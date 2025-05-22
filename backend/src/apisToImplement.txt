@@ -1,0 +1,135 @@
+Authentication & User Management
+
+COMPLETED POST /api/login
+COMPLETED POST /api/register
+COMPLETED POST /api/forgot-password
+COMPLETED GET /api/verify-token
+COMPLETED PUT /api/update-profile
+Admin/General Stats
+
+COMPLETED GET /api/numbers
+
+
+Classes Management (Admin)
+
+COMPLETED POST /api/classes
+COMPLETED PUT /api/classes/<class_id>
+COMPLETED POST /api/classes/<class_id>/teachers
+COMPLETED DELETE /api/classes/<class_id>/teachers/<teacher_id>
+COMPLETED POST /api/classes/<class_id>/students
+COMPLETED DELETE /api/classes/<class_id>/students/<student_id>
+COMPLETED GET /api/classes (Lists classes, with role-based filtering)
+COMPLETED GET /api/classes/enrolled-teacher (Lists classes for the enrolled teacher)
+COMPLETED GET /api/classes/<class_id> (Get single class details)
+
+
+Teachers Management (Admin)
+
+COMPLETED GET /api/teachers/all
+COMPLETED POST /api/teacher/create
+Parents Management (Admin)
+
+COMPLETED GET /api/parents/all
+COMPLETED POST /api/student-parent (Creates parent-student relationship)
+
+
+Students Management
+
+COMPLETED GET /api/students (Get all students, for admin/teacher)
+COMPLETED POST /api/student (Create student, admin only)
+COMPLETED PUT /api/student/<student_id> (Update student, admin only - uses rollNum as student_id in path for lookup)
+COMPLETED POST /api/students/<student_id>/enroll (Enroll student in a class)
+COMPLETED GET /api/students/<student_id>/enrollment-history
+COMPLETED POST /api/students/<student_id>/transfer (Transfer student to another class)
+COMPLETED POST /api/students/<student_id>/withdraw
+COMPLETED GET /api/classes/<class_id>/roster (Get class roster)
+COMPLETED GET /api/student/<student_id>/basic-info (For parent)
+COMPLETED GET /api/student/<student_id>/basic-info-for-teacher (For teacher)
+COMPLETED GET /api/parent/students (Get students for a logged-in parent)
+
+
+Weekly Menu
+
+COMPLETED POST /api/menu/weekly
+COMPLETED GET /api/menu/weekly (Get current week's menu)
+COMPLETED PUT /api/menu/weekly/<menu_id>
+COMPLETED DELETE /api/menu/weekly/<menu_id>
+
+
+Weekly Reports
+
+COMPLETED POST /api/reports/weekly
+COMPLETED GET /api/reports/weekly/<student_id>
+COMPLETED PUT /api/reports/weekly/<report_id>
+COMPLETED POST /api/reports/weekly/batch/<student_id> (Create batch reports for a student)
+
+
+Monthly Plans
+
+COMPLETED POST /api/plans/monthly
+COMPLETED GET /api/plans/monthly/<class_id> (Get plan for a class by month/year query params)
+COMPLETED PUT /api/plans/monthly/<plan_id>
+COMPLETED DELETE /api/plans/monthly/<plan_id>
+COMPLETED GET /api/plans/monthly/<class_id>/list (List all plans for a class, optionally by year)
+
+
+Box Items (My Box)
+
+COMPLETED GET /api/box/items (Get all possible box items, initializes defaults if none exist)
+COMPLETED GET /api/box/student/<student_id> (Get a student's box status)
+COMPLETED PUT /api/box/student/<student_id> (Update a student's box status)
+Note: The old commented-out routes for POST /api/box/items and DELETE /api/box/items/<item_id> are not considered "currently implemented" based on the active code.
+
+
+Documents (My Documents)
+
+COMPLETED GET /api/documents/types
+COMPLETED POST /api/documents/types (Admin only)
+COMPLETED GET /api/documents/student/<student_id>
+COMPLETED PUT /api/documents/student/<student_id> (Admin only)
+COMPLETED DELETE /api/documents/types/<document_id> (Admin only)
+COMPLETED PUT /api/documents/types/<document_id> (Admin only)
+
+
+Posts (Wall)
+
+COMPLETED GET /api/posts
+COMPLETED POST /api/posts (Admin only)
+COMPLETED PUT /api/posts/<post_id> (Admin only)
+COMPLETED DELETE /api/posts/<post_id> (Admin only)
+
+
+Activities (Calendar/Events)
+
+COMPLETED GET /api/activities/class/<class_id> (Filter by month query param)
+COMPLETED GET /api/activities/<activity_id> (Get specific activity)
+COMPLETED POST /api/activities (Admin only)
+COMPLETED PUT /api/activities/<activity_id> (Admin only)
+COMPLETED DELETE /api/activities/<activity_id> (Admin only)
+
+
+Lost Items
+
+COMPLETED GET /api/lost-items
+COMPLETED GET /api/lost-items/<item_id>
+COMPLETED POST /api/lost-items (Handles image upload)
+COMPLETED PUT /api/lost-items/<item_id> (Handles image update)
+COMPLETED DELETE /api/lost-items/<item_id>
+COMPLETED GET /api/lost-items/<item_id>/image (Serve item image)
+
+
+Health Metrics & Info
+
+COMPLETED GET /api/health/metrics/<student_id> (Filter by type and period query params)
+COMPLETED POST /api/health/metrics/<student_id>
+COMPLETED PUT /api/health/metrics/<student_id>/<metric_id>
+COMPLETED GET /api/health/info/<student_id>
+COMPLETED PUT /api/health/info/<student_id>
+
+
+Fees & Payments
+
+COMPLETED GET /api/fees/<student_id>
+COMPLETED POST /api/fees (Admin/Teacher)
+COMPLETED PUT /api/fees/<fee_id>/status
+COMPLETED GET /api/fees/summary/<student_id>
