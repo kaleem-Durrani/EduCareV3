@@ -23,7 +23,7 @@ import {
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
 import { useApiQuery } from "../hooks/useApi";
-import { adminService } from "../services/api";
+import { adminService } from "../services/index";
 import AdminLayout from "../components/Layout/AdminLayout";
 
 const { Title, Text } = Typography;

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { authService } from "../services/api.js";
+import { authService } from "../services/index.js";
 import { message } from "antd";
 
 const AuthContext = createContext();

@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Button, theme, Space, Typography } from 'antd';
+import React, { useState } from "react";
+import {
+  Layout,
+  Menu,
+  Avatar,
+  Dropdown,
+  Button,
+  theme,
+  Space,
+  Typography,
+} from "antd";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -17,9 +26,10 @@ import {
   SearchOutlined,
   LogoutOutlined,
   SettingOutlined,
-} from '@ant-design/icons';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+} from "@ant-design/icons";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import { PROTECTED_ROUTES } from "../../constants/routes";
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -36,98 +46,98 @@ const AdminLayout = ({ children }) => {
   // Menu items configuration
   const menuItems = [
     {
-      key: '/dashboard',
+      key: PROTECTED_ROUTES.DASHBOARD,
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: "Dashboard",
     },
     {
-      key: '/students',
+      key: PROTECTED_ROUTES.STUDENTS,
       icon: <UserOutlined />,
-      label: 'Students',
+      label: "Students",
     },
     {
-      key: '/teachers',
+      key: PROTECTED_ROUTES.TEACHERS,
       icon: <TeamOutlined />,
-      label: 'Teachers',
+      label: "Teachers",
     },
     {
-      key: '/parents',
+      key: PROTECTED_ROUTES.PARENTS,
       icon: <TeamOutlined />,
-      label: 'Parents',
+      label: "Parents",
     },
     {
-      key: '/classes',
+      key: PROTECTED_ROUTES.CLASSES,
       icon: <BookOutlined />,
-      label: 'Classes',
+      label: "Classes",
     },
     {
-      key: '/reports',
+      key: PROTECTED_ROUTES.REPORTS,
       icon: <FileTextOutlined />,
-      label: 'Reports',
+      label: "Reports",
     },
     {
-      key: '/monthly-plans',
+      key: PROTECTED_ROUTES.MONTHLY_PLANS,
       icon: <CalendarOutlined />,
-      label: 'Monthly Plans',
+      label: "Monthly Plans",
     },
     {
-      key: '/food-menu',
+      key: PROTECTED_ROUTES.FOOD_MENU,
       icon: <CalendarOutlined />,
-      label: 'Food Menu',
+      label: "Food Menu",
     },
     {
-      key: '/health',
+      key: PROTECTED_ROUTES.HEALTH,
       icon: <HeartOutlined />,
-      label: 'Health',
+      label: "Health",
     },
     {
-      key: '/fees',
+      key: PROTECTED_ROUTES.FEES,
       icon: <DollarOutlined />,
-      label: 'Fees',
+      label: "Fees",
     },
     {
-      key: '/box-items',
+      key: PROTECTED_ROUTES.BOX_ITEMS,
       icon: <InboxOutlined />,
-      label: 'Box Items',
+      label: "Box Items",
     },
     {
-      key: '/documents',
+      key: PROTECTED_ROUTES.DOCUMENTS,
       icon: <FileOutlined />,
-      label: 'Documents',
+      label: "Documents",
     },
     {
-      key: '/posts',
+      key: PROTECTED_ROUTES.POSTS,
       icon: <NotificationOutlined />,
-      label: 'Posts',
+      label: "Posts",
     },
     {
-      key: '/lost-items',
+      key: PROTECTED_ROUTES.LOST_ITEMS,
       icon: <SearchOutlined />,
-      label: 'Lost Items',
+      label: "Lost Items",
     },
   ];
 
   // User dropdown menu
   const userMenuItems = [
     {
-      key: 'profile',
+      key: "profile",
       icon: <UserOutlined />,
-      label: 'Profile',
-      onClick: () => navigate('/profile'),
+      label: "Profile",
+      onClick: () => navigate(PROTECTED_ROUTES.PROFILE),
     },
     {
-      key: 'settings',
+      key: "settings",
       icon: <SettingOutlined />,
-      label: 'Settings',
-      onClick: () => navigate('/settings'),
+      label: "Settings",
+      onClick: () => navigate(PROTECTED_ROUTES.SETTINGS),
     },
     {
-      type: 'divider',
+      type: "divider",
     },
     {
-      key: 'logout',
+      key: "logout",
       icon: <LogoutOutlined />,
-      label: 'Logout',
+      label: "Logout",
       onClick: logout,
     },
   ];
@@ -139,39 +149,41 @@ const AdminLayout = ({ children }) => {
   const getSelectedKeys = () => {
     const pathname = location.pathname;
     // Find the menu item that matches the current path
-    const matchedItem = menuItems.find(item => pathname.startsWith(item.key));
+    const matchedItem = menuItems.find((item) => pathname.startsWith(item.key));
     return matchedItem ? [matchedItem.key] : [];
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider 
-        trigger={null} 
-        collapsible 
+    <Layout style={{ minHeight: "100vh" }}>
+      <Sider
+        trigger={null}
+        collapsible
         collapsed={collapsed}
         style={{
           background: colorBgContainer,
-          borderRight: '1px solid #f0f0f0',
+          borderRight: "1px solid #f0f0f0",
         }}
       >
-        <div style={{ 
-          height: 64, 
-          margin: 16, 
-          display: 'flex', 
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-        }}>
+        <div
+          style={{
+            height: 64,
+            margin: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: collapsed ? "center" : "flex-start",
+          }}
+        >
           {!collapsed ? (
-            <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>
+            <Text strong style={{ fontSize: "18px", color: "#1890ff" }}>
               EduCare
             </Text>
           ) : (
-            <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>
+            <Text strong style={{ fontSize: "18px", color: "#1890ff" }}>
               EC
             </Text>
           )}
         </div>
-        
+
         <Menu
           theme="light"
           mode="inline"
@@ -181,16 +193,16 @@ const AdminLayout = ({ children }) => {
           style={{ borderRight: 0 }}
         />
       </Sider>
-      
+
       <Layout>
         <Header
           style={{
-            padding: '0 16px',
+            padding: "0 16px",
             background: colorBgContainer,
-            borderBottom: '1px solid #f0f0f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            borderBottom: "1px solid #f0f0f0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
           <Button
@@ -198,12 +210,12 @@ const AdminLayout = ({ children }) => {
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
             style={{
-              fontSize: '16px',
+              fontSize: "16px",
               width: 64,
               height: 64,
             }}
           />
-          
+
           <Space>
             <Text>Welcome, {user?.name || user?.email}</Text>
             <Dropdown
@@ -211,17 +223,17 @@ const AdminLayout = ({ children }) => {
               placement="bottomRight"
               arrow
             >
-              <Avatar 
-                style={{ backgroundColor: '#1890ff', cursor: 'pointer' }}
+              <Avatar
+                style={{ backgroundColor: "#1890ff", cursor: "pointer" }}
                 icon={<UserOutlined />}
               />
             </Dropdown>
           </Space>
         </Header>
-        
+
         <Content
           style={{
-            margin: '16px',
+            margin: "16px",
             padding: 24,
             minHeight: 280,
             background: colorBgContainer,

@@ -7,6 +7,7 @@ import {
 import { ConfigProvider } from "antd";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
+import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./constants/routes";
 
 // Auth Pages
 import Login from "./pages/Auth/Login";
@@ -48,12 +49,12 @@ export default function App() {
         <Router>
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route path={PUBLIC_ROUTES.HOME} element={<Home />} />
+            <Route path={PUBLIC_ROUTES.LOGIN} element={<Login />} />
 
             {/* Protected Routes */}
             <Route
-              path="/dashboard"
+              path={PROTECTED_ROUTES.DASHBOARD}
               element={
                 <PrivateRoute>
                   <Dashboard />
@@ -62,7 +63,7 @@ export default function App() {
             />
 
             <Route
-              path="/students"
+              path={PROTECTED_ROUTES.STUDENTS}
               element={
                 <PrivateRoute>
                   <StudentsScreen />
@@ -71,7 +72,7 @@ export default function App() {
             />
 
             <Route
-              path="/teachers"
+              path={PROTECTED_ROUTES.TEACHERS}
               element={
                 <PrivateRoute>
                   <TeachersScreen />
@@ -80,7 +81,7 @@ export default function App() {
             />
 
             <Route
-              path="/parents"
+              path={PROTECTED_ROUTES.PARENTS}
               element={
                 <PrivateRoute>
                   <ParentsScreen />
@@ -89,7 +90,7 @@ export default function App() {
             />
 
             <Route
-              path="/classes"
+              path={PROTECTED_ROUTES.CLASSES}
               element={
                 <PrivateRoute>
                   <ClassesScreen />
@@ -98,7 +99,7 @@ export default function App() {
             />
 
             <Route
-              path="/food-menu"
+              path={PROTECTED_ROUTES.FOOD_MENU}
               element={
                 <PrivateRoute>
                   <FoodMenuScreen />
@@ -107,7 +108,7 @@ export default function App() {
             />
 
             <Route
-              path="/reports"
+              path={PROTECTED_ROUTES.REPORTS}
               element={
                 <PrivateRoute>
                   <ReportsScreen />
@@ -116,7 +117,7 @@ export default function App() {
             />
 
             <Route
-              path="/monthly-plans"
+              path={PROTECTED_ROUTES.MONTHLY_PLANS}
               element={
                 <PrivateRoute>
                   <MonthlyPlansScreen />
@@ -125,7 +126,7 @@ export default function App() {
             />
 
             <Route
-              path="/lost-items"
+              path={PROTECTED_ROUTES.LOST_ITEMS}
               element={
                 <PrivateRoute>
                   <LostItemsScreen />
@@ -134,7 +135,7 @@ export default function App() {
             />
 
             <Route
-              path="/fees"
+              path={PROTECTED_ROUTES.FEES}
               element={
                 <PrivateRoute>
                   <FeesScreen />
@@ -142,14 +143,11 @@ export default function App() {
               }
             />
 
-            {/* Redirect old routes */}
-            <Route
-              path="/Admin/*"
-              element={<Navigate to="/dashboard" replace />}
-            />
-
             {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route
+              path="*"
+              element={<Navigate to={PUBLIC_ROUTES.HOME} replace />}
+            />
           </Routes>
         </Router>
       </AuthProvider>
