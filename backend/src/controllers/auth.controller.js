@@ -64,7 +64,9 @@ export const register = asyncHandler(async (req, res) => {
 
   const result = await withTransaction(async (session) => {
     // Check if user already exists
-    const existingUser = await User.findOne({ email }).session(session);
+    const existingUser = session
+      ? await User.findOne({ email }).session(session)
+      : await User.findOne({ email });
 
     if (existingUser) {
       throwConflict("Email already registered");
@@ -85,7 +87,12 @@ export const register = asyncHandler(async (req, res) => {
       is_active: true,
     });
 
-    await newUser.save({ session });
+    // Save with or without session
+    if (session) {
+      await newUser.save({ session });
+    } else {
+      await newUser.save();
+    }
 
     return {
       user: {
@@ -154,35 +161,32 @@ export const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { name, phone, address } = req.body;
 
-  const result = await withTransaction(async (session) => {
-    // Prepare update data
-    const updateData = {};
-    if (name !== undefined) updateData.name = name;
-    if (phone !== undefined) updateData.phone = phone;
-    if (address !== undefined) updateData.address = address;
+  // Prepare update data
+  const updateData = {};
+  if (name !== undefined) updateData.name = name;
+  if (phone !== undefined) updateData.phone = phone;
+  if (address !== undefined) updateData.address = address;
 
-    // Update user
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-      select: "-password_hash",
-      session,
-    });
-
-    if (!updatedUser) {
-      throwNotFound("User");
-    }
-
-    return {
-      user: {
-        id: updatedUser._id,
-        email: updatedUser.email,
-        name: updatedUser.name,
-        phone: updatedUser.phone,
-        address: updatedUser.address,
-        role: updatedUser.role,
-      },
-    };
+  // Update user
+  const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+    new: true,
+    select: "-password_hash",
   });
+
+  if (!updatedUser) {
+    throwNotFound("User");
+  }
+
+  const result = {
+    user: {
+      id: updatedUser._id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+      address: updatedUser.address,
+      role: updatedUser.role,
+    },
+  };
 
   return sendSuccess(res, result, "Profile updated successfully");
 });

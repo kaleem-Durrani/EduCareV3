@@ -27,7 +27,8 @@ config();
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI =
-  process.env.MONGO_URI || "mongodb://localhost:27017/educare_db";
+  process.env.MONGO_URI ||
+  "mongodb://localhost:27017/educare_db?replicaSet=rs0";
 
 const app = express();
 
