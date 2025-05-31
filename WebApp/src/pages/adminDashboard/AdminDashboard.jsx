@@ -1,6 +1,6 @@
-import React from "react";
+import { useEffect } from "react";
 import { Row, Col, Typography, Space } from "antd";
-import { useApiQuery } from "../../hooks/useApi";
+import useApi from "../../hooks/useApi";
 import { adminService } from "../../services/index";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import StatsCards from "./components/StatsCards";
@@ -11,9 +11,15 @@ const { Title } = Typography;
 
 const AdminDashboard = () => {
   // Fetch dashboard statistics using our new API structure
-  const { data: stats, loading } = useApiQuery(adminService.getNumbers, {
-    showErrorMessage: true,
-  });
+  const {
+    data: stats,
+    isLoading: loading,
+    request,
+  } = useApi(adminService.getNumbers);
+
+  useEffect(() => {
+    request();
+  }, []);
 
   return (
     <AdminLayout>

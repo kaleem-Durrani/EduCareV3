@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Button,
@@ -14,6 +14,7 @@ import {
   Row,
   Col,
   Statistic,
+  message,
 } from "antd";
 import {
   PlusOutlined,
@@ -22,7 +23,7 @@ import {
   UserOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { useApiQuery, useApiMutation } from "../hooks/useApi";
+import useApi from "../hooks/useApi";
 import { studentService } from "../services/index";
 import AdminLayout from "../components/Layout/AdminLayout";
 
@@ -37,38 +38,48 @@ export default function StudentsScreen() {
   // Fetch students data
   const {
     data: students,
-    loading,
-    refetch,
-  } = useApiQuery(studentService.getAllStudents, {
-    showErrorMessage: true,
-  });
+    isLoading: loading,
+    request: fetchStudents,
+  } = useApi(studentService.getAllStudents);
 
-  // Create student mutation
-  const { mutate: createStudent, loading: creating } = useApiMutation(
-    studentService.createStudent,
-    {
-      onSuccess: () => {
-        setIsModalVisible(false);
-        form.resetFields();
-        refetch();
-      },
-      successMessage: "Student created successfully!",
-    }
+  // Create student API
+  const { request: createStudentRequest, isLoading: creating } = useApi(
+    studentService.createStudent
   );
 
-  // Update student mutation
-  const { mutate: updateStudent, loading: updating } = useApiMutation(
-    ({ id, data }) => studentService.updateStudent(id, data),
-    {
-      onSuccess: () => {
-        setIsModalVisible(false);
-        setEditingStudent(null);
-        form.resetFields();
-        refetch();
-      },
-      successMessage: "Student updated successfully!",
-    }
+  // Update student API
+  const { request: updateStudentRequest, isLoading: updating } = useApi(
+    ({ id, data }) => studentService.updateStudent(id, data)
   );
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const handleCreateStudent = async (values) => {
+    try {
+      await createStudentRequest(values);
+      message.success("Student created successfully!");
+      setIsModalVisible(false);
+      form.resetFields();
+      fetchStudents();
+    } catch (error) {
+      message.error("Failed to create student");
+    }
+  };
+
+  const handleUpdateStudent = async (values) => {
+    try {
+      await updateStudentRequest({ id: editingStudent.id, data: values });
+      message.success("Student updated successfully!");
+      setIsModalVisible(false);
+      setEditingStudent(null);
+      form.resetFields();
+      fetchStudents();
+    } catch (error) {
+      message.error("Failed to update student");
+    }
+  };
 
   const columns = [
     {
@@ -160,17 +171,10 @@ export default function StudentsScreen() {
   };
 
   const handleSubmit = async (values) => {
-    try {
-      if (editingStudent) {
-        await updateStudent({
-          id: editingStudent.rollNum,
-          data: values,
-        });
-      } else {
-        await createStudent(values);
-      }
-    } catch (error) {
-      console.error("Error saving student:", error);
+    if (editingStudent) {
+      await handleUpdateStudent(values);
+    } else {
+      await handleCreateStudent(values);
     }
   };
 

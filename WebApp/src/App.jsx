@@ -11,6 +11,7 @@ import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./constants/routes";
 
 // Auth Pages
 import Login from "./pages/Auth/Login";
+import Register from "./pages/Auth/Register";
 import Home from "./pages/Home";
 
 // Dashboard
@@ -51,6 +52,7 @@ export default function App() {
             {/* Public Routes */}
             <Route path={PUBLIC_ROUTES.HOME} element={<Home />} />
             <Route path={PUBLIC_ROUTES.LOGIN} element={<Login />} />
+            <Route path={PUBLIC_ROUTES.REGISTER} element={<Register />} />
 
             {/* Protected Routes */}
             <Route

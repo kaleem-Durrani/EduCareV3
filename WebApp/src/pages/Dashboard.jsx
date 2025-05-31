@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Row,
   Col,
@@ -22,7 +22,7 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext";
-import { useApiQuery } from "../hooks/useApi";
+import useApi from "../hooks/useApi";
 import { adminService } from "../services/index";
 import AdminLayout from "../components/Layout/AdminLayout";
 
@@ -32,12 +32,15 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   // Fetch dashboard statistics
-  const { data: stats, loading: statsLoading } = useApiQuery(
-    adminService.getNumbers,
-    {
-      showErrorMessage: true,
-    }
-  );
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    request,
+  } = useApi(adminService.getNumbers);
+
+  useEffect(() => {
+    request();
+  }, []);
 
   const quickActions = [
     {

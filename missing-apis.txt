@@ -2,4 +2,8 @@
 
 ## APIs found in frontend but not in our 69 backend endpoints:
 
+1. GET /api/numbers - Dashboard statistics endpoint (used in AdminDashboard)
+   - Should return: { students: number, teachers: number, classes: number, parents: number }
+   - Used by: adminService.getNumbers()
+
 (This file will be updated as we find missing APIs during screen rewrites)

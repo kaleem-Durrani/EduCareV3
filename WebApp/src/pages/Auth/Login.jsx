@@ -1,37 +1,40 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Form,
   Input,
   Button,
-  Select,
   Card,
   Typography,
   Row,
   Col,
   Space,
+  Alert,
 } from "antd";
 import { UserOutlined, LockOutlined, LoginOutlined } from "@ant-design/icons";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import { useApiForm } from "../../hooks/useApi";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 export default function Login() {
   const [form] = Form.useForm();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const { handleSubmit, loading } = useApiForm(
-    ({ email, password, role }) => login(email, password, role),
-    {
-      onSuccess: () => {
-        navigate("/dashboard");
-      },
-      form,
+  const handleSubmit = async (values) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await login(values.email, values.password, "admin");
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
-  );
+  };
 
   return (
     <Row
@@ -49,10 +52,19 @@ export default function Login() {
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             <div style={{ textAlign: "center" }}>
               <Title level={2} style={{ color: "#1890ff", marginBottom: 8 }}>
-                EduCare
+                EduCare Admin
               </Title>
-              <Text type="secondary">Sign in to your account</Text>
+              <Text type="secondary">Sign in to admin dashboard</Text>
             </div>
+
+            {error && (
+              <Alert
+                message={error}
+                type="error"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
 
             <Form
               form={form}
@@ -60,9 +72,6 @@ export default function Login() {
               onFinish={handleSubmit}
               layout="vertical"
               size="large"
-              initialValues={{
-                role: "parent",
-              }}
             >
               <Form.Item
                 name="email"
@@ -106,23 +115,6 @@ export default function Login() {
                 />
               </Form.Item>
 
-              <Form.Item
-                name="role"
-                label="Role"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please select your role!",
-                  },
-                ]}
-              >
-                <Select placeholder="Select your role">
-                  <Option value="parent">Parent</Option>
-                  <Option value="teacher">Teacher</Option>
-                  <Option value="admin">Admin</Option>
-                </Select>
-              </Form.Item>
-
               <Form.Item>
                 <Button
                   type="primary"
@@ -136,11 +128,11 @@ export default function Login() {
               </Form.Item>
             </Form>
 
-            <div style={{ textAlign: "center" }}>
+            <div style={{ textAlign: "center", marginTop: 16 }}>
               <Text type="secondary">
                 Don't have an account?{" "}
                 <Link to="/register" style={{ color: "#1890ff" }}>
-                  Register here
+                  Create admin account
                 </Link>
               </Text>
             </div>
