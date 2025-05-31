@@ -1,122 +1,152 @@
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Space,
+} from "antd";
+import { UserOutlined, LockOutlined, LoginOutlined } from "@ant-design/icons";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import { useApiForm } from "../../hooks/useApi";
+
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 export default function Login() {
-  const [formData, setFormData] = useState({ 
-    email: '', 
-    password: '', 
-    role: 'parent' 
-  });
-  const [error, setError] = useState('');
+  const [form] = Form.useForm();
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    try {
-      await login(formData.email, formData.password, formData.role);
-      navigate('/dashboard');
-    } catch (error) {
-      setError('Invalid credentials or server error');
+  const { handleSubmit, loading } = useApiForm(
+    ({ email, password, role }) => login(email, password, role),
+    {
+      onSuccess: () => {
+        navigate("/dashboard");
+      },
+      form,
     }
-  };
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
-        </h2>
-      </div>
+    <Row
+      justify="center"
+      align="middle"
+      style={{ minHeight: "100vh", background: "#f0f2f5" }}
+    >
+      <Col xs={22} sm={16} md={12} lg={8} xl={6}>
+        <Card
+          style={{
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+            borderRadius: "8px",
+          }}
+        >
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            <div style={{ textAlign: "center" }}>
+              <Title level={2} style={{ color: "#1890ff", marginBottom: 8 }}>
+                EduCare
+              </Title>
+              <Text type="secondary">Sign in to your account</Text>
+            </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
+            <Form
+              form={form}
+              name="login"
+              onFinish={handleSubmit}
+              layout="vertical"
+              size="large"
+              initialValues={{
+                role: "parent",
+              }}
+            >
+              <Form.Item
+                name="email"
+                label="Email Address"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your email!",
+                  },
+                  {
+                    type: "email",
+                    message: "Please enter a valid email!",
+                  },
+                ]}
+              >
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Enter your email"
                   autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
-              </div>
-            </div>
+              </Form.Item>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
+              <Form.Item
+                name="password"
+                label="Password"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your password!",
+                  },
+                  {
+                    min: 6,
+                    message: "Password must be at least 6 characters!",
+                  },
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Enter your password"
                   autoComplete="current-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
-              </div>
-            </div>
+              </Form.Item>
 
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
-              <div className="mt-1">
-                <select
-                  id="role"
-                  name="role"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              <Form.Item
+                name="role"
+                label="Role"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please select your role!",
+                  },
+                ]}
+              >
+                <Select placeholder="Select your role">
+                  <Option value="parent">Parent</Option>
+                  <Option value="teacher">Teacher</Option>
+                  <Option value="admin">Admin</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  icon={<LoginOutlined />}
+                  block
                 >
-                  <option value="parent">Parent</option>
-                  <option value="teacher">Teacher</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-            </div>
+                  Sign In
+                </Button>
+              </Form.Item>
+            </Form>
 
-            {error && (
-              <div className="text-red-500 text-sm text-center">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Sign in
-              </button>
+            <div style={{ textAlign: "center" }}>
+              <Text type="secondary">
+                Don't have an account?{" "}
+                <Link to="/register" style={{ color: "#1890ff" }}>
+                  Register here
+                </Link>
+              </Text>
             </div>
-
-            <div className="text-center text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a 
-                href="/register" 
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Register here
-              </a>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          </Space>
+        </Card>
+      </Col>
+    </Row>
   );
 }

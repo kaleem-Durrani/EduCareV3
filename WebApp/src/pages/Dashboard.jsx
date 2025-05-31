@@ -1,50 +1,201 @@
-import { useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import WeeklyMenu from '../components/Menu/WeeklyMenu';
-import StudentOverview from '../components/Students/StudentOverview';
+import React from "react";
+import {
+  Row,
+  Col,
+  Card,
+  Statistic,
+  Typography,
+  Button,
+  Space,
+  List,
+  Avatar,
+} from "antd";
+import {
+  UserOutlined,
+  TeamOutlined,
+  BookOutlined,
+  DollarOutlined,
+  PlusOutlined,
+  FileTextOutlined,
+  UploadOutlined,
+  TrophyOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
+import { useAuth } from "../context/AuthContext";
+import { useApiQuery } from "../hooks/useApi";
+import { adminService } from "../services/api";
+import AdminLayout from "../components/Layout/AdminLayout";
+
+const { Title, Text } = Typography;
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">
-          Welcome back, {user?.role}
-        </h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
-            <StudentOverview />
-          </div>
-          
-          {/* Right Column */}
-          <div className="space-y-8">
-            <WeeklyMenu />
-            <QuickActions />
-          </div>
-        </div>
-      </div>
-    </div>
+  // Fetch dashboard statistics
+  const { data: stats, loading: statsLoading } = useApiQuery(
+    adminService.getNumbers,
+    {
+      showErrorMessage: true,
+    }
   );
-}
 
-function QuickActions() {
+  const quickActions = [
+    {
+      title: "Add New Student",
+      icon: <UserOutlined />,
+      action: () => console.log("Add student"),
+    },
+    {
+      title: "Create Class",
+      icon: <BookOutlined />,
+      action: () => console.log("Create class"),
+    },
+    {
+      title: "View Reports",
+      icon: <FileTextOutlined />,
+      action: () => console.log("View reports"),
+    },
+    {
+      title: "Upload Documents",
+      icon: <UploadOutlined />,
+      action: () => console.log("Upload documents"),
+    },
+  ];
+
+  const recentActivities = [
+    {
+      title: "New student enrolled",
+      description: "John Doe has been enrolled in Class A",
+      time: "2 hours ago",
+      avatar: <UserOutlined />,
+    },
+    {
+      title: "Weekly report submitted",
+      description: "Class B weekly report has been submitted",
+      time: "4 hours ago",
+      avatar: <FileTextOutlined />,
+    },
+    {
+      title: "Fee payment received",
+      description: "Payment received from Jane Smith",
+      time: "1 day ago",
+      avatar: <DollarOutlined />,
+    },
+  ];
+
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-      <div className="space-y-3">
-        <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-          Add New Student
-        </button>
-        <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-          View Reports
-        </button>
-        <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-          Upload Documents
-        </button>
-      </div>
-    </div>
+    <AdminLayout>
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        {/* Welcome Header */}
+        <div>
+          <Title level={2}>Welcome back, {user?.name || user?.email}!</Title>
+          <Text type="secondary">
+            Here's what's happening in your school today.
+          </Text>
+        </div>
+
+        {/* Statistics Cards */}
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="Total Students"
+                value={stats?.students || 0}
+                loading={statsLoading}
+                prefix={<UserOutlined />}
+                valueStyle={{ color: "#3f8600" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="Total Teachers"
+                value={stats?.teachers || 0}
+                loading={statsLoading}
+                prefix={<TeamOutlined />}
+                valueStyle={{ color: "#1890ff" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="Total Classes"
+                value={stats?.classes || 0}
+                loading={statsLoading}
+                prefix={<BookOutlined />}
+                valueStyle={{ color: "#722ed1" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="Total Parents"
+                value={stats?.parents || 0}
+                loading={statsLoading}
+                prefix={<TeamOutlined />}
+                valueStyle={{ color: "#eb2f96" }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Main Content */}
+        <Row gutter={[16, 16]}>
+          {/* Quick Actions */}
+          <Col xs={24} lg={12}>
+            <Card title="Quick Actions" extra={<PlusOutlined />}>
+              <Row gutter={[8, 8]}>
+                {quickActions.map((action, index) => (
+                  <Col xs={12} key={index}>
+                    <Button
+                      type="dashed"
+                      icon={action.icon}
+                      onClick={action.action}
+                      style={{ width: "100%", height: "60px" }}
+                    >
+                      {action.title}
+                    </Button>
+                  </Col>
+                ))}
+              </Row>
+            </Card>
+          </Col>
+
+          {/* Recent Activities */}
+          <Col xs={24} lg={12}>
+            <Card title="Recent Activities" extra={<CalendarOutlined />}>
+              <List
+                itemLayout="horizontal"
+                dataSource={recentActivities}
+                renderItem={(item) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar
+                          style={{ backgroundColor: "#1890ff" }}
+                          icon={item.avatar}
+                        />
+                      }
+                      title={item.title}
+                      description={
+                        <div>
+                          <div>{item.description}</div>
+                          <Text type="secondary" style={{ fontSize: "12px" }}>
+                            {item.time}
+                          </Text>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </Space>
+    </AdminLayout>
   );
 }
