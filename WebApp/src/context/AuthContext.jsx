@@ -34,6 +34,7 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     try {
       const response = await authService.register(userData);
+      console.log(response);
 
       if (response.success) {
         message.success("Registration successful! Please login.");
@@ -64,22 +65,35 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // Try to verify token with backend
-      const response = await authService.verifyToken();
+      // If we have stored user data, use it immediately
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
 
-      if (response.success) {
-        setUser(response.data.user);
-      } else {
-        // If verification fails, use stored user data if available
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        } else {
+      // Try to verify token with backend (optional verification)
+      try {
+        const response = await authService.verifyToken();
+        if (response.success) {
+          setUser(response.data.user);
+        }
+      } catch (verifyError) {
+        // If token verification fails but we have stored user, keep them logged in
+        // Only logout if we don't have stored user data
+        if (!storedUser) {
+          console.warn("Token verification failed and no stored user data");
           logout();
+        } else {
+          console.warn("Token verification failed but using stored user data");
         }
       }
     } catch (error) {
-      // If verification fails, clear auth data
-      logout();
+      // Only logout if we don't have any stored user data
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        logout();
+      } else {
+        setUser(JSON.parse(storedUser));
+      }
     } finally {
       setLoading(false);
     }
