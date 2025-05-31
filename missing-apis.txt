@@ -1,0 +1,5 @@
+# Missing APIs - To be added to backend
+
+## APIs found in frontend but not in our 69 backend endpoints:
+
+(This file will be updated as we find missing APIs during screen rewrites)
