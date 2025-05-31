@@ -1,35 +1,17 @@
-import React, { useState } from "react";
-import Sidebar from "../../components/Layout/Sidebar";
-import Header from "../../components/layout/Header";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
+import React from "react";
+import SideBar from "./SideBar";
 
 const AdminLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen" style={{ backgroundColor: "#F4F3F0" }}>
       {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      <div className="w-64 flex-shrink-0">
+        <SideBar />
+      </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <Header onMenuToggle={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          <ErrorBoundary>
-            <div className="p-6">{children}</div>
-          </ErrorBoundary>
-        </main>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );
