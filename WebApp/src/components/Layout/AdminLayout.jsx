@@ -234,10 +234,12 @@ const AdminLayout = ({ children }) => {
         <Content
           style={{
             margin: "16px",
+            maxHeight: "89vh",
             padding: 24,
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
+            overflowY: "auto",
           }}
         >
           {children}
