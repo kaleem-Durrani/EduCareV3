@@ -1,6 +1,7 @@
 import MonthlyPlan from "../models/monthlyPlan.model.js";
 import Class from "../models/class.model.js";
 import { sendSuccess } from "../utils/response.utils.js";
+import { deleteUploadedFile, getRelativePath } from "../utils/file.utils.js";
 import {
   withTransaction,
   asyncHandler,
@@ -16,7 +17,15 @@ import {
  * Admin/Teacher only
  */
 export const createMonthlyPlan = asyncHandler(async (req, res) => {
-  const { class_id, month, year, description, imageUrl } = req.body;
+  const { class_id, month, year, description } = req.body;
+
+  // Debug logging
+  console.log("Request body:", req.body);
+  console.log("Request file:", req.file);
+
+  // Handle uploaded file
+  const imageUrl = req.file ? getRelativePath(req.file.path) : null;
+  console.log("Processed imageUrl:", imageUrl);
 
   const result = await withTransaction(async (session) => {
     // Check if class exists
@@ -115,7 +124,10 @@ export const getMonthlyPlan = asyncHandler(async (req, res) => {
  */
 export const updateMonthlyPlan = asyncHandler(async (req, res) => {
   const { plan_id } = req.params;
-  const { description, imageUrl } = req.body;
+  const { description } = req.body;
+
+  // Handle uploaded file
+  const newImageUrl = req.file ? getRelativePath(req.file.path) : null;
 
   const result = await withTransaction(async (session) => {
     const plan = await MonthlyPlan.findById(plan_id)
@@ -133,10 +145,18 @@ export const updateMonthlyPlan = asyncHandler(async (req, res) => {
       throwForbidden("You don't have access to this class");
     }
 
-    // Update fields
+    // Handle image update and deletion of old image
     const updateData = { updatedBy: req.user.id };
     if (description !== undefined) updateData.description = description;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+
+    // If new image is uploaded, delete old image and update
+    if (newImageUrl) {
+      // Delete old image if it exists
+      if (plan.imageUrl) {
+        deleteUploadedFile(plan.imageUrl);
+      }
+      updateData.imageUrl = newImageUrl;
+    }
 
     const updatedPlan = await MonthlyPlan.findByIdAndUpdate(
       plan_id,
@@ -172,6 +192,11 @@ export const deleteMonthlyPlan = asyncHandler(async (req, res) => {
     !plan.class_id.teachers.includes(req.user.id)
   ) {
     throwForbidden("You don't have access to this class");
+  }
+
+  // Delete associated image file if it exists
+  if (plan.imageUrl) {
+    deleteUploadedFile(plan.imageUrl);
   }
 
   await MonthlyPlan.findByIdAndDelete(plan_id);
