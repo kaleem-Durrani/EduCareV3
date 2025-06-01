@@ -23,9 +23,7 @@ export const createClassValidation = [
 ];
 
 export const updateClassValidation = [
-  param("class_id")
-    .isMongoId()
-    .withMessage("Invalid class ID"),
+  param("class_id").isMongoId().withMessage("Invalid class ID"),
   body("name")
     .optional()
     .isLength({ min: 2 })
@@ -49,43 +47,25 @@ export const updateClassValidation = [
 ];
 
 export const classIdValidation = [
-  param("class_id")
-    .isMongoId()
-    .withMessage("Invalid class ID"),
+  param("class_id").isMongoId().withMessage("Invalid class ID"),
 ];
 
-export const addTeacherValidation = [
-  param("class_id")
-    .isMongoId()
-    .withMessage("Invalid class ID"),
-  body("teacher_id")
-    .isMongoId()
-    .withMessage("Invalid teacher ID"),
+export const enrollTeacherValidation = [
+  param("class_id").isMongoId().withMessage("Invalid class ID"),
+  body("teacher_id").isMongoId().withMessage("Invalid teacher ID"),
 ];
 
 export const removeTeacherValidation = [
-  param("class_id")
-    .isMongoId()
-    .withMessage("Invalid class ID"),
-  param("teacher_id")
-    .isMongoId()
-    .withMessage("Invalid teacher ID"),
+  param("class_id").isMongoId().withMessage("Invalid class ID"),
+  param("teacher_id").isMongoId().withMessage("Invalid teacher ID"),
 ];
 
 export const addStudentValidation = [
-  param("class_id")
-    .isMongoId()
-    .withMessage("Invalid class ID"),
-  body("student_id")
-    .isMongoId()
-    .withMessage("Invalid student ID"),
+  param("class_id").isMongoId().withMessage("Invalid class ID"),
+  body("student_id").isMongoId().withMessage("Invalid student ID"),
 ];
 
 export const removeStudentValidation = [
-  param("class_id")
-    .isMongoId()
-    .withMessage("Invalid class ID"),
-  param("student_id")
-    .isMongoId()
-    .withMessage("Invalid student ID"),
+  param("class_id").isMongoId().withMessage("Invalid class ID"),
+  param("student_id").isMongoId().withMessage("Invalid student ID"),
 ];

@@ -107,11 +107,11 @@ export const updateClass = asyncHandler(async (req, res) => {
 });
 
 /**
- * Add teacher to class
- * POST /api/classes/:class_id/teachers
+ * Enroll teacher to class
+ * POST /api/classes/:class_id/teacher
  * Admin only
  */
-export const addTeacherToClass = asyncHandler(async (req, res) => {
+export const enrollTeacher = asyncHandler(async (req, res) => {
   const { class_id } = req.params;
   const { teacher_id } = req.body;
 
@@ -150,7 +150,7 @@ export const addTeacherToClass = asyncHandler(async (req, res) => {
     return updatedClass;
   });
 
-  return sendSuccess(res, result, "Teacher added to class successfully");
+  return sendSuccess(res, result, "Teacher enrolled to class successfully");
 });
 
 /**

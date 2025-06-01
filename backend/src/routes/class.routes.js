@@ -2,7 +2,7 @@ import express from "express";
 import {
   createClass,
   updateClass,
-  addTeacherToClass,
+  enrollTeacher,
   removeTeacherFromClass,
   addStudentToClass,
   removeStudentFromClass,
@@ -15,7 +15,7 @@ import {
   createClassValidation,
   updateClassValidation,
   classIdValidation,
-  addTeacherValidation,
+  enrollTeacherValidation,
   removeTeacherValidation,
   addStudentValidation,
   removeStudentValidation,
@@ -58,17 +58,17 @@ router.put(
 );
 
 /**
- * @route   POST /api/classes/:class_id/teachers
- * @desc    Add teacher to class
+ * @route   POST /api/classes/:class_id/teacher
+ * @desc    Enroll teacher to class
  * @access  Private (Admin only)
  */
 router.post(
-  "/classes/:class_id/teachers",
+  "/classes/:class_id/teacher",
   authenticate,
   requireAdmin,
-  addTeacherValidation,
+  enrollTeacherValidation,
   handleValidationErrors,
-  addTeacherToClass
+  enrollTeacher
 );
 
 /**
