@@ -38,16 +38,14 @@ apiClient.interceptors.response.use(
       // window.location.href = "/login";
     }
 
-    // Return a consistent error structure
-    const errorMessage =
-      error.response?.data?.message || error.message || "An error occurred";
-    const errorCode = error.response?.status || 500;
+    // Log the full error response for debugging
+    console.log("API Error Response:", error.response?.data);
+    console.log("API Error Status:", error.response?.status);
+    console.log("API Error Headers:", error.response?.headers);
 
-    return Promise.reject({
-      message: errorMessage,
-      code: errorCode,
-      data: error.response?.data,
-    });
+    // DON'T transform the error - preserve the original axios error structure
+    // This allows our error handling utilities to access the full response
+    return Promise.reject(error);
   }
 );
 
