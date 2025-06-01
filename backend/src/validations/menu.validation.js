@@ -4,37 +4,21 @@ export const createMenuValidation = [
   body("startDate")
     .isISO8601()
     .withMessage("Please provide a valid start date"),
-  body("endDate")
-    .isISO8601()
-    .withMessage("Please provide a valid end date"),
-  body("menuItems")
+  body("endDate").isISO8601().withMessage("Please provide a valid end date"),
+  body("menuData")
     .isArray({ min: 1 })
-    .withMessage("Menu items must be an array with at least one item"),
-  body("menuItems.*.day")
-    .isIn(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
-    .withMessage("Day must be a valid day of the week"),
-  body("menuItems.*.breakfast")
-    .optional()
+    .withMessage("Menu data must be an array with at least one day"),
+  body("menuData.*.day")
+    .isIn(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+    .withMessage("Day must be a valid weekday (Monday-Friday)"),
+  body("menuData.*.items").isArray().withMessage("Items must be an array"),
+  body("menuData.*.items.*")
     .isString()
-    .withMessage("Breakfast must be a string"),
-  body("menuItems.*.lunch")
-    .optional()
-    .isString()
-    .withMessage("Lunch must be a string"),
-  body("menuItems.*.snack")
-    .optional()
-    .isString()
-    .withMessage("Snack must be a string"),
-  body("menuItems.*.dinner")
-    .optional()
-    .isString()
-    .withMessage("Dinner must be a string"),
+    .withMessage("Each menu item must be a string"),
 ];
 
 export const updateMenuValidation = [
-  param("menu_id")
-    .isMongoId()
-    .withMessage("Invalid menu ID"),
+  param("menu_id").isMongoId().withMessage("Invalid menu ID"),
   body("startDate")
     .optional()
     .isISO8601()
@@ -43,34 +27,24 @@ export const updateMenuValidation = [
     .optional()
     .isISO8601()
     .withMessage("Please provide a valid end date"),
-  body("menuItems")
+  body("menuData")
     .optional()
     .isArray({ min: 1 })
-    .withMessage("Menu items must be an array with at least one item"),
-  body("menuItems.*.day")
+    .withMessage("Menu data must be an array with at least one day"),
+  body("menuData.*.day")
     .optional()
-    .isIn(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
-    .withMessage("Day must be a valid day of the week"),
-  body("menuItems.*.breakfast")
+    .isIn(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+    .withMessage("Day must be a valid weekday (Monday-Friday)"),
+  body("menuData.*.items")
     .optional()
-    .isString()
-    .withMessage("Breakfast must be a string"),
-  body("menuItems.*.lunch")
-    .optional()
-    .isString()
-    .withMessage("Lunch must be a string"),
-  body("menuItems.*.snack")
+    .isArray()
+    .withMessage("Items must be an array"),
+  body("menuData.*.items.*")
     .optional()
     .isString()
-    .withMessage("Snack must be a string"),
-  body("menuItems.*.dinner")
-    .optional()
-    .isString()
-    .withMessage("Dinner must be a string"),
+    .withMessage("Each menu item must be a string"),
 ];
 
 export const menuIdValidation = [
-  param("menu_id")
-    .isMongoId()
-    .withMessage("Invalid menu ID"),
+  param("menu_id").isMongoId().withMessage("Invalid menu ID"),
 ];

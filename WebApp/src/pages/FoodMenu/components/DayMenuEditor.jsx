@@ -20,7 +20,15 @@ export default function DayMenuEditor({ day, items, onItemsChange }) {
   };
 
   return (
-    <Card size="small" style={{ backgroundColor: "#fafafa" }}>
+    <Card
+      size="small"
+      style={{
+        backgroundColor: "#fafafa",
+        border: "2px solid #d9d9d9",
+        borderRadius: "8px",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+      }}
+    >
       <Space direction="vertical" style={{ width: "100%" }}>
         {items.map((item, index) => (
           <Space key={index} style={{ width: "100%" }}>
@@ -28,7 +36,13 @@ export default function DayMenuEditor({ day, items, onItemsChange }) {
               value={item}
               onChange={(e) => handleItemChange(index, e.target.value)}
               placeholder={`Enter menu item ${index + 1}`}
-              style={{ flex: 1 }}
+              style={{
+                flex: 1,
+                border: "2px solid #d9d9d9",
+                borderRadius: "6px",
+                fontSize: "14px",
+                padding: "8px 12px",
+              }}
             />
             <Button
               type="text"
@@ -36,27 +50,43 @@ export default function DayMenuEditor({ day, items, onItemsChange }) {
               icon={<DeleteOutlined />}
               onClick={() => handleDeleteItem(index)}
               size="small"
+              style={{
+                border: "1px solid #ff4d4f",
+                borderRadius: "4px",
+              }}
             />
           </Space>
         ))}
-        
+
         <Button
           type="dashed"
           icon={<PlusOutlined />}
           onClick={handleAddItem}
-          style={{ width: "100%" }}
+          style={{
+            width: "100%",
+            border: "2px dashed #1890ff",
+            borderRadius: "6px",
+            height: "40px",
+            fontSize: "14px",
+            fontWeight: "500",
+          }}
           size="small"
         >
           Add Menu Item
         </Button>
-        
+
         {items.length === 0 && (
-          <div style={{ 
-            textAlign: "center", 
-            color: "#999", 
-            padding: "20px",
-            fontStyle: "italic" 
-          }}>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#999",
+              padding: "20px",
+              fontStyle: "italic",
+              backgroundColor: "#f0f0f0",
+              border: "1px dashed #d9d9d9",
+              borderRadius: "6px",
+            }}
+          >
             No items added yet. Click "Add Menu Item" to start.
           </div>
         )}

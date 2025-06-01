@@ -13,7 +13,7 @@ import {
  * Admin only
  */
 export const createWeeklyMenu = asyncHandler(async (req, res) => {
-  const { startDate, endDate, menuItems } = req.body;
+  const { startDate, endDate, menuData } = req.body;
 
   const result = await withTransaction(async (session) => {
     // Check if menu already exists for this date range
@@ -33,7 +33,7 @@ export const createWeeklyMenu = asyncHandler(async (req, res) => {
     const newMenu = new WeeklyMenu({
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      menuItems,
+      menuData,
       createdBy: req.user.id,
     });
 
@@ -83,7 +83,7 @@ export const getCurrentWeeklyMenu = asyncHandler(async (req, res) => {
  */
 export const updateWeeklyMenu = asyncHandler(async (req, res) => {
   const { menu_id } = req.params;
-  const { startDate, endDate, menuItems } = req.body;
+  const { startDate, endDate, menuData } = req.body;
 
   const result = await withTransaction(async (session) => {
     const menu = await WeeklyMenu.findById(menu_id).session(session);
@@ -115,7 +115,7 @@ export const updateWeeklyMenu = asyncHandler(async (req, res) => {
     const updateData = { updatedBy: req.user.id };
     if (startDate !== undefined) updateData.startDate = new Date(startDate);
     if (endDate !== undefined) updateData.endDate = new Date(endDate);
-    if (menuItems !== undefined) updateData.menuItems = menuItems;
+    if (menuData !== undefined) updateData.menuData = menuData;
 
     const updatedMenu = await WeeklyMenu.findByIdAndUpdate(
       menu_id,

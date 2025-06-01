@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Button,
   Space,
@@ -35,7 +35,7 @@ export default function FoodMenuScreen() {
     data: menuData,
     isLoading: loading,
     request: fetchMenu,
-  } = useApi(menuService.getWeeklyMenu);
+  } = useApi(menuService.getCurrentWeeklyMenu);
 
   // Create menu API
   const { request: createMenuRequest, isLoading: creating } = useApi(
@@ -69,7 +69,7 @@ export default function FoodMenuScreen() {
 
   const handleUpdateMenu = async (values) => {
     try {
-      await updateMenuRequest({ id: menuData.menuId, data: values });
+      await updateMenuRequest({ id: menuData._id, data: values });
       message.success("Menu updated successfully!");
       setIsEditModalVisible(false);
       fetchMenu();
@@ -80,7 +80,7 @@ export default function FoodMenuScreen() {
 
   const handleDeleteMenu = async () => {
     try {
-      await deleteMenuRequest(menuData.menuId);
+      await deleteMenuRequest(menuData._id);
       message.success("Menu deleted successfully!");
       fetchMenu();
     } catch (error) {
@@ -106,8 +106,13 @@ export default function FoodMenuScreen() {
 
   // Calculate statistics
   const totalDays = menuData?.menuData?.length || 0;
-  const totalItems = menuData?.menuData?.reduce((sum, day) => sum + (day.items?.length || 0), 0) || 0;
-  const avgItemsPerDay = totalDays > 0 ? Math.round(totalItems / totalDays * 10) / 10 : 0;
+  const totalItems =
+    menuData?.menuData?.reduce(
+      (sum, day) => sum + (day.items?.length || 0),
+      0
+    ) || 0;
+  const avgItemsPerDay =
+    totalDays > 0 ? Math.round((totalItems / totalDays) * 10) / 10 : 0;
 
   return (
     <AdminLayout>
@@ -155,12 +160,20 @@ export default function FoodMenuScreen() {
           <div style={{ marginBottom: 16 }}>
             <Space>
               {!menuData ? (
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleCreate}
+                >
                   Create Weekly Menu
                 </Button>
               ) : (
                 <>
-                  <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+                  <Button
+                    type="primary"
+                    icon={<EditOutlined />}
+                    onClick={handleEdit}
+                  >
                     Edit Menu
                   </Button>
                   <Popconfirm
@@ -195,7 +208,11 @@ export default function FoodMenuScreen() {
               description="No menu found"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             >
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+              >
                 Create First Menu
               </Button>
             </Empty>

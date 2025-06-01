@@ -51,19 +51,28 @@ export default function MenuTable({ menuData }) {
   ];
 
   // Filter out weekends and prepare data
-  const tableData = menuData?.menuData?.filter(
-    (item) => item.day !== "Saturday" && item.day !== "Sunday"
-  ) || [];
+  const tableData =
+    menuData?.menuData?.filter(
+      (item) => item.day !== "Saturday" && item.day !== "Sunday"
+    ) || [];
 
   return (
     <div>
       {/* Menu Period Info */}
       {menuData?.startDate && menuData?.endDate && (
-        <div style={{ marginBottom: 16, padding: 16, backgroundColor: "#f5f5f5", borderRadius: 8 }}>
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 16,
+            backgroundColor: "#f5f5f5",
+            borderRadius: 8,
+          }}
+        >
           <Space>
             <Text strong>Menu Period:</Text>
             <Text>
-              {dayjs(menuData.startDate).format("MMM DD, YYYY")} - {dayjs(menuData.endDate).format("MMM DD, YYYY")}
+              {dayjs(menuData.startDate).format("MMM DD, YYYY")} -{" "}
+              {dayjs(menuData.endDate).format("MMM DD, YYYY")}
             </Text>
           </Space>
         </div>
@@ -77,17 +86,21 @@ export default function MenuTable({ menuData }) {
         pagination={false}
         size="middle"
         bordered
-        rowClassName={(record, index) => 
+        rowClassName={(record, index) =>
           index % 2 === 0 ? "table-row-light" : "table-row-dark"
         }
+        style={{
+          "--table-row-light-bg": "#fafafa",
+          "--table-row-dark-bg": "#ffffff",
+        }}
       />
 
-      <style jsx>{`
+      <style>{`
         .table-row-light {
-          background-color: #fafafa;
+          background-color: #fafafa !important;
         }
         .table-row-dark {
-          background-color: #ffffff;
+          background-color: #ffffff !important;
         }
       `}</style>
     </div>

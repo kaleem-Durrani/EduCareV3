@@ -37,16 +37,14 @@ export default function MenuFormModal({
       if (mode === "edit" && initialData) {
         // Set form values for edit mode
         form.setFieldsValue({
-          dateRange: [
-            dayjs(initialData.startDate),
-            dayjs(initialData.endDate),
-          ],
+          dateRange: [dayjs(initialData.startDate), dayjs(initialData.endDate)],
         });
-        
+
         // Filter out weekends and set menu data
-        const filteredMenuData = initialData.menuData?.filter(
-          (item) => item.day !== "Saturday" && item.day !== "Sunday"
-        ) || [];
+        const filteredMenuData =
+          initialData.menuData?.filter(
+            (item) => item.day !== "Saturday" && item.day !== "Sunday"
+          ) || [];
         setMenuData(filteredMenuData);
       } else {
         // Reset for create mode
@@ -64,7 +62,7 @@ export default function MenuFormModal({
 
   const handleSubmit = async (values) => {
     const [startDate, endDate] = values.dateRange;
-    
+
     const formData = {
       startDate: startDate.format("YYYY-MM-DD"),
       endDate: endDate.format("YYYY-MM-DD"),
@@ -87,8 +85,8 @@ export default function MenuFormModal({
   };
 
   const updateDayMenu = (day, items) => {
-    setMenuData(prevData =>
-      prevData.map(dayMenu =>
+    setMenuData((prevData) =>
+      prevData.map((dayMenu) =>
         dayMenu.day === day ? { ...dayMenu, items } : dayMenu
       )
     );
@@ -107,12 +105,17 @@ export default function MenuFormModal({
         <Form.Item
           name="dateRange"
           label="Menu Period"
-          rules={[
-            { required: true, message: "Please select menu period!" },
-          ]}
+          rules={[{ required: true, message: "Please select menu period!" }]}
         >
           <RangePicker
-            style={{ width: "100%" }}
+            style={{
+              width: "100%",
+              border: "2px solid #d9d9d9",
+              borderRadius: "6px",
+              fontSize: "14px",
+              padding: "8px 12px",
+              height: "45px",
+            }}
             format="YYYY-MM-DD"
             placeholder={["Start Date", "End Date"]}
           />
@@ -123,7 +126,19 @@ export default function MenuFormModal({
         <div style={{ maxHeight: "400px", overflowY: "auto" }}>
           {menuData.map((dayMenu) => (
             <div key={dayMenu.day} style={{ marginBottom: 24 }}>
-              <Title level={4}>{dayMenu.day}</Title>
+              <Title
+                level={4}
+                style={{
+                  backgroundColor: "#f0f2f5",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  border: "1px solid #d9d9d9",
+                  marginBottom: "12px",
+                  color: "#1890ff",
+                }}
+              >
+                {dayMenu.day}
+              </Title>
               <DayMenuEditor
                 day={dayMenu.day}
                 items={dayMenu.items}
@@ -135,16 +150,10 @@ export default function MenuFormModal({
 
         <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
           <Space>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-            >
+            <Button type="primary" htmlType="submit" loading={loading}>
               {mode === "edit" ? "Update Menu" : "Create Menu"}
             </Button>
-            <Button onClick={handleCancel}>
-              Cancel
-            </Button>
+            <Button onClick={handleCancel}>Cancel</Button>
           </Space>
         </Form.Item>
       </Form>
