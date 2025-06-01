@@ -1,24 +1,9 @@
-import {
-  Form,
-  Input,
-  Button,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Space,
-  Alert,
-} from "antd";
-import {
-  UserOutlined,
-  LockOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  HomeOutlined,
-} from "@ant-design/icons";
-import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import { Form, Input, Button, Typography, Alert } from "antd";
+import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import BgImage from "../../assets/designlogin.jpg";
 
 const { Title, Text } = Typography;
 
@@ -37,9 +22,6 @@ export default function Register() {
         email: values.email,
         password: values.password,
         role: "admin",
-        name: values.name,
-        phone: values.phone,
-        address: values.address,
       });
       navigate("/login");
     } catch (err) {
@@ -50,191 +32,220 @@ export default function Register() {
   };
 
   return (
-    <Row
-      justify="center"
-      align="middle"
-      style={{ minHeight: "100vh", background: "#f0f2f5" }}
-    >
-      <Col xs={22} sm={16} md={12} lg={8} xl={6}>
-        <Card
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+      {/* Left Side - Registration Form */}
+      <div className="flex items-center justify-center p-6 sm:p-12">
+        <div
+          className="w-full max-w-md p-8 rounded-2xl bg-white transition-all duration-300 ease-in-out shadow-lg hover:shadow-2xl transform hover:-translate-y-1"
           style={{
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-            borderRadius: "8px",
+            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            animation: "float 6s ease-in-out infinite",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow =
+              "0 25px 50px rgba(127, 86, 218, 0.25)";
+            e.currentTarget.style.transform = "translateY(-8px)";
+            e.currentTarget.style.animation = "none";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = "0 10px 25px rgba(0, 0, 0, 0.1)";
+            e.currentTarget.style.transform = "translateY(0px)";
+            e.currentTarget.style.animation = "float 6s ease-in-out infinite";
           }}
         >
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <div style={{ textAlign: "center" }}>
-              <Title level={2} style={{ color: "#1890ff", marginBottom: 8 }}>
-                EduCare Admin
-              </Title>
-              <Text type="secondary">Create admin account</Text>
-            </div>
+          <Title level={1} style={{ color: "#2c2143", marginBottom: 8 }}>
+            Admin Register
+          </Title>
+          <Text
+            style={{
+              color: "#666",
+              fontSize: "16px",
+              display: "block",
+              marginBottom: 32,
+            }}
+          >
+            Create a new admin account.
+          </Text>
 
-            {error && (
-              <Alert
-                message={error}
-                type="error"
-                showIcon
-                style={{ marginBottom: 16 }}
-              />
-            )}
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+              style={{ marginBottom: 24 }}
+            />
+          )}
 
-            <Form
-              form={form}
-              name="register"
-              onFinish={handleSubmit}
-              layout="vertical"
-              size="large"
+          <Form
+            form={form}
+            name="register"
+            onFinish={handleSubmit}
+            layout="vertical"
+            size="large"
+          >
+            <Form.Item
+              name="email"
+              rules={[
+                {
+                  required: true,
+                  message: "Email is required",
+                },
+                {
+                  type: "email",
+                  message: "Please enter a valid email!",
+                },
+              ]}
             >
-              <Form.Item
-                name="name"
-                label="Full Name"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your full name!",
-                  },
-                  {
-                    min: 2,
-                    message: "Name must be at least 2 characters!",
-                  },
-                ]}
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "16px",
+                  transition: "all 0.3s ease",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#7f56da";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(127, 86, 218, 0.1)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#d1d5db";
+                  e.target.style.boxShadow = "none";
+                  e.target.style.transform = "translateY(0px)";
+                }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              rules={[
+                {
+                  required: true,
+                  message: "Password is required",
+                },
+                {
+                  min: 6,
+                  message: "Password must be at least 6 characters!",
+                },
+              ]}
+            >
+              <Input.Password
+                placeholder="Password"
+                iconRender={(visible) =>
+                  visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                }
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "16px",
+                  transition: "all 0.3s ease",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#7f56da";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(127, 86, 218, 0.1)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#d1d5db";
+                  e.target.style.boxShadow = "none";
+                  e.target.style.transform = "translateY(0px)";
+                }}
+              />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 24 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                block
+                style={{
+                  backgroundColor: "#7f56da",
+                  borderColor: "#7f56da",
+                  height: "48px",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 4px 12px rgba(127, 86, 218, 0.3)",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#6645b8";
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow =
+                    "0 8px 20px rgba(127, 86, 218, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "#7f56da";
+                  e.target.style.transform = "translateY(0px)";
+                  e.target.style.boxShadow =
+                    "0 4px 12px rgba(127, 86, 218, 0.3)";
+                }}
               >
-                <Input
-                  prefix={<UserOutlined />}
-                  placeholder="Enter your full name"
-                  autoComplete="name"
-                />
-              </Form.Item>
+                {loading ? "Creating account..." : "Register"}
+              </Button>
+            </Form.Item>
+          </Form>
 
-              <Form.Item
-                name="email"
-                label="Email Address"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your email!",
-                  },
-                  {
-                    type: "email",
-                    message: "Please enter a valid email!",
-                  },
-                ]}
+          <div style={{ textAlign: "center" }}>
+            <Text style={{ fontSize: "14px", color: "#666" }}>
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                style={{
+                  color: "#7f56da",
+                  textDecoration: "none",
+                  fontWeight: "500",
+                }}
               >
-                <Input
-                  prefix={<MailOutlined />}
-                  placeholder="Enter your email"
-                  autoComplete="email"
-                />
-              </Form.Item>
+                Sign in here
+              </Link>
+            </Text>
+          </div>
+        </div>
+      </div>
 
-              <Form.Item
-                name="password"
-                label="Password"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your password!",
-                  },
-                  {
-                    min: 6,
-                    message: "Password must be at least 6 characters!",
-                  },
-                ]}
-              >
-                <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="Enter your password"
-                  autoComplete="new-password"
-                />
-              </Form.Item>
+      {/* Right Side - Background Image */}
+      <div
+        className="hidden md:block bg-cover bg-center bg-no-repeat relative overflow-hidden"
+        style={{
+          backgroundImage: `url(${BgImage})`,
+          backgroundColor: "#f3f4f6",
+          transition: "all 0.3s ease-in-out",
+        }}
+      >
+        {/* Overlay for better visual effect */}
+        <div
+          className="absolute inset-0 bg-gradient-to-l from-purple-500/20 to-transparent transition-opacity duration-300"
+          style={{ opacity: 0 }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "0";
+          }}
+        />
+      </div>
 
-              <Form.Item
-                name="confirmPassword"
-                label="Confirm Password"
-                dependencies={["password"]}
-                rules={[
-                  {
-                    required: true,
-                    message: "Please confirm your password!",
-                  },
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      if (!value || getFieldValue("password") === value) {
-                        return Promise.resolve();
-                      }
-                      return Promise.reject(
-                        new Error("Passwords do not match!")
-                      );
-                    },
-                  }),
-                ]}
-              >
-                <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="Confirm your password"
-                  autoComplete="new-password"
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="phone"
-                label="Phone Number"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your phone number!",
-                  },
-                ]}
-              >
-                <Input
-                  prefix={<PhoneOutlined />}
-                  placeholder="Enter your phone number"
-                  autoComplete="tel"
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="address"
-                label="Address"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your address!",
-                  },
-                ]}
-              >
-                <Input.TextArea
-                  prefix={<HomeOutlined />}
-                  placeholder="Enter your address"
-                  autoComplete="address"
-                  rows={3}
-                />
-              </Form.Item>
-
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={loading}
-                  block
-                >
-                  Create Account
-                </Button>
-              </Form.Item>
-            </Form>
-
-            <div style={{ textAlign: "center" }}>
-              <Text type="secondary">
-                Already have an account?{" "}
-                <Link to="/login" style={{ color: "#1890ff" }}>
-                  Sign in here
-                </Link>
-              </Text>
-            </div>
-          </Space>
-        </Card>
-      </Col>
-    </Row>
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+      `}</style>
+    </div>
   );
 }
