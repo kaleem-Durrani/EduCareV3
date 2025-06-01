@@ -16,7 +16,7 @@ import {
  * Admin/Teacher only
  */
 export const createMonthlyPlan = asyncHandler(async (req, res) => {
-  const { class_id, month, year, title, description, activities } = req.body;
+  const { class_id, month, year, description, imageUrl } = req.body;
 
   const result = await withTransaction(async (session) => {
     // Check if class exists
@@ -50,9 +50,8 @@ export const createMonthlyPlan = asyncHandler(async (req, res) => {
       class_id,
       month,
       year,
-      title,
       description,
-      activities: activities || [],
+      imageUrl,
       createdBy: req.user.id,
     });
 
@@ -116,7 +115,7 @@ export const getMonthlyPlan = asyncHandler(async (req, res) => {
  */
 export const updateMonthlyPlan = asyncHandler(async (req, res) => {
   const { plan_id } = req.params;
-  const { title, description, activities } = req.body;
+  const { description, imageUrl } = req.body;
 
   const result = await withTransaction(async (session) => {
     const plan = await MonthlyPlan.findById(plan_id)
@@ -136,9 +135,8 @@ export const updateMonthlyPlan = asyncHandler(async (req, res) => {
 
     // Update fields
     const updateData = { updatedBy: req.user.id };
-    if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
-    if (activities !== undefined) updateData.activities = activities;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
 
     const updatedPlan = await MonthlyPlan.findByIdAndUpdate(
       plan_id,

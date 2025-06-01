@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Button,
   Space,
@@ -53,7 +53,10 @@ export default function MonthlyPlansScreen() {
     isLoading: loading,
     request: fetchPlans,
   } = useApi((params) =>
-    planService.getMonthlyPlans(params.classId, params.month, params.year)
+    planService.getMonthlyPlan(params.classId, {
+      month: params.month,
+      year: params.year,
+    })
   );
 
   // Create plan API
@@ -78,7 +81,7 @@ export default function MonthlyPlansScreen() {
   useEffect(() => {
     if (selectedClass) {
       fetchPlans({
-        classId: selectedClass.id,
+        classId: selectedClass._id,
         month: selectedMonth,
         year: selectedYear,
       });
@@ -87,22 +90,20 @@ export default function MonthlyPlansScreen() {
 
   const handleCreatePlan = async (values) => {
     try {
-      const formData = new FormData();
-      formData.append("class_id", selectedClass.id);
-      formData.append("month", selectedMonth);
-      formData.append("year", selectedYear);
-      formData.append("description", values.description);
+      const planData = {
+        class_id: selectedClass._id,
+        month: selectedMonth,
+        year: selectedYear,
+        description: values.description,
+        imageUrl: values.imageUrl || null, // For now, handle as URL
+      };
 
-      if (values.image?.file) {
-        formData.append("image", values.image.file);
-      }
-
-      await createPlanRequest(formData);
+      await createPlanRequest(planData);
       message.success("Monthly plan created successfully!");
       setIsModalVisible(false);
       form.resetFields();
       fetchPlans({
-        classId: selectedClass.id,
+        classId: selectedClass._id,
         month: selectedMonth,
         year: selectedYear,
       });
@@ -113,23 +114,18 @@ export default function MonthlyPlansScreen() {
 
   const handleUpdatePlan = async (values) => {
     try {
-      const formData = new FormData();
-      formData.append("class_id", selectedClass.id);
-      formData.append("month", selectedMonth);
-      formData.append("year", selectedYear);
-      formData.append("description", values.description);
+      const planData = {
+        description: values.description,
+        imageUrl: values.imageUrl || editingPlan.imageUrl, // Keep existing or update
+      };
 
-      if (values.image?.file) {
-        formData.append("image", values.image.file);
-      }
-
-      await updatePlanRequest({ id: editingPlan.planId, data: formData });
+      await updatePlanRequest({ id: editingPlan._id, data: planData });
       message.success("Monthly plan updated successfully!");
       setIsModalVisible(false);
       setEditingPlan(null);
       form.resetFields();
       fetchPlans({
-        classId: selectedClass.id,
+        classId: selectedClass._id,
         month: selectedMonth,
         year: selectedYear,
       });
@@ -143,7 +139,7 @@ export default function MonthlyPlansScreen() {
       await deletePlanRequest(planId);
       message.success("Monthly plan deleted successfully!");
       fetchPlans({
-        classId: selectedClass.id,
+        classId: selectedClass._id,
         month: selectedMonth,
         year: selectedYear,
       });
@@ -170,6 +166,7 @@ export default function MonthlyPlansScreen() {
     setEditingPlan(plan);
     form.setFieldsValue({
       description: plan.description,
+      imageUrl: plan.imageUrl,
     });
     setIsModalVisible(true);
   };
@@ -181,9 +178,7 @@ export default function MonthlyPlansScreen() {
   };
 
   const handleClassChange = (classId) => {
-    const selectedClassObj = classesData?.classes?.find(
-      (c) => c.id === classId
-    );
+    const selectedClassObj = classesData?.find((c) => c._id === classId);
     setSelectedClass(selectedClassObj);
   };
 
@@ -205,7 +200,7 @@ export default function MonthlyPlansScreen() {
     return months[monthNumber - 1];
   };
 
-  const classes = classesData?.classes || [];
+  const classes = classesData || [];
   const plans = plansData ? [plansData] : [];
   const totalPlans = plans.length;
 
@@ -263,14 +258,14 @@ export default function MonthlyPlansScreen() {
                 <Select
                   style={{ width: "100%" }}
                   placeholder="Choose a class"
-                  value={selectedClass?.id}
+                  value={selectedClass?._id}
                   onChange={handleClassChange}
                   showSearch
                   optionFilterProp="children"
                 >
                   {classes.map((cls) => (
-                    <Option key={cls.id} value={cls.id}>
-                      {cls.name} - {cls.grade} {cls.section}
+                    <Option key={cls._id} value={cls._id}>
+                      {cls.name}
                     </Option>
                   ))}
                 </Select>
@@ -357,7 +352,7 @@ export default function MonthlyPlansScreen() {
                           type="primary"
                           danger
                           icon={<DeleteOutlined />}
-                          onClick={() => handleDeletePlan(plan.planId)}
+                          onClick={() => handleDeletePlan(plan._id)}
                           loading={deleting}
                         >
                           Delete
@@ -378,7 +373,7 @@ export default function MonthlyPlansScreen() {
                             <h4>Plan Image:</h4>
                             <Image
                               width={200}
-                              src={`http://tallal.info:5500${plan.imageUrl}`}
+                              src={plan.imageUrl}
                               alt="Monthly Plan"
                               style={{ borderRadius: 8 }}
                             />
@@ -422,34 +417,62 @@ export default function MonthlyPlansScreen() {
           width={600}
         >
           <Form form={form} layout="vertical" onFinish={handleSubmit}>
-            <Form.Item
-              name="description"
-              label="Plan Description"
-              rules={[
-                { required: true, message: "Please enter plan description!" },
-              ]}
-            >
-              <TextArea
-                rows={4}
-                placeholder="Enter detailed monthly plan description"
+            {/* 1. Month (Display only - text format) */}
+            <Form.Item label="Month">
+              <Input
+                value={getMonthName(selectedMonth)}
+                disabled
+                style={{
+                  backgroundColor: "#f0f2f5",
+                  border: "2px solid #d9d9d9",
+                  borderRadius: "6px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  color: "#1890ff",
+                }}
               />
             </Form.Item>
 
-            <Form.Item name="image" label="Plan Image (Optional)">
-              <Dragger
-                name="file"
-                multiple={false}
-                beforeUpload={() => false}
-                accept="image/*"
-              >
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Click or drag image to upload</p>
-                <p className="ant-upload-hint">
-                  Support for single image upload
-                </p>
-              </Dragger>
+            {/* 2. Image URL */}
+            <Form.Item
+              name="imageUrl"
+              label="Image URL"
+              rules={[{ type: "url", message: "Please enter a valid URL!" }]}
+            >
+              <Input
+                placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+                style={{
+                  border: "2px solid #d9d9d9",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  padding: "8px 12px",
+                }}
+              />
+            </Form.Item>
+
+            {/* 3. Description/Text box */}
+            <Form.Item
+              name="description"
+              label="Description (Yellow Box Content)"
+              rules={[
+                { required: true, message: "Please enter plan description!" },
+                {
+                  max: 1000,
+                  message: "Description cannot exceed 1000 characters!",
+                },
+              ]}
+            >
+              <TextArea
+                rows={6}
+                placeholder="Enter monthly plan description (will be shown in yellow box in parent view)"
+                showCount
+                maxLength={1000}
+                style={{
+                  border: "2px solid #d9d9d9",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                }}
+              />
             </Form.Item>
 
             <Form.Item>
@@ -458,10 +481,25 @@ export default function MonthlyPlansScreen() {
                   type="primary"
                   htmlType="submit"
                   loading={creating || updating}
+                  style={{
+                    borderRadius: "6px",
+                    height: "40px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
                 >
                   {editingPlan ? "Update" : "Create"} Plan
                 </Button>
-                <Button onClick={handleCancel}>Cancel</Button>
+                <Button
+                  onClick={handleCancel}
+                  style={{
+                    borderRadius: "6px",
+                    height: "40px",
+                    fontSize: "14px",
+                  }}
+                >
+                  Cancel
+                </Button>
               </Space>
             </Form.Item>
           </Form>
