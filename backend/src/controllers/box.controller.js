@@ -40,6 +40,38 @@ export const getBoxItems = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get paginated box items
+ * GET /api/box/items/paginated
+ * Admin/Teacher only
+ */
+export const getPaginatedBoxItems = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get paginated box items
+  const boxItems = await BoxItem.find()
+    .sort({ createdAt: -1 }) // Most recent first
+    .skip(skip)
+    .limit(limit);
+
+  const totalBoxItems = await BoxItem.countDocuments();
+
+  const result = {
+    boxItems,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalBoxItems / limit),
+      totalBoxItems,
+      hasNextPage: page < Math.ceil(totalBoxItems / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+
+  return sendSuccess(res, result, "Paginated box items retrieved successfully");
+});
+
+/**
  * Get a student's box status
  * GET /api/box/student/:student_id
  * Admin/Teacher/Parent access (with restrictions)
@@ -178,4 +210,133 @@ export const updateStudentBoxStatus = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, result, "Student box status updated successfully");
+});
+
+/**
+ * Get box statistics (REAL-TIME)
+ * GET /api/box/statistics
+ * Admin/Teacher only
+ */
+export const getBoxStatistics = asyncHandler(async (req, res) => {
+  // Get all students count
+  const totalStudents = await Student.countDocuments({ active: true });
+
+  // Get all box items
+  const boxItems = await BoxItem.find();
+  const totalBoxItems = boxItems.length;
+
+  // Get all student box statuses
+  const allStudentBoxStatuses = await StudentBoxStatus.find({}).populate(
+    "student_id",
+    "_id"
+  );
+
+  // Calculate statistics
+  let totalItemsWithStudents = 0;
+  let studentsWithBoxStatus = 0;
+  let totalItemsChecked = 0;
+
+  allStudentBoxStatuses.forEach((boxStatus) => {
+    if (boxStatus.items && boxStatus.items.length > 0) {
+      studentsWithBoxStatus++;
+      const checkedItems = boxStatus.items.filter((item) => item.has_item);
+      totalItemsChecked += checkedItems.length;
+      totalItemsWithStudents += boxStatus.items.length;
+    }
+  });
+
+  const maxPossibleItems = totalStudents * totalBoxItems;
+  const overallCompletion =
+    maxPossibleItems > 0
+      ? Math.round((totalItemsChecked / maxPossibleItems) * 100)
+      : 0;
+
+  const statistics = {
+    totalStudents,
+    totalBoxItems,
+    totalItemsChecked,
+    overallCompletion,
+    studentsWithBoxStatus,
+    lastCalculated: new Date(),
+  };
+
+  return sendSuccess(res, statistics, "Box statistics retrieved successfully");
+});
+
+/**
+ * Get paginated students with box status statistics
+ * GET /api/box/students/paginated
+ * Admin/Teacher only
+ */
+export const getPaginatedStudentsBoxStatus = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get paginated students
+  const students = await Student.find({ active: true })
+    .populate("current_class", "name")
+    .select("fullName rollNum current_class")
+    .sort({ fullName: 1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalStudents = await Student.countDocuments({ active: true });
+
+  // Get box items
+  const boxItems = await BoxItem.find();
+
+  // Get box statuses only for current page students (EFFICIENT!)
+  const studentIds = students.map((s) => s._id);
+  const studentBoxStatuses = await StudentBoxStatus.find({
+    student_id: { $in: studentIds },
+  }).populate("student_id", "_id");
+
+  // Create lookup map
+  const boxStatusMap = {};
+  studentBoxStatuses.forEach((status) => {
+    boxStatusMap[status.student_id._id.toString()] = status;
+  });
+
+  // Calculate stats for current page students only
+  const studentsWithStats = students.map((student) => {
+    const boxStatus = boxStatusMap[student._id.toString()];
+
+    let totalItems = boxItems.length;
+    let checkedItems = 0;
+    let lastUpdated = null;
+
+    if (boxStatus && boxStatus.items) {
+      checkedItems = boxStatus.items.filter((item) => item.has_item).length;
+      lastUpdated = boxStatus.updatedAt;
+    }
+
+    return {
+      ...student.toObject(),
+      boxStats: {
+        totalItems,
+        checkedItems,
+        completionPercentage:
+          totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0,
+        lastUpdated,
+      },
+    };
+  });
+
+  const result = {
+    students: studentsWithStats,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalStudents / limit),
+      totalStudents,
+      hasNextPage: page < Math.ceil(totalStudents / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+
+  return sendSuccess(
+    res,
+    result,
+    "Paginated students box status retrieved successfully"
+  );
 });

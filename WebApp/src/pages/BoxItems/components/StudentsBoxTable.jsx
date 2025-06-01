@@ -1,10 +1,10 @@
 import React from "react";
 import { Table, Button, Space, Card, Tag, Avatar, Progress } from "antd";
-import { 
-  UserOutlined, 
-  InboxOutlined, 
+import {
+  UserOutlined,
+  InboxOutlined,
   EditOutlined,
-  EyeOutlined 
+  EyeOutlined,
 } from "@ant-design/icons";
 
 export default function StudentsBoxTable({
@@ -26,8 +26,8 @@ export default function StudentsBoxTable({
         <Space>
           <Avatar icon={<UserOutlined />} />
           <div>
-            <div style={{ fontWeight: 'bold' }}>{text}</div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
+            <div style={{ fontWeight: "bold" }}>{text}</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>
               Roll: {record.rollNum}
             </div>
           </div>
@@ -38,36 +38,39 @@ export default function StudentsBoxTable({
       title: "Class",
       dataIndex: "current_class",
       key: "current_class",
-      render: (classInfo) => (
+      render: (classInfo) =>
         classInfo ? (
           <Tag color="blue">{classInfo.name}</Tag>
         ) : (
           <Tag color="default">Not Assigned</Tag>
-        )
-      ),
+        ),
     },
     {
       title: "Box Status",
       key: "boxStatus",
       render: (_, record) => {
-        const boxStatus = record.boxStatus;
-        if (!boxStatus || !boxStatus.items) {
+        const stats = record.boxStats;
+        if (!stats) {
           return <Tag color="red">Not Set</Tag>;
         }
-        
-        const totalItems = boxStatus.items.length;
-        const itemsInStock = boxStatus.items.filter(item => item.has_item).length;
-        const percentage = totalItems > 0 ? Math.round((itemsInStock / totalItems) * 100) : 0;
-        
+
+        const { totalItems, checkedItems, completionPercentage } = stats;
+
         return (
-          <div style={{ minWidth: '120px' }}>
-            <Progress 
-              percent={percentage} 
-              size="small" 
-              status={percentage === 100 ? "success" : percentage > 50 ? "active" : "exception"}
+          <div style={{ minWidth: "120px" }}>
+            <Progress
+              percent={completionPercentage}
+              size="small"
+              status={
+                completionPercentage === 100
+                  ? "success"
+                  : completionPercentage > 50
+                  ? "active"
+                  : "exception"
+              }
             />
-            <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-              {itemsInStock}/{totalItems} items
+            <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
+              {checkedItems}/{totalItems} items
             </div>
           </div>
         );
@@ -77,17 +80,20 @@ export default function StudentsBoxTable({
       title: "Last Updated",
       key: "lastUpdated",
       render: (_, record) => {
-        const boxStatus = record.boxStatus;
-        if (!boxStatus || !boxStatus.updatedAt) {
-          return <span style={{ color: '#999' }}>Never</span>;
+        const stats = record.boxStats;
+        if (!stats || !stats.lastUpdated) {
+          return <span style={{ color: "#999" }}>Never</span>;
         }
-        
-        const date = new Date(boxStatus.updatedAt);
+
+        const date = new Date(stats.lastUpdated);
         return (
           <div>
             <div>{date.toLocaleDateString()}</div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div style={{ fontSize: "12px", color: "#666" }}>
+              {date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </div>
           </div>
         );

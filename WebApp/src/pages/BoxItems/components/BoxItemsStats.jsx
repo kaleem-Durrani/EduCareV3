@@ -1,28 +1,21 @@
 import React from "react";
 import { Card, Row, Col, Statistic } from "antd";
-import { 
-  InboxOutlined, 
-  UserOutlined, 
+import {
+  InboxOutlined,
+  UserOutlined,
   CheckCircleOutlined,
-  ExclamationCircleOutlined 
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
-export default function BoxItemsStats({ students, boxItems, studentBoxStatuses }) {
-  const totalStudents = students.length;
-  const totalBoxItems = boxItems.length;
-  const studentsWithBoxStatus = studentBoxStatuses.length;
-  
-  // Calculate total items in stock across all students
-  const totalItemsInStock = studentBoxStatuses.reduce((total, status) => {
-    if (status.items && Array.isArray(status.items)) {
-      return total + status.items.filter(item => item.has_item).length;
-    }
-    return total;
-  }, 0);
-
-  const coveragePercentage = totalStudents > 0 
-    ? Math.round((studentsWithBoxStatus / totalStudents) * 100) 
-    : 0;
+export default function BoxItemsStats({
+  students,
+  boxItems,
+  overallStatistics,
+}) {
+  const totalStudents = overallStatistics.totalStudents || students.length;
+  const totalBoxItems = overallStatistics.totalBoxItems || boxItems.length;
+  const totalItemsChecked = overallStatistics.totalItemsChecked || 0;
+  const overallCompletion = overallStatistics.overallCompletion || 0;
 
   return (
     <Row gutter={16}>
@@ -49,8 +42,8 @@ export default function BoxItemsStats({ students, boxItems, studentBoxStatuses }
       <Col span={6}>
         <Card>
           <Statistic
-            title="Items In Stock"
-            value={totalItemsInStock}
+            title="Items Checked"
+            value={totalItemsChecked}
             prefix={<CheckCircleOutlined />}
             valueStyle={{ color: "#52c41a" }}
           />
@@ -59,11 +52,13 @@ export default function BoxItemsStats({ students, boxItems, studentBoxStatuses }
       <Col span={6}>
         <Card>
           <Statistic
-            title="Coverage"
-            value={coveragePercentage}
+            title="Completion"
+            value={overallCompletion}
             suffix="%"
             prefix={<ExclamationCircleOutlined />}
-            valueStyle={{ color: coveragePercentage > 80 ? "#3f8600" : "#cf1322" }}
+            valueStyle={{
+              color: overallCompletion > 80 ? "#3f8600" : "#cf1322",
+            }}
           />
         </Card>
       </Col>
