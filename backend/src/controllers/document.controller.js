@@ -17,7 +17,7 @@ import {
  * All authenticated users
  */
 export const getDocumentTypes = asyncHandler(async (req, res) => {
-  const documentTypes = await DocumentType.find({ isActive: true }).sort({
+  const documentTypes = await DocumentType.find().sort({
     name: 1,
   });
 
@@ -25,6 +25,42 @@ export const getDocumentTypes = asyncHandler(async (req, res) => {
     res,
     documentTypes,
     "Document types retrieved successfully"
+  );
+});
+
+/**
+ * Get paginated document types
+ * GET /api/documents/types/paginated
+ * Admin/Teacher only
+ */
+export const getPaginatedDocumentTypes = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get paginated document types
+  const documentTypes = await DocumentType.find()
+    .sort({ createdAt: -1 }) // Most recent first
+    .skip(skip)
+    .limit(limit);
+
+  const totalDocumentTypes = await DocumentType.countDocuments();
+
+  const result = {
+    documentTypes,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalDocumentTypes / limit),
+      totalDocumentTypes,
+      hasNextPage: page < Math.ceil(totalDocumentTypes / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+
+  return sendSuccess(
+    res,
+    result,
+    "Paginated document types retrieved successfully"
   );
 });
 
@@ -116,11 +152,8 @@ export const deleteDocumentType = asyncHandler(async (req, res) => {
     throwNotFound("Document type");
   }
 
-  // Soft delete by setting isActive to false
-  await DocumentType.findByIdAndUpdate(document_id, {
-    isActive: false,
-    updatedBy: req.user.id,
-  });
+  // Hard delete the document type
+  await DocumentType.findByIdAndDelete(document_id);
 
   return sendSuccess(res, null, "Document type deleted successfully");
 });
@@ -176,7 +209,7 @@ export const getStudentDocuments = asyncHandler(async (req, res) => {
 
   // If no documents exist, create empty document structure
   if (!studentDocuments) {
-    const allDocumentTypes = await DocumentType.find({ isActive: true });
+    const allDocumentTypes = await DocumentType.find();
     const documentStatuses = allDocumentTypes.map((type) => ({
       document_type_id: type._id,
       submitted: false,
@@ -248,4 +281,269 @@ export const updateStudentDocuments = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, result, "Student documents updated successfully");
+});
+
+/**
+ * Get all students with their document statistics (EFFICIENT)
+ * GET /api/documents/students/all
+ * Admin/Teacher only
+ */
+export const getAllStudentsDocuments = asyncHandler(async (req, res) => {
+  // Get all students with basic info
+  const students = await Student.find({ active: true })
+    .populate("current_class", "name")
+    .select("fullName rollNum current_class")
+    .sort({ fullName: 1 });
+
+  // Get all document types
+  const documentTypes = await DocumentType.find().select("_id name required");
+
+  // Get all student documents in one query (EFFICIENT!)
+  const allStudentDocuments = await StudentDocument.find({
+    student_id: { $in: students.map((s) => s._id) },
+  }).populate("student_id", "_id");
+
+  // Create a map for quick lookup
+  const documentsMap = {};
+  allStudentDocuments.forEach((doc) => {
+    documentsMap[doc.student_id._id.toString()] = doc;
+  });
+
+  // Calculate statistics for each student
+  const studentsWithStats = students.map((student) => {
+    const studentDoc = documentsMap[student._id.toString()];
+
+    let totalDocs = documentTypes.length;
+    let submittedDocs = 0;
+    let requiredDocs = documentTypes.filter((type) => type.required).length;
+    let submittedRequiredDocs = 0;
+    let lastUpdated = null;
+
+    if (studentDoc && studentDoc.documents) {
+      submittedDocs = studentDoc.documents.filter(
+        (doc) => doc.submitted
+      ).length;
+      submittedRequiredDocs = studentDoc.documents.filter((doc) => {
+        return (
+          doc.submitted &&
+          documentTypes.some(
+            (type) =>
+              type._id.toString() === doc.document_type_id.toString() &&
+              type.required
+          )
+        );
+      }).length;
+      lastUpdated = studentDoc.updatedAt;
+    }
+
+    return {
+      ...student.toObject(),
+      documentStats: {
+        totalDocs,
+        submittedDocs,
+        requiredDocs,
+        submittedRequiredDocs,
+        completionPercentage:
+          totalDocs > 0 ? Math.round((submittedDocs / totalDocs) * 100) : 0,
+        requiredCompletionPercentage:
+          requiredDocs > 0
+            ? Math.round((submittedRequiredDocs / requiredDocs) * 100)
+            : 100,
+        lastUpdated,
+      },
+    };
+  });
+
+  // Calculate overall statistics
+  const totalStudents = students.length;
+  const totalDocumentTypes = documentTypes.length;
+  const totalDocumentsSubmitted = studentsWithStats.reduce(
+    (sum, student) => sum + student.documentStats.submittedDocs,
+    0
+  );
+  const totalRequiredDocs = studentsWithStats.reduce(
+    (sum, student) => sum + student.documentStats.submittedRequiredDocs,
+    0
+  );
+  const maxPossibleRequired = studentsWithStats.reduce(
+    (sum, student) => sum + student.documentStats.requiredDocs,
+    0
+  );
+  const overallCompliance =
+    maxPossibleRequired > 0
+      ? Math.round((totalRequiredDocs / maxPossibleRequired) * 100)
+      : 100;
+
+  const result = {
+    students: studentsWithStats,
+    statistics: {
+      totalStudents,
+      totalDocumentTypes,
+      totalDocumentsSubmitted,
+      overallCompliance,
+    },
+  };
+
+  return sendSuccess(res, result, "Students documents retrieved successfully");
+});
+
+/**
+ * Get document statistics (REAL-TIME)
+ * GET /api/documents/statistics
+ * Admin/Teacher only
+ */
+export const getDocumentStatistics = asyncHandler(async (req, res) => {
+  // Get all students count
+  const totalStudents = await Student.countDocuments({ active: true });
+
+  // Get all document types
+  const documentTypes = await DocumentType.find().select("_id name required");
+  const totalDocumentTypes = documentTypes.length;
+  const requiredDocumentTypes = documentTypes.filter((type) => type.required);
+
+  // Get all student documents
+  const allStudentDocuments = await StudentDocument.find({}).populate(
+    "student_id",
+    "_id"
+  );
+
+  // Calculate statistics
+  let totalDocumentsSubmitted = 0;
+  let totalRequiredSubmitted = 0;
+  let studentsWithDocuments = 0;
+
+  allStudentDocuments.forEach((studentDoc) => {
+    if (studentDoc.documents && studentDoc.documents.length > 0) {
+      studentsWithDocuments++;
+      const submittedDocs = studentDoc.documents.filter((doc) => doc.submitted);
+      totalDocumentsSubmitted += submittedDocs.length;
+
+      const submittedRequired = submittedDocs.filter((doc) =>
+        requiredDocumentTypes.some(
+          (reqType) =>
+            reqType._id.toString() === doc.document_type_id.toString()
+        )
+      );
+      totalRequiredSubmitted += submittedRequired.length;
+    }
+  });
+
+  const maxPossibleRequired = totalStudents * requiredDocumentTypes.length;
+  const overallCompliance =
+    maxPossibleRequired > 0
+      ? Math.round((totalRequiredSubmitted / maxPossibleRequired) * 100)
+      : 100;
+
+  const statistics = {
+    totalStudents,
+    totalDocumentTypes,
+    totalDocumentsSubmitted,
+    overallCompliance,
+    studentsWithDocuments,
+    lastCalculated: new Date(),
+  };
+
+  return sendSuccess(
+    res,
+    statistics,
+    "Document statistics retrieved successfully"
+  );
+});
+
+/**
+ * Get paginated students with document statistics
+ * GET /api/documents/students/paginated
+ * Admin/Teacher only
+ */
+export const getPaginatedStudentsDocuments = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get paginated students
+  const students = await Student.find({ active: true })
+    .populate("current_class", "name")
+    .select("fullName rollNum current_class")
+    .sort({ fullName: 1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalStudents = await Student.countDocuments({ active: true });
+
+  // Get document types
+  const documentTypes = await DocumentType.find().select("_id name required");
+
+  // Get documents only for current page students (EFFICIENT!)
+  const studentIds = students.map((s) => s._id);
+  const studentDocuments = await StudentDocument.find({
+    student_id: { $in: studentIds },
+  }).populate("student_id", "_id");
+
+  // Create lookup map
+  const documentsMap = {};
+  studentDocuments.forEach((doc) => {
+    documentsMap[doc.student_id._id.toString()] = doc;
+  });
+
+  // Calculate stats for current page students only
+  const studentsWithStats = students.map((student) => {
+    const studentDoc = documentsMap[student._id.toString()];
+
+    let totalDocs = documentTypes.length;
+    let submittedDocs = 0;
+    let requiredDocs = documentTypes.filter((type) => type.required).length;
+    let submittedRequiredDocs = 0;
+    let lastUpdated = null;
+
+    if (studentDoc && studentDoc.documents) {
+      submittedDocs = studentDoc.documents.filter(
+        (doc) => doc.submitted
+      ).length;
+      submittedRequiredDocs = studentDoc.documents.filter((doc) => {
+        return (
+          doc.submitted &&
+          documentTypes.some(
+            (type) =>
+              type._id.toString() === doc.document_type_id.toString() &&
+              type.required
+          )
+        );
+      }).length;
+      lastUpdated = studentDoc.updatedAt;
+    }
+
+    return {
+      ...student.toObject(),
+      documentStats: {
+        totalDocs,
+        submittedDocs,
+        requiredDocs,
+        submittedRequiredDocs,
+        completionPercentage:
+          totalDocs > 0 ? Math.round((submittedDocs / totalDocs) * 100) : 0,
+        requiredCompletionPercentage:
+          requiredDocs > 0
+            ? Math.round((submittedRequiredDocs / requiredDocs) * 100)
+            : 100,
+        lastUpdated,
+      },
+    };
+  });
+
+  const result = {
+    students: studentsWithStats,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalStudents / limit),
+      totalStudents,
+      hasNextPage: page < Math.ceil(totalStudents / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+
+  return sendSuccess(
+    res,
+    result,
+    "Paginated students documents retrieved successfully"
+  );
 });

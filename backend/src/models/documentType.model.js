@@ -5,6 +5,7 @@ import { Schema } from "mongoose";
 const documentTypeSchema = new Schema(
   {
     name: { type: String, required: true, unique: true },
+    description: { type: String, default: "" }, // Description for the document type
     required: { type: Boolean, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" }, // Admin who added this document type
   },
