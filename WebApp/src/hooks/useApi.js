@@ -1,17 +1,26 @@
 import { useState } from "react";
+import { handleApiError, ERROR_DISPLAY_TYPES } from "../utils/errorHandler";
 
-export default function useApi(apiCall) {
+export default function useApi(apiCall, options = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [response, setResponse] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [errorInfo, setErrorInfo] = useState(null);
+
+  // Default error handling options
+  const defaultErrorOptions = {
+    displayType: ERROR_DISPLAY_TYPES.MESSAGE,
+    showValidationDetails: true,
+    autoHandle: true,
+    ...options.errorHandling,
+  };
 
   const request = async (...args) => {
     setIsLoading(true);
     setError(null);
     setData(null);
-    setErrorMessage(null);
+    setErrorInfo(null);
 
     try {
       const response = await apiCall(...args);
@@ -20,30 +29,19 @@ export default function useApi(apiCall) {
       // Axios successful response structure
       setData(response.data);
       setResponse(response);
+      return response.data; // Return data for easier access
     } catch (err) {
-      // Axios error structure
-      if (err.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        setError(err.response);
-        setErrorMessage(err.message);
-        console.log(err.response.data);
-        console.log(err.response.status);
-        console.log(err.response.headers);
-      } else if (err.request) {
-        // The request was made but no response was received
-        setError(err.request);
-        setErrorMessage("Network error - no response received");
-        console.log(err.request);
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        setError(err);
-        setErrorMessage(err.message);
-        console.log("Error", err.message);
-      }
-    }
+      // Use enhanced error handling
+      const parsedError = handleApiError(err, defaultErrorOptions);
 
-    setIsLoading(false);
+      setError(err);
+      setErrorInfo(parsedError);
+
+      // Re-throw the error so components can still catch it if needed
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const clearData = () => {
@@ -51,8 +49,16 @@ export default function useApi(apiCall) {
     setError(null);
     setData(null);
     setResponse(null);
-    setErrorMessage(null);
+    setErrorInfo(null);
   };
 
-  return { request, isLoading, error, data, response, errorMessage, clearData };
+  return {
+    request,
+    isLoading,
+    error,
+    data,
+    response,
+    errorInfo,
+    clearData,
+  };
 }
