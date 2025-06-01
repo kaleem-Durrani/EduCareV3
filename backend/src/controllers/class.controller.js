@@ -358,3 +358,28 @@ export const getClassById = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, classDoc, "Class details retrieved successfully");
 });
+
+/**
+ * Get classes for select options (label/value pairs)
+ * GET /api/classes/select
+ * All authenticated users
+ */
+export const getClassesForSelect = asyncHandler(async (req, res) => {
+  const classes = await Class.find({ isActive: true })
+    .select("name grade section")
+    .sort({ name: 1 })
+    .lean();
+
+  const selectOptions = classes.map((classItem) => ({
+    value: classItem._id.toString(),
+    label: `${classItem.name}${
+      classItem.grade ? ` (Grade ${classItem.grade})` : ""
+    }${classItem.section ? ` - ${classItem.section}` : ""}`,
+  }));
+
+  return sendSuccess(
+    res,
+    selectOptions,
+    "Classes for select retrieved successfully"
+  );
+});

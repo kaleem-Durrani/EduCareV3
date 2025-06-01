@@ -9,6 +9,7 @@ import {
   getClasses,
   getEnrolledTeacherClasses,
   getClassById,
+  getClassesForSelect,
 } from "../controllers/class.controller.js";
 import { getClassRoster } from "../controllers/student.controller.js";
 import {
@@ -112,6 +113,13 @@ router.delete(
   handleValidationErrors,
   removeStudentFromClass
 );
+
+/**
+ * @route   GET /api/classes/select
+ * @desc    Get classes for select options (label/value pairs)
+ * @access  Private (All authenticated users)
+ */
+router.get("/classes/select", authenticate, getClassesForSelect);
 
 /**
  * @route   GET /api/classes

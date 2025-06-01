@@ -596,3 +596,26 @@ export const getParentStudents = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, students, "Parent students retrieved successfully");
 });
+
+/**
+ * Get students for select options (label/value pairs)
+ * GET /api/students/select
+ * All authenticated users
+ */
+export const getStudentsForSelect = asyncHandler(async (req, res) => {
+  const students = await Student.find({ active: true })
+    .select("fullName rollNum")
+    .sort({ fullName: 1 })
+    .lean();
+
+  const selectOptions = students.map((student) => ({
+    value: student._id.toString(),
+    label: `${student.fullName} (${student.rollNum})`,
+  }));
+
+  return sendSuccess(
+    res,
+    selectOptions,
+    "Students for select retrieved successfully"
+  );
+});

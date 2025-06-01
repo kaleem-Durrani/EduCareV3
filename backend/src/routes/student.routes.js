@@ -10,6 +10,7 @@ import {
   getStudentBasicInfoForParent,
   getStudentBasicInfoForTeacher,
   getParentStudents,
+  getStudentsForSelect,
 } from "../controllers/student.controller.js";
 import {
   createStudentValidation,
@@ -28,6 +29,13 @@ import {
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+/**
+ * @route   GET /api/students/select
+ * @desc    Get students for select options (label/value pairs)
+ * @access  Private (All authenticated users)
+ */
+router.get("/students/select", authenticate, getStudentsForSelect);
 
 /**
  * @route   GET /api/students

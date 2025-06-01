@@ -69,3 +69,26 @@ export const createTeacher = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, result, "Teacher created successfully", 201);
 });
+
+/**
+ * Get teachers for select options (label/value pairs)
+ * GET /api/teachers/select
+ * All authenticated users
+ */
+export const getTeachersForSelect = asyncHandler(async (req, res) => {
+  const teachers = await User.find({ role: "teacher", is_active: true })
+    .select("name email")
+    .sort({ name: 1 })
+    .lean();
+
+  const selectOptions = teachers.map((teacher) => ({
+    value: teacher._id.toString(),
+    label: `${teacher.name} (${teacher.email})`,
+  }));
+
+  return sendSuccess(
+    res,
+    selectOptions,
+    "Teachers for select retrieved successfully"
+  );
+});

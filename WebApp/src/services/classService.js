@@ -2,6 +2,7 @@ import { api } from "./api.js";
 
 export const classService = {
   getAllClasses: () => api.get("/classes"),
+  getClassesForSelect: () => api.get("/classes/select"),
   getClassById: (classId) => api.get(`/classes/${classId}`),
   createClass: (classData) => api.post("/classes", classData),
   updateClass: (classId, classData) =>

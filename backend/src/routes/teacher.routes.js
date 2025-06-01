@@ -1,10 +1,21 @@
 import express from "express";
-import { getAllTeachers, createTeacher } from "../controllers/teacher.controller.js";
+import {
+  getAllTeachers,
+  createTeacher,
+  getTeachersForSelect,
+} from "../controllers/teacher.controller.js";
 import { createTeacherValidation } from "../validations/teacher.validation.js";
 import { handleValidationErrors } from "../middleware/validation.middleware.js";
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+/**
+ * @route   GET /api/teachers/select
+ * @desc    Get teachers for select options (label/value pairs)
+ * @access  Private (All authenticated users)
+ */
+router.get("/teachers/select", authenticate, getTeachersForSelect);
 
 /**
  * @route   GET /api/teachers/all
