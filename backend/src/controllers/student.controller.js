@@ -206,7 +206,6 @@ export const enrollStudent = asyncHandler(async (req, res) => {
 
     // Update student's current class
     student.current_class = class_id;
-    student.class = classDoc.name;
     student.current_academic_year = finalAcademicYear;
     await student.save({ session });
 
@@ -344,7 +343,6 @@ export const transferStudent = asyncHandler(async (req, res) => {
 
     // Update student's current class
     student.current_class = new_class_id;
-    student.class = newClass.name;
     student.current_academic_year = academicYear;
     await student.save({ session });
 
@@ -420,7 +418,6 @@ export const withdrawStudent = asyncHandler(async (req, res) => {
     // Mark student as inactive
     student.active = false;
     student.current_class = null;
-    student.class = null;
     await student.save({ session });
 
     return student;

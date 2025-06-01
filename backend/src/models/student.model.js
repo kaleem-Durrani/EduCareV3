@@ -4,7 +4,6 @@ import { Schema } from "mongoose";
 const studentSchema = new Schema(
   {
     fullName: { type: String, required: true },
-    class: { type: String, required: true }, // Could also be a reference if classes have fixed names/grades that are not just strings
     rollNum: { type: Number, unique: true }, // As per the feedback "Enrollment #" [cite: 12]
     birthdate: { type: Date, required: true },
     schedule: {
