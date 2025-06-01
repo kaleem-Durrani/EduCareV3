@@ -15,18 +15,19 @@ import Register from "./pages/Auth/Register";
 import Home from "./pages/Home";
 
 // Dashboard
-import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 // Admin Pages
-import ClassesScreen from "./pages/ClassesScreen";
-import StudentsScreen from "./pages/StudentsScreen";
-import TeachersScreen from "./pages/TeachersScreen";
-import ParentsScreen from "./pages/ParentsScreen";
-import FoodMenuScreen from "./pages/FoodMenuScreen";
-import ReportsScreen from "./pages/ReportsScreen";
+import ClassesScreen from "./pages/Classes";
+import StudentsScreen from "./pages/Students";
+import TeachersScreen from "./pages/Teachers";
+import ParentsScreen from "./pages/Parents";
+import FoodMenuScreen from "./pages/FoodMenu";
+import ReportsScreen from "./pages/Reports";
 import MonthlyPlansScreen from "./pages/MonthlyPlans";
-import LostItemsScreen from "./pages/LostItemsScreen";
-import FeesScreen from "./pages/FeesScreen";
+import LostItemsScreen from "./pages/LostItems";
+import FeesScreen from "./pages/Fees";
+import HealthScreen from "./pages/Health";
 
 // Ant Design theme configuration
 const theme = {
@@ -59,7 +60,7 @@ export default function App() {
               path={PROTECTED_ROUTES.DASHBOARD}
               element={
                 <PrivateRoute>
-                  <Dashboard />
+                  <AdminDashboard />
                 </PrivateRoute>
               }
             />
@@ -141,6 +142,15 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <FeesScreen />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path={PROTECTED_ROUTES.HEALTH}
+              element={
+                <PrivateRoute>
+                  <HealthScreen />
                 </PrivateRoute>
               }
             />
