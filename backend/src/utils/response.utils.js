@@ -5,16 +5,21 @@
  * @param {string} message - Success message
  * @param {number} statusCode - HTTP status code
  */
-export const sendSuccess = (res, data = null, message = "Success", statusCode = 200) => {
+export const sendSuccess = (
+  res,
+  data = null,
+  message = "Success",
+  statusCode = 200
+) => {
   const response = {
     success: true,
     message,
   };
-  
+
   if (data !== null) {
     response.data = data;
   }
-  
+
   return res.status(statusCode).json(response);
 };
 
@@ -25,16 +30,22 @@ export const sendSuccess = (res, data = null, message = "Success", statusCode = 
  * @param {number} statusCode - HTTP status code
  * @param {*} errors - Validation errors or additional error details
  */
-export const sendError = (res, message = "Error", statusCode = 500, errors = null) => {
+export const sendError = (
+  res,
+  message = "Error",
+  statusCode = 500,
+  errors = null
+) => {
   const response = {
     success: false,
     message,
   };
-  
+
   if (errors) {
     response.errors = errors;
   }
-  
+  console.log(response);
+
   return res.status(statusCode).json(response);
 };
 
