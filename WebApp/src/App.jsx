@@ -28,6 +28,7 @@ import MonthlyPlansScreen from "./pages/MonthlyPlans";
 import LostItemsScreen from "./pages/LostItems";
 import FeesScreen from "./pages/Fees";
 import HealthScreen from "./pages/Health";
+import BoxItemsScreen from "./pages/BoxItems";
 
 // Ant Design theme configuration
 const theme = {
@@ -151,6 +152,15 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <HealthScreen />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path={PROTECTED_ROUTES.BOX_ITEMS}
+              element={
+                <PrivateRoute>
+                  <BoxItemsScreen />
                 </PrivateRoute>
               }
             />

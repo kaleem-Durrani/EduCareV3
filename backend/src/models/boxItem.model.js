@@ -5,6 +5,7 @@ import { Schema } from "mongoose";
 const boxItemSchema = new Schema(
   {
     name: { type: String, required: true, unique: true },
+    description: { type: String, default: "" }, // Description for the item
     defaultInStock: { type: Boolean, default: false }, // From the new GET /api/box/items logic
     createdBy: { type: Schema.Types.ObjectId, ref: "User" }, // Admin/Teacher who added this item type
   },
