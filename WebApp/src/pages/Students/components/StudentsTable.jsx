@@ -1,26 +1,42 @@
-import React from "react";
-import { Table, Button, Space, Tag, Card, Modal } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Table, Button, Space, Tag, Card, Modal, Avatar } from "antd";
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 
 export default function StudentsTable({
   students,
   loading,
+  pagination,
   onAdd,
-  onEdit,
   onDelete,
+  onViewDetails,
+  onTableChange,
 }) {
   const columns = [
     {
-      title: "Roll Number",
-      dataIndex: "rollNum",
-      key: "rollNum",
-      sorter: true,
-    },
-    {
-      title: "Name",
-      dataIndex: "fullName",
-      key: "fullName",
-      sorter: true,
+      title: "Student",
+      key: "student",
+      render: (_, record) => (
+        <Space>
+          <Avatar
+            size={40}
+            src={record.photoUrl ? `${SERVER_URL}/${record.photoUrl}` : null}
+            icon={<UserOutlined />}
+          />
+          <div>
+            <div style={{ fontWeight: "bold" }}>{record.fullName}</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>
+              Enrollment #: {record.rollNum}
+            </div>
+          </div>
+        </Space>
+      ),
+      sorter: (a, b) => a.fullName.localeCompare(b.fullName),
+      sortDirections: ["ascend", "descend"],
     },
     {
       title: "Date of Birth",
@@ -30,17 +46,17 @@ export default function StudentsTable({
     },
     {
       title: "Current Class",
-      dataIndex: ["currentClass", "name"],
-      key: "currentClass",
+      dataIndex: ["current_class", "name"],
+      key: "current_class",
       render: (className) => className || "Not Assigned",
     },
     {
       title: "Status",
       dataIndex: "active",
       key: "active",
-      render: (status) => (
-        <Tag color={status === true ? "green" : "red"}>
-          {status === true ? "Active" : "Inactive"}
+      render: (active) => (
+        <Tag color={active ? "green" : "red"}>
+          {active ? "Active" : "Inactive"}
         </Tag>
       ),
     },
@@ -51,10 +67,10 @@ export default function StudentsTable({
         <Space size="middle">
           <Button
             type="link"
-            icon={<EditOutlined />}
-            onClick={() => onEdit(record)}
+            icon={<EyeOutlined />}
+            onClick={() => onViewDetails && onViewDetails(record)}
           >
-            Edit
+            Details
           </Button>
           <Button
             type="link"
@@ -92,13 +108,45 @@ export default function StudentsTable({
         columns={columns}
         dataSource={students}
         loading={loading}
-        rowKey="rollNum"
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} students`,
+        rowKey="_id"
+        pagination={
+          pagination
+            ? {
+                current: pagination.currentPage,
+                total: pagination.totalItems,
+                pageSize: pagination.itemsPerPage,
+                showQuickJumper: true,
+                showSizeChanger: true,
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} of ${total} students`,
+                onChange: (page, pageSize) => {
+                  if (onTableChange) {
+                    onTableChange({ page, pageSize });
+                  }
+                },
+                onShowSizeChange: (current, size) => {
+                  if (onTableChange) {
+                    onTableChange({ page: 1, pageSize: size });
+                  }
+                },
+              }
+            : {
+                pageSize: 10,
+                showQuickJumper: true,
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} of ${total} students`,
+              }
+        }
+        onChange={(paginationInfo, filters, sorter) => {
+          // Handle table changes (sorting, filtering, etc.)
+          if (onTableChange) {
+            onTableChange({
+              page: paginationInfo.current,
+              pageSize: paginationInfo.pageSize,
+              sorter,
+              filters,
+            });
+          }
         }}
       />
     </Card>
