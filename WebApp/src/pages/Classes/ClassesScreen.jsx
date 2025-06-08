@@ -4,7 +4,13 @@ import useApi from "../../hooks/useApi";
 import { classService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
 import AdminLayout from "../../components/Layout/AdminLayout";
-import { ClassesStats, ClassesTable, ClassFormModal } from "./components";
+import {
+  ClassesStats,
+  ClassesTable,
+  ClassFormModal,
+  StudentsModal,
+  TeachersModal,
+} from "./components";
 
 const { Title } = Typography;
 
@@ -12,16 +18,34 @@ export default function ClassesScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [classStatistics, setClassStatistics] = useState(null);
+  const [studentsModalVisible, setStudentsModalVisible] = useState(false);
+  const [teachersModalVisible, setTeachersModalVisible] = useState(false);
+  const [selectedClassForModal, setSelectedClassForModal] = useState(null);
+  const [classStudents, setClassStudents] = useState([]);
+  const [classTeachers, setClassTeachers] = useState([]);
   const pageSize = 10;
 
-  // Fetch classes data
+  // Fetch classes data with pagination
   const {
     data: classesData,
     isLoading: loading,
     request: fetchClasses,
-  } = useApi(() =>
-    classService.getAllClasses({ page: currentPage, per_page: pageSize })
-  );
+  } = useApi((params) => classService.getAllClasses(params), {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      showValidationDetails: true,
+    },
+  });
+
+  // Get class statistics API
+  const { request: getClassStatisticsRequest, isLoading: loadingStatistics } =
+    useApi(classService.getClassStatistics, {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    });
 
   // Create class API with enhanced validation error handling
   const { request: createClassRequest, isLoading: creating } = useApi(
@@ -48,15 +72,38 @@ export default function ClassesScreen() {
   );
 
   useEffect(() => {
-    fetchClasses();
+    fetchClassesData();
+    fetchClassStatistics();
+  }, []);
+
+  useEffect(() => {
+    fetchClassesData();
   }, [currentPage]);
+
+  const fetchClassesData = async () => {
+    const params = {
+      page: currentPage,
+      limit: pageSize,
+    };
+    await fetchClasses(params);
+  };
+
+  const fetchClassStatistics = async () => {
+    try {
+      const stats = await getClassStatisticsRequest();
+      setClassStatistics(stats);
+    } catch (error) {
+      console.log("Failed to fetch class statistics");
+    }
+  };
 
   const handleCreateClass = async (values) => {
     try {
       await createClassRequest(values);
       message.success("Class created successfully!");
       setIsModalVisible(false);
-      fetchClasses();
+      fetchClassesData();
+      fetchClassStatistics(); // Refresh statistics
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Create class error handled by useApi");
@@ -65,11 +112,12 @@ export default function ClassesScreen() {
 
   const handleUpdateClass = async (values) => {
     try {
-      await updateClassRequest({ id: editingClass.id, data: values });
+      await updateClassRequest({ id: editingClass._id, data: values });
       message.success("Class updated successfully!");
       setIsModalVisible(false);
       setEditingClass(null);
-      fetchClasses();
+      fetchClassesData();
+      fetchClassStatistics(); // Refresh statistics
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Update class error handled by useApi");
@@ -99,12 +147,70 @@ export default function ClassesScreen() {
     setEditingClass(null);
   };
 
-  const handleViewStudents = (classItem) => {
-    console.log("View students for class:", classItem);
-    // TODO: Navigate to students view for this class
+  const handleViewStudents = async (classItem) => {
+    try {
+      const response = await classService.getClassDetails(classItem._id);
+      console.log("Class details response:", response);
+
+      // Access the data from the response (handle both direct data and wrapped response)
+      const classDetails = response.data || response;
+      setSelectedClassForModal(classItem);
+      setClassStudents(classDetails.students || []);
+      setStudentsModalVisible(true);
+    } catch (error) {
+      console.error("Error fetching class details:", error);
+      message.error("Failed to fetch class details");
+    }
   };
 
-  const classes = classesData || [];
+  const handleViewTeachers = async (classItem) => {
+    try {
+      const response = await classService.getClassDetails(classItem._id);
+      console.log("Teachers response:", response);
+
+      // Access the data from the response (handle both direct data and wrapped response)
+      const classDetails = response.data || response;
+      setSelectedClassForModal(classItem);
+      setClassTeachers(classDetails.teachers || []);
+      setTeachersModalVisible(true);
+    } catch (error) {
+      console.error("Error fetching class teachers:", error);
+      message.error("Failed to fetch class teachers");
+    }
+  };
+
+  const handleRefreshClassData = async () => {
+    if (selectedClassForModal) {
+      try {
+        const response = await classService.getClassDetails(
+          selectedClassForModal._id
+        );
+        const classDetails = response.data || response;
+        setClassStudents(classDetails.students || []);
+        setClassTeachers(classDetails.teachers || []);
+        // Also refresh the main classes list
+        fetchClassesData();
+        fetchClassStatistics();
+      } catch (error) {
+        console.error("Error refreshing class data:", error);
+      }
+    }
+  };
+
+  const handleCloseStudentsModal = () => {
+    setStudentsModalVisible(false);
+    setSelectedClassForModal(null);
+    setClassStudents([]);
+  };
+
+  const handleCloseTeachersModal = () => {
+    setTeachersModalVisible(false);
+    setSelectedClassForModal(null);
+    setClassTeachers([]);
+  };
+
+  const classes = classesData?.classes || [];
+  const pagination = classesData?.pagination || {};
 
   return (
     <AdminLayout>
@@ -114,7 +220,10 @@ export default function ClassesScreen() {
         </div>
 
         {/* Statistics Cards */}
-        <ClassesStats classes={classes} />
+        <ClassesStats
+          statistics={classStatistics}
+          loading={loadingStatistics}
+        />
 
         {/* Classes Table */}
         <ClassesTable
@@ -122,11 +231,12 @@ export default function ClassesScreen() {
           loading={loading}
           currentPage={currentPage}
           pageSize={pageSize}
-          total={classesData?.total || 0}
+          total={pagination.totalItems || 0}
           onPageChange={setCurrentPage}
           onAdd={handleAdd}
           onEdit={handleEdit}
           onViewStudents={handleViewStudents}
+          onViewTeachers={handleViewTeachers}
         />
 
         {/* Add/Edit Modal */}
@@ -138,6 +248,24 @@ export default function ClassesScreen() {
           title={editingClass ? "Edit Class" : "Add New Class"}
           mode={editingClass ? "edit" : "create"}
           initialData={editingClass}
+        />
+
+        {/* Students Modal */}
+        <StudentsModal
+          visible={studentsModalVisible}
+          onCancel={handleCloseStudentsModal}
+          classData={selectedClassForModal}
+          students={classStudents}
+          onRefresh={handleRefreshClassData}
+        />
+
+        {/* Teachers Modal */}
+        <TeachersModal
+          visible={teachersModalVisible}
+          onCancel={handleCloseTeachersModal}
+          classData={selectedClassForModal}
+          teachers={classTeachers}
+          onRefresh={handleRefreshClassData}
         />
       </Space>
     </AdminLayout>

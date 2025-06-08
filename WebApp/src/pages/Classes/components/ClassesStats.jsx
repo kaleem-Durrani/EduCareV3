@@ -1,15 +1,34 @@
 import React from "react";
 import { Card, Row, Col, Statistic } from "antd";
-import { BookOutlined, TeamOutlined } from "@ant-design/icons";
+import { BookOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 
-export default function ClassesStats({ classes }) {
-  const totalClasses = classes.length;
-  const totalStudents = classes.reduce((sum, cls) => sum + (cls.studentCount || 0), 0);
-  const averageClassSize = totalClasses > 0 ? Math.round(totalStudents / totalClasses) : 0;
+export default function ClassesStats({ statistics, loading }) {
+  if (loading || !statistics) {
+    return (
+      <Row gutter={16}>
+        {[1, 2, 3, 4].map((i) => (
+          <Col span={6} key={i}>
+            <Card loading={true}>
+              <Statistic title="Loading..." value={0} />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    );
+  }
+
+  const {
+    totalClasses,
+    activeClasses,
+    totalStudents,
+    totalTeachers,
+    classesWithStudents,
+    classesWithTeachers,
+  } = statistics;
 
   return (
     <Row gutter={16}>
-      <Col span={8}>
+      <Col span={6}>
         <Card>
           <Statistic
             title="Total Classes"
@@ -19,23 +38,33 @@ export default function ClassesStats({ classes }) {
           />
         </Card>
       </Col>
-      <Col span={8}>
+      <Col span={6}>
+        <Card>
+          <Statistic
+            title="Active Classes"
+            value={activeClasses}
+            prefix={<BookOutlined />}
+            valueStyle={{ color: "#1890ff" }}
+          />
+        </Card>
+      </Col>
+      <Col span={6}>
         <Card>
           <Statistic
             title="Total Students"
             value={totalStudents}
             prefix={<TeamOutlined />}
-            valueStyle={{ color: "#1890ff" }}
+            valueStyle={{ color: "#722ed1" }}
           />
         </Card>
       </Col>
-      <Col span={8}>
+      <Col span={6}>
         <Card>
           <Statistic
-            title="Average Class Size"
-            value={averageClassSize}
-            prefix={<TeamOutlined />}
-            valueStyle={{ color: "#722ed1" }}
+            title="Total Teachers"
+            value={totalTeachers}
+            prefix={<UserOutlined />}
+            valueStyle={{ color: "#cf1322" }}
           />
         </Card>
       </Col>
