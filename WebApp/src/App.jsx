@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { StudentsProvider } from "./context/StudentsContext";
 import { TeachersProvider } from "./context/TeachersContext";
 import { ClassesProvider } from "./context/ClassesContext";
+import { ParentsProvider } from "./context/ParentsContext";
 import PrivateRoute from "./components/PrivateRoute";
 import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./constants/routes";
 
@@ -57,147 +58,152 @@ export default function App() {
         <StudentsProvider>
           <TeachersProvider>
             <ClassesProvider>
-              <Router>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path={PUBLIC_ROUTES.HOME} element={<Home />} />
-                  <Route path={PUBLIC_ROUTES.LOGIN} element={<Login />} />
-                  <Route path={PUBLIC_ROUTES.REGISTER} element={<Register />} />
+              <ParentsProvider>
+                <Router>
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path={PUBLIC_ROUTES.HOME} element={<Home />} />
+                    <Route path={PUBLIC_ROUTES.LOGIN} element={<Login />} />
+                    <Route
+                      path={PUBLIC_ROUTES.REGISTER}
+                      element={<Register />}
+                    />
 
-                  {/* Protected Routes */}
-                  <Route
-                    path={PROTECTED_ROUTES.DASHBOARD}
-                    element={
-                      <PrivateRoute>
-                        <AdminDashboard />
-                      </PrivateRoute>
-                    }
-                  />
+                    {/* Protected Routes */}
+                    <Route
+                      path={PROTECTED_ROUTES.DASHBOARD}
+                      element={
+                        <PrivateRoute>
+                          <AdminDashboard />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.STUDENTS}
-                    element={
-                      <PrivateRoute>
-                        <StudentsScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.STUDENTS}
+                      element={
+                        <PrivateRoute>
+                          <StudentsScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.TEACHERS}
-                    element={
-                      <PrivateRoute>
-                        <TeachersScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.TEACHERS}
+                      element={
+                        <PrivateRoute>
+                          <TeachersScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.PARENTS}
-                    element={
-                      <PrivateRoute>
-                        <ParentsScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.PARENTS}
+                      element={
+                        <PrivateRoute>
+                          <ParentsScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.CLASSES}
-                    element={
-                      <PrivateRoute>
-                        <ClassesScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.CLASSES}
+                      element={
+                        <PrivateRoute>
+                          <ClassesScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.FOOD_MENU}
-                    element={
-                      <PrivateRoute>
-                        <FoodMenuScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.FOOD_MENU}
+                      element={
+                        <PrivateRoute>
+                          <FoodMenuScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.REPORTS}
-                    element={
-                      <PrivateRoute>
-                        <ReportsScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.REPORTS}
+                      element={
+                        <PrivateRoute>
+                          <ReportsScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.MONTHLY_PLANS}
-                    element={
-                      <PrivateRoute>
-                        <MonthlyPlansScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.MONTHLY_PLANS}
+                      element={
+                        <PrivateRoute>
+                          <MonthlyPlansScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.LOST_ITEMS}
-                    element={
-                      <PrivateRoute>
-                        <LostItemsScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.LOST_ITEMS}
+                      element={
+                        <PrivateRoute>
+                          <LostItemsScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.FEES}
-                    element={
-                      <PrivateRoute>
-                        <FeesScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.FEES}
+                      element={
+                        <PrivateRoute>
+                          <FeesScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.HEALTH}
-                    element={
-                      <PrivateRoute>
-                        <HealthScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.HEALTH}
+                      element={
+                        <PrivateRoute>
+                          <HealthScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.BOX_ITEMS}
-                    element={
-                      <PrivateRoute>
-                        <BoxItemsScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.BOX_ITEMS}
+                      element={
+                        <PrivateRoute>
+                          <BoxItemsScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.DOCUMENTS}
-                    element={
-                      <PrivateRoute>
-                        <DocumentsScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.DOCUMENTS}
+                      element={
+                        <PrivateRoute>
+                          <DocumentsScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  <Route
-                    path={PROTECTED_ROUTES.POSTS}
-                    element={
-                      <PrivateRoute>
-                        <PostsScreen />
-                      </PrivateRoute>
-                    }
-                  />
+                    <Route
+                      path={PROTECTED_ROUTES.POSTS}
+                      element={
+                        <PrivateRoute>
+                          <PostsScreen />
+                        </PrivateRoute>
+                      }
+                    />
 
-                  {/* Catch all route */}
-                  <Route
-                    path="*"
-                    element={<Navigate to={PUBLIC_ROUTES.HOME} replace />}
-                  />
-                </Routes>
-              </Router>
+                    {/* Catch all route */}
+                    <Route
+                      path="*"
+                      element={<Navigate to={PUBLIC_ROUTES.HOME} replace />}
+                    />
+                  </Routes>
+                </Router>
+              </ParentsProvider>
             </ClassesProvider>
           </TeachersProvider>
         </StudentsProvider>
