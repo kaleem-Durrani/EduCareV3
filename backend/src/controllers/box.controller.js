@@ -276,7 +276,7 @@ export const getPaginatedStudentsBoxStatus = asyncHandler(async (req, res) => {
   // Get paginated students
   const students = await Student.find({ active: true })
     .populate("current_class", "name")
-    .select("fullName rollNum current_class")
+    .select("fullName rollNum current_class photoUrl")
     .sort({ fullName: 1 })
     .skip(skip)
     .limit(limit);
