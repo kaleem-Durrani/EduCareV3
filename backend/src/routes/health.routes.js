@@ -5,10 +5,26 @@ import {
   updateHealthMetric,
   getHealthInfo,
   updateHealthInfo,
+  getHealthStatistics,
 } from "../controllers/health.controller.js";
-import { authenticate, requireAdminOrTeacher } from "../middleware/auth.middleware.js";
+import {
+  authenticate,
+  requireAdminOrTeacher,
+} from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+/**
+ * @route   GET /api/health/statistics
+ * @desc    Get health statistics for all students
+ * @access  Private (Admin/Teacher)
+ */
+router.get(
+  "/health/statistics",
+  authenticate,
+  requireAdminOrTeacher,
+  getHealthStatistics
+);
 
 /**
  * @route   GET /api/health/metrics/:student_id
@@ -22,14 +38,24 @@ router.get("/health/metrics/:student_id", authenticate, getHealthMetrics);
  * @desc    Create health metric for a student
  * @access  Private (Admin/Teacher)
  */
-router.post("/health/metrics/:student_id", authenticate, requireAdminOrTeacher, createHealthMetric);
+router.post(
+  "/health/metrics/:student_id",
+  authenticate,
+  requireAdminOrTeacher,
+  createHealthMetric
+);
 
 /**
  * @route   PUT /api/health/metrics/:student_id/:metric_id
  * @desc    Update health metric
  * @access  Private (Admin/Teacher)
  */
-router.put("/health/metrics/:student_id/:metric_id", authenticate, requireAdminOrTeacher, updateHealthMetric);
+router.put(
+  "/health/metrics/:student_id/:metric_id",
+  authenticate,
+  requireAdminOrTeacher,
+  updateHealthMetric
+);
 
 /**
  * @route   GET /api/health/info/:student_id
@@ -43,6 +69,11 @@ router.get("/health/info/:student_id", authenticate, getHealthInfo);
  * @desc    Update health info for a student
  * @access  Private (Admin/Teacher)
  */
-router.put("/health/info/:student_id", authenticate, requireAdminOrTeacher, updateHealthInfo);
+router.put(
+  "/health/info/:student_id",
+  authenticate,
+  requireAdminOrTeacher,
+  updateHealthInfo
+);
 
 export default router;

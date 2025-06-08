@@ -11,6 +11,56 @@ import {
 } from "../utils/transaction.utils.js";
 
 /**
+ * Get health statistics for all students
+ * GET /api/health/statistics
+ * Admin/Teacher only
+ */
+export const getHealthStatistics = asyncHandler(async (req, res) => {
+  // Get total students count
+  const totalStudents = await Student.countDocuments();
+
+  // Get students with health info
+  const studentsWithHealthInfo = await HealthInfo.countDocuments();
+
+  // Get students with health metrics
+  const studentsWithMetrics = await HealthMetric.distinct("student_id").then(
+    (ids) => ids.length
+  );
+
+  // Get total health metrics count
+  const totalMetrics = await HealthMetric.countDocuments();
+
+  // Get recent metrics (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentMetrics = await HealthMetric.countDocuments({
+    createdAt: { $gte: thirtyDaysAgo },
+  });
+
+  const statistics = {
+    totalStudents,
+    studentsWithHealthInfo,
+    studentsWithMetrics,
+    totalMetrics,
+    recentMetrics,
+    healthInfoCoverage:
+      totalStudents > 0
+        ? ((studentsWithHealthInfo / totalStudents) * 100).toFixed(1)
+        : 0,
+    metricsCoverage:
+      totalStudents > 0
+        ? ((studentsWithMetrics / totalStudents) * 100).toFixed(1)
+        : 0,
+  };
+
+  return sendSuccess(
+    res,
+    statistics,
+    "Health statistics retrieved successfully"
+  );
+});
+
+/**
  * Get health metrics for a student
  * GET /api/health/metrics/:student_id
  * Filter by type and period query params
