@@ -1,93 +1,138 @@
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  Button,
-  Space,
-  Typography,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  Upload,
-  Card,
-  Row,
-  Col,
-  Statistic,
-  message,
-  Select,
-  Image,
-  Popconfirm,
-  Tag,
-} from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  InboxOutlined,
-  FileImageOutlined,
-  CalendarOutlined,
-} from "@ant-design/icons";
+import { Space, Typography, Button, Card, message, Form } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import useApi from "../../hooks/useApi";
 import { lostItemService } from "../../services/index";
+import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
 import AdminLayout from "../../components/Layout/AdminLayout";
+import {
+  LostItemsStatistics,
+  LostItemsFilters,
+  LostItemsTable,
+  LostItemFormModal,
+  ClaimItemModal,
+} from "./components";
 import dayjs from "dayjs";
 
 const { Title } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
-const { Dragger } = Upload;
 
 export default function LostItemsScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isClaimModalVisible, setIsClaimModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [claimingItem, setClaimingItem] = useState(null);
   const [form] = Form.useForm();
+  const [claimForm] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
+  const [statistics, setStatistics] = useState(null);
   const [filters, setFilters] = useState({
     status: "",
     dateFrom: "",
     dateTo: "",
+    search: "",
   });
   const pageSize = 10;
+
+  // Fetch lost items statistics
+  const { request: fetchStatistics, isLoading: loadingStatistics } = useApi(
+    lostItemService.getLostItemsStatistics,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        title: "Failed to Load Statistics",
+      },
+    }
+  );
 
   // Fetch lost items data
   const {
     data: itemsData,
     isLoading: loading,
     request: fetchItems,
-  } = useApi(() => lostItemService.getAllLostItems({ 
-    page: currentPage, 
-    per_page: pageSize,
-    ...filters 
-  }));
+  } = useApi((params) => lostItemService.getAllLostItems(params), {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      title: "Failed to Load Lost Items",
+    },
+  });
 
   // Create item API
   const { request: createItemRequest, isLoading: creating } = useApi(
-    lostItemService.createLostItem
+    lostItemService.createLostItem,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+        title: "Failed to Create Lost Item",
+      },
+    }
   );
 
   // Update item API
   const { request: updateItemRequest, isLoading: updating } = useApi(
-    ({ id, data }) => lostItemService.updateLostItem(id, data)
+    ({ id, data }) => lostItemService.updateLostItem(id, data),
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+        title: "Failed to Update Lost Item",
+      },
+    }
+  );
+
+  // Claim item API
+  const { request: claimItemRequest, isLoading: claiming } = useApi(
+    ({ id, data }) => lostItemService.claimLostItem(id, data),
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+        title: "Failed to Claim Lost Item",
+      },
+    }
   );
 
   // Delete item API
-  const { request: deleteItemRequest, isLoading: deleting } = useApi(
-    lostItemService.deleteLostItem
+  const { request: deleteItemRequest } = useApi(
+    lostItemService.deleteLostItem,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        title: "Failed to Delete Lost Item",
+      },
+    }
   );
 
   useEffect(() => {
-    fetchItems();
+    fetchItems({
+      page: currentPage,
+      limit: pageSize,
+      ...filters,
+    });
   }, [currentPage, filters]);
+
+  useEffect(() => {
+    fetchStatisticsData();
+  }, []);
+
+  const fetchStatisticsData = async () => {
+    try {
+      const stats = await fetchStatistics();
+      setStatistics(stats);
+    } catch (error) {
+      console.log("Failed to fetch statistics");
+    }
+  };
 
   const handleCreateItem = async (values) => {
     try {
       const formData = new FormData();
-      Object.keys(values).forEach(key => {
-        if (key === 'dateFound') {
-          formData.append(key, values[key].format('YYYY-MM-DD'));
-        } else if (key === 'image' && values[key]?.file) {
-          formData.append(key, values[key].file);
-        } else if (key !== 'image') {
+      Object.keys(values).forEach((key) => {
+        if (key === "dateFound") {
+          formData.append(key, values[key].format("YYYY-MM-DD"));
+        } else if (key === "image" && values[key]?.file) {
+          formData.append("image", values[key].file);
+        } else if (key !== "image") {
           formData.append(key, values[key]);
         }
       });
@@ -96,33 +141,46 @@ export default function LostItemsScreen() {
       message.success("Lost item created successfully!");
       setIsModalVisible(false);
       form.resetFields();
-      fetchItems();
+      fetchItems({
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+      });
+      fetchStatisticsData();
     } catch (error) {
-      message.error("Failed to create lost item");
+      console.log("Create item error handled by useApi");
     }
   };
 
   const handleUpdateItem = async (values) => {
     try {
       const formData = new FormData();
-      Object.keys(values).forEach(key => {
-        if (key === 'dateFound') {
-          formData.append(key, values[key].format('YYYY-MM-DD'));
-        } else if (key === 'image' && values[key]?.file) {
+      Object.keys(values).forEach((key) => {
+        if (key === "dateFound") {
+          formData.append(key, values[key].format("YYYY-MM-DD"));
+        } else if (key === "image" && values[key]?.file) {
           formData.append(key, values[key].file);
-        } else if (key !== 'image') {
+        } else if (key !== "image") {
           formData.append(key, values[key]);
         }
       });
 
-      await updateItemRequest({ id: editingItem._id || editingItem.id, data: formData });
+      await updateItemRequest({
+        id: editingItem._id,
+        data: formData,
+      });
       message.success("Lost item updated successfully!");
       setIsModalVisible(false);
       setEditingItem(null);
       form.resetFields();
-      fetchItems();
+      fetchItems({
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+      });
+      fetchStatisticsData();
     } catch (error) {
-      message.error("Failed to update lost item");
+      console.log("Update item error handled by useApi");
     }
   };
 
@@ -130,10 +188,41 @@ export default function LostItemsScreen() {
     try {
       await deleteItemRequest(itemId);
       message.success("Lost item deleted successfully!");
-      fetchItems();
+      fetchItems({
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+      });
+      fetchStatisticsData();
     } catch (error) {
-      message.error("Failed to delete lost item");
+      console.log("Delete item error handled by useApi");
     }
+  };
+
+  const handleClaimItem = async (values) => {
+    try {
+      await claimItemRequest({
+        id: claimingItem._id,
+        data: { parentEmail: values.parentEmail },
+      });
+      message.success("Lost item claimed successfully!");
+      setIsClaimModalVisible(false);
+      setClaimingItem(null);
+      claimForm.resetFields();
+      fetchItems({
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+      });
+      fetchStatisticsData();
+    } catch (error) {
+      console.log("Claim item error handled by useApi");
+    }
+  };
+
+  const handleClaim = (item) => {
+    setClaimingItem(item);
+    setIsClaimModalVisible(true);
   };
 
   const handleSubmit = async (values) => {
@@ -167,107 +256,22 @@ export default function LostItemsScreen() {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
 
-  const columns = [
-    {
-      title: "Image",
-      dataIndex: "imageUrl",
-      key: "imageUrl",
-      width: 100,
-      render: (imageUrl, record) => (
-        imageUrl ? (
-          <Image
-            width={60}
-            height={60}
-            src={`http://tallal.info:5500${imageUrl}`}
-            alt={record.title}
-            style={{ objectFit: "cover", borderRadius: 4 }}
-            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
-          />
-        ) : (
-          <div style={{ 
-            width: 60, 
-            height: 60, 
-            backgroundColor: "#f5f5f5", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center",
-            borderRadius: 4
-          }}>
-            <FileImageOutlined style={{ color: "#ccc" }} />
-          </div>
-        )
-      ),
-    },
-    {
-      title: "Title",
-      dataIndex: "title",
-      key: "title",
-      render: (text) => <strong>{text}</strong>,
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-      ellipsis: true,
-    },
-    {
-      title: "Date Found",
-      dataIndex: "dateFound",
-      key: "dateFound",
-      render: (date) => dayjs(date).format("MMM DD, YYYY"),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <Tag color={status === "claimed" ? "green" : "orange"}>
-          {status?.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="primary"
-            ghost
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            Edit
-          </Button>
-          <Popconfirm
-            title="Delete Item"
-            description="Are you sure you want to delete this lost item?"
-            onConfirm={() => handleDeleteItem(record._id || record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button
-              type="primary"
-              danger
-              icon={<DeleteOutlined />}
-              loading={deleting}
-            >
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
+  const handleClaimCancel = () => {
+    setIsClaimModalVisible(false);
+    setClaimingItem(null);
+    claimForm.resetFields();
+  };
+
+  // Extract items data
   const items = itemsData?.items || [];
-  const totalItems = items.length;
-  const claimedItems = items.filter(item => item.status === "claimed").length;
-  const unclaimedItems = totalItems - claimedItems;
 
   return (
     <AdminLayout>
@@ -277,72 +281,16 @@ export default function LostItemsScreen() {
         </div>
 
         {/* Statistics Cards */}
-        <Row gutter={16}>
-          <Col span={8}>
-            <Card>
-              <Statistic
-                title="Total Items"
-                value={totalItems}
-                prefix={<InboxOutlined />}
-                valueStyle={{ color: "#3f8600" }}
-              />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card>
-              <Statistic
-                title="Unclaimed Items"
-                value={unclaimedItems}
-                prefix={<InboxOutlined />}
-                valueStyle={{ color: "#cf1322" }}
-              />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card>
-              <Statistic
-                title="Claimed Items"
-                value={claimedItems}
-                prefix={<InboxOutlined />}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Card>
-          </Col>
-        </Row>
+        <LostItemsStatistics
+          statistics={statistics}
+          loading={loadingStatistics}
+        />
 
         {/* Filters */}
-        <Card title="Filters">
-          <Row gutter={16}>
-            <Col span={6}>
-              <Select
-                style={{ width: "100%" }}
-                placeholder="Filter by status"
-                value={filters.status}
-                onChange={(value) => handleFilterChange("status", value)}
-                allowClear
-              >
-                <Option value="unclaimed">Unclaimed</Option>
-                <Option value="claimed">Claimed</Option>
-              </Select>
-            </Col>
-            <Col span={6}>
-              <DatePicker
-                style={{ width: "100%" }}
-                placeholder="From date"
-                value={filters.dateFrom ? dayjs(filters.dateFrom) : null}
-                onChange={(date) => handleFilterChange("dateFrom", date?.format("YYYY-MM-DD") || "")}
-              />
-            </Col>
-            <Col span={6}>
-              <DatePicker
-                style={{ width: "100%" }}
-                placeholder="To date"
-                value={filters.dateTo ? dayjs(filters.dateTo) : null}
-                onChange={(date) => handleFilterChange("dateTo", date?.format("YYYY-MM-DD") || "")}
-              />
-            </Col>
-          </Row>
-        </Card>
+        <LostItemsFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+        />
 
         {/* Table */}
         <Card>
@@ -352,100 +300,39 @@ export default function LostItemsScreen() {
             </Button>
           </div>
 
-          <Table
-            columns={columns}
-            dataSource={items}
+          <LostItemsTable
+            items={items}
             loading={loading}
-            rowKey={(record) => record._id || record.id}
-            pagination={{
-              current: currentPage,
-              pageSize: pageSize,
-              total: itemsData?.total || 0,
-              onChange: setCurrentPage,
-              showSizeChanger: false,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} of ${total} items`,
-            }}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            total={itemsData?.pagination?.totalItems || 0}
+            onPageChange={handlePageChange}
+            onEdit={handleEdit}
+            onDelete={handleDeleteItem}
+            onClaim={handleClaim}
           />
         </Card>
 
         {/* Add/Edit Modal */}
-        <Modal
-          title={editingItem ? "Edit Lost Item" : "Add Lost Item"}
-          open={isModalVisible}
+        <LostItemFormModal
+          visible={isModalVisible}
+          editingItem={editingItem}
+          form={form}
+          onSubmit={handleSubmit}
           onCancel={handleCancel}
-          footer={null}
-          width={600}
-        >
-          <Form form={form} layout="vertical" onFinish={handleSubmit}>
-            <Form.Item
-              name="title"
-              label="Title"
-              rules={[
-                { required: true, message: "Please enter item title!" },
-              ]}
-            >
-              <Input placeholder="Enter item title" />
-            </Form.Item>
+          creating={creating}
+          updating={updating}
+        />
 
-            <Form.Item
-              name="description"
-              label="Description"
-              rules={[
-                { required: true, message: "Please enter description!" },
-              ]}
-            >
-              <TextArea
-                rows={3}
-                placeholder="Enter item description"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="dateFound"
-              label="Date Found"
-              rules={[
-                { required: true, message: "Please select date found!" },
-              ]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              name="image"
-              label="Image"
-            >
-              <Dragger
-                name="file"
-                multiple={false}
-                beforeUpload={() => false}
-                accept="image/*"
-              >
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Click or drag image to upload</p>
-                <p className="ant-upload-hint">Support for single image upload</p>
-              </Dragger>
-            </Form.Item>
-
-            <Form.Item>
-              <Space>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={creating || updating}
-                >
-                  {editingItem ? "Update" : "Create"} Item
-                </Button>
-                <Button onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </Space>
-            </Form.Item>
-          </Form>
-        </Modal>
+        {/* Claim Modal */}
+        <ClaimItemModal
+          visible={isClaimModalVisible}
+          claimingItem={claimingItem}
+          form={claimForm}
+          onSubmit={handleClaimItem}
+          onCancel={handleClaimCancel}
+          claiming={claiming}
+        />
       </Space>
     </AdminLayout>
   );
