@@ -1,82 +1,107 @@
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  Button,
-  Space,
-  Typography,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  DatePicker,
-  Select,
-  Card,
-  Row,
-  Col,
-  Statistic,
-  message,
-  Tag,
-  Popconfirm,
-  Empty,
-} from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  DollarOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { Space, Typography, Form, message } from "antd";
 import useApi from "../../hooks/useApi";
-import { feeService, studentService } from "../../services/index";
+import { feeService } from "../../services/index";
 import AdminLayout from "../../components/Layout/AdminLayout";
+import {
+  FeesStatistics,
+  StudentSelector,
+  FeesTable,
+  FeeModal,
+} from "./components";
+import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
 import dayjs from "dayjs";
 
 const { Title } = Typography;
-const { Option } = Select;
 
 export default function FeesScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingFee, setEditingFee] = useState(null);
   const [form] = Form.useForm();
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [feeStatistics, setFeeStatistics] = useState(null);
 
-  // Fetch students data
-  const {
-    data: studentsData,
-    request: fetchStudents,
-  } = useApi(studentService.getAllStudents);
-
-  // Fetch fees data
+  // Fetch fees data with pagination
   const {
     data: feesData,
     isLoading: loading,
     request: fetchFees,
-  } = useApi((studentId) => feeService.getStudentFees(studentId));
+  } = useApi(
+    (studentId, params) => feeService.getStudentFees(studentId, params),
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    }
+  );
+
+  // Get fee statistics API
+  const { request: getFeeStatisticsRequest, isLoading: loadingStatistics } =
+    useApi(feeService.getFeeStatistics, {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    });
 
   // Create fee API
   const { request: createFeeRequest, isLoading: creating } = useApi(
-    feeService.createFee
+    feeService.createFee,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    }
   );
 
   // Update fee status API
   const { request: updateFeeStatusRequest, isLoading: updating } = useApi(
-    ({ id, status }) => feeService.updateFeeStatus(id, status)
+    feeService.updateFeeStatus,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    }
   );
 
   // Delete fee API
   const { request: deleteFeeRequest, isLoading: deleting } = useApi(
-    feeService.deleteFee
+    feeService.deleteFee,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    }
   );
 
   useEffect(() => {
-    fetchStudents();
+    fetchFeeStatistics();
   }, []);
 
   useEffect(() => {
     if (selectedStudentId) {
-      fetchFees(selectedStudentId);
+      const params = {
+        page: currentPage,
+        limit: pageSize,
+      };
+      fetchFees(selectedStudentId, params);
     }
-  }, [selectedStudentId]);
+  }, [selectedStudentId, currentPage, pageSize]);
+
+  const fetchFeeStatistics = async () => {
+    try {
+      const stats = await getFeeStatisticsRequest();
+      setFeeStatistics(stats);
+    } catch (error) {
+      console.log("Failed to fetch fee statistics");
+    }
+  };
 
   const handleCreateFee = async (values) => {
     try {
@@ -84,30 +109,48 @@ export default function FeesScreen() {
         ...values,
         deadline: values.deadline.format("YYYY-MM-DD"),
         student_id: values.student_id,
-        status: "Unpaid",
+        status: "pending", // Use backend status format
       };
       await createFeeRequest(feeData);
       message.success("Fee created successfully!");
       setIsModalVisible(false);
       form.resetFields();
       if (selectedStudentId) {
-        fetchFees(selectedStudentId);
+        const params = {
+          page: currentPage,
+          limit: pageSize,
+        };
+        fetchFees(selectedStudentId, params);
       }
+      // Refresh statistics
+      fetchFeeStatistics();
     } catch (error) {
-      message.error("Failed to create fee");
+      console.log("Create fee error handled by useApi");
     }
   };
 
   const handleUpdateFeeStatus = async (feeId, currentStatus) => {
     try {
-      const newStatus = currentStatus === "Paid" ? "Unpaid" : "Paid";
-      await updateFeeStatusRequest({ id: feeId, status: newStatus });
-      message.success(`Fee marked as ${newStatus.toLowerCase()}!`);
+      // Normalize status for backend
+      const normalizedCurrentStatus = currentStatus?.toLowerCase();
+      const newStatus = normalizedCurrentStatus === "paid" ? "pending" : "paid";
+
+      await updateFeeStatusRequest(feeId, newStatus);
+      message.success(
+        `Fee marked as ${newStatus === "paid" ? "paid" : "unpaid"}!`
+      );
+
       if (selectedStudentId) {
-        fetchFees(selectedStudentId);
+        const params = {
+          page: currentPage,
+          limit: pageSize,
+        };
+        fetchFees(selectedStudentId, params);
       }
+      // Refresh statistics
+      fetchFeeStatistics();
     } catch (error) {
-      message.error("Failed to update fee status");
+      console.log("Update fee status error handled by useApi");
     }
   };
 
@@ -116,10 +159,16 @@ export default function FeesScreen() {
       await deleteFeeRequest(feeId);
       message.success("Fee deleted successfully!");
       if (selectedStudentId) {
-        fetchFees(selectedStudentId);
+        const params = {
+          page: currentPage,
+          limit: pageSize,
+        };
+        fetchFees(selectedStudentId, params);
       }
+      // Refresh statistics
+      fetchFeeStatistics();
     } catch (error) {
-      message.error("Failed to delete fee");
+      console.log("Delete fee error handled by useApi");
     }
   };
 
@@ -140,85 +189,17 @@ export default function FeesScreen() {
 
   const handleStudentChange = (studentId) => {
     setSelectedStudentId(studentId);
+    setCurrentPage(1); // Reset to first page when changing student
   };
 
-  const columns = [
-    {
-      title: "Title",
-      dataIndex: "title",
-      key: "title",
-      render: (text) => <strong>{text}</strong>,
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      render: (amount) => (
-        <Space>
-          <DollarOutlined />
-          {amount}
-        </Space>
-      ),
-    },
-    {
-      title: "Deadline",
-      dataIndex: "deadline",
-      key: "deadline",
-      render: (date) => dayjs(date).format("MMM DD, YYYY"),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <Tag color={status === "Paid" ? "green" : "orange"}>
-          {status?.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space>
-          <Button
-            type={record.status === "Paid" ? "default" : "primary"}
-            onClick={() => handleUpdateFeeStatus(record.id || record._id, record.status)}
-            loading={updating}
-            size="small"
-          >
-            {record.status === "Paid" ? "Mark Unpaid" : "Mark Paid"}
-          </Button>
-          <Popconfirm
-            title="Delete Fee"
-            description="Are you sure you want to delete this fee?"
-            onConfirm={() => handleDeleteFee(record.id || record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button
-              type="primary"
-              danger
-              icon={<DeleteOutlined />}
-              loading={deleting}
-              size="small"
-            >
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const handlePageChange = (page, size) => {
+    setCurrentPage(page);
+    if (size !== pageSize) {
+      setPageSize(size);
+    }
+  };
 
-  const students = studentsData?.students || [];
   const fees = feesData || [];
-  const totalFees = fees.length;
-  const paidFees = fees.filter(fee => fee.status === "Paid").length;
-  const unpaidFees = totalFees - paidFees;
-  const totalAmount = fees.reduce((sum, fee) => sum + (parseFloat(fee.amount) || 0), 0);
-
-  const selectedStudent = students.find(s => s._id === selectedStudentId);
 
   return (
     <AdminLayout>
@@ -228,197 +209,42 @@ export default function FeesScreen() {
         </div>
 
         {/* Statistics Cards */}
-        <Row gutter={16}>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Total Fees"
-                value={totalFees}
-                prefix={<DollarOutlined />}
-                valueStyle={{ color: "#3f8600" }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Paid Fees"
-                value={paidFees}
-                prefix={<DollarOutlined />}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Unpaid Fees"
-                value={unpaidFees}
-                prefix={<DollarOutlined />}
-                valueStyle={{ color: "#cf1322" }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="Total Amount"
-                value={totalAmount}
-                prefix={<DollarOutlined />}
-                valueStyle={{ color: "#722ed1" }}
-                precision={2}
-              />
-            </Card>
-          </Col>
-        </Row>
+        <FeesStatistics
+          statistics={feeStatistics}
+          loading={loadingStatistics}
+        />
 
         {/* Student Selection */}
-        <Card title="Select Student">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Select
-                style={{ width: "100%" }}
-                placeholder="Choose a student to view fees"
-                value={selectedStudentId}
-                onChange={handleStudentChange}
-                showSearch
-                optionFilterProp="children"
-              >
-                {students.map((student) => (
-                  <Option key={student._id} value={student._id}>
-                    {student.fullName}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-            <Col span={12}>
-              {selectedStudent && (
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                  Add Fee for {selectedStudent.fullName}
-                </Button>
-              )}
-            </Col>
-          </Row>
-        </Card>
+        <StudentSelector
+          selectedStudentId={selectedStudentId}
+          onStudentChange={handleStudentChange}
+          onAddFee={handleAdd}
+        />
 
         {/* Fees Table */}
-        <Card>
-          {selectedStudent ? (
-            <div>
-              <div style={{ marginBottom: 16 }}>
-                <Space>
-                  <UserOutlined />
-                  <span style={{ fontWeight: 500 }}>
-                    Fees for: {selectedStudent.fullName}
-                  </span>
-                </Space>
-              </div>
-              
-              <Table
-                columns={columns}
-                dataSource={fees}
-                loading={loading}
-                rowKey={(record) => record.id || record._id}
-                pagination={{
-                  pageSize: 10,
-                  showSizeChanger: false,
-                  showQuickJumper: true,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} fees`,
-                }}
-              />
-            </div>
-          ) : (
-            <Empty
-              description="Please select a student to view fees"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          )}
-        </Card>
+        <FeesTable
+          selectedStudentId={selectedStudentId}
+          fees={fees}
+          loading={loading}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          total={fees.length} // This will be updated when backend supports pagination
+          onPageChange={handlePageChange}
+          onUpdateStatus={handleUpdateFeeStatus}
+          onDeleteFee={handleDeleteFee}
+          updating={updating}
+          deleting={deleting}
+        />
 
         {/* Add Fee Modal */}
-        <Modal
-          title="Add New Fee"
-          open={isModalVisible}
+        <FeeModal
+          visible={isModalVisible}
           onCancel={handleCancel}
-          footer={null}
-          width={600}
-        >
-          <Form form={form} layout="vertical" onFinish={handleCreateFee}>
-            <Form.Item
-              name="student_id"
-              label="Student"
-              rules={[
-                { required: true, message: "Please select a student!" },
-              ]}
-            >
-              <Select
-                placeholder="Choose a student"
-                showSearch
-                optionFilterProp="children"
-              >
-                {students.map((student) => (
-                  <Option key={student._id} value={student._id}>
-                    {student.fullName}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="title"
-              label="Fee Title"
-              rules={[
-                { required: true, message: "Please enter fee title!" },
-              ]}
-            >
-              <Input placeholder="Enter fee title (e.g., Tuition Fee, Activity Fee)" />
-            </Form.Item>
-
-            <Form.Item
-              name="amount"
-              label="Amount"
-              rules={[
-                { required: true, message: "Please enter amount!" },
-                { type: "number", min: 0, message: "Amount must be positive!" },
-              ]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                placeholder="Enter fee amount"
-                min={0}
-                precision={2}
-                formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="deadline"
-              label="Payment Deadline"
-              rules={[
-                { required: true, message: "Please select deadline!" },
-              ]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item>
-              <Space>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={creating}
-                >
-                  Create Fee
-                </Button>
-                <Button onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </Space>
-            </Form.Item>
-          </Form>
-        </Modal>
+          onSubmit={handleCreateFee}
+          form={form}
+          loading={creating}
+          editingFee={editingFee}
+        />
       </Space>
     </AdminLayout>
   );
