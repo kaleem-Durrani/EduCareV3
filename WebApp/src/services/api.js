@@ -1,6 +1,14 @@
 import axios from "axios";
 import { API_BASE_URL, SERVER_URL } from "../constants/api.js";
 
+// Flag to prevent multiple logout events
+let isLoggingOut = false;
+
+// Listen for manual logout events to reset the flag
+window.addEventListener("auth:manualLogout", () => {
+  isLoggingOut = false;
+});
+
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -39,10 +47,24 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common error scenarios
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      // window.location.href = "/login";
+      // Prevent multiple logout events
+      if (!isLoggingOut) {
+        isLoggingOut = true;
+
+        // Unauthorized - clear token and trigger logout
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        // Dispatch custom event to notify AuthContext
+        window.dispatchEvent(new CustomEvent("auth:forceLogout"));
+
+        // Redirect to login page after a short delay to allow context to update
+        setTimeout(() => {
+          window.location.href = "/login";
+          // Reset flag after redirect
+          isLoggingOut = false;
+        }, 100);
+      }
     }
 
     // Log the full error response for debugging

@@ -12,6 +12,20 @@ export function AuthProvider({ children }) {
     checkAuthStatus();
   }, []);
 
+  // Listen for logout events from API interceptor
+  useEffect(() => {
+    const handleForceLogout = () => {
+      setUser(null);
+      message.warning("Session expired. Please login again.");
+    };
+
+    window.addEventListener("auth:forceLogout", handleForceLogout);
+
+    return () => {
+      window.removeEventListener("auth:forceLogout", handleForceLogout);
+    };
+  }, []);
+
   const login = async (email, password, role) => {
     try {
       const response = await authService.login({ email, password, role });
@@ -53,6 +67,9 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("user");
     setUser(null);
     message.success("Logged out successfully");
+
+    // Reset any logout flags in the API client
+    window.dispatchEvent(new CustomEvent("auth:manualLogout"));
   };
 
   const checkAuthStatus = async () => {
