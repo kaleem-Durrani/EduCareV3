@@ -1,43 +1,120 @@
 import LostItem from "../models/lostItem.model.js";
+import User from "../models/user.model.js";
 import { sendSuccess } from "../utils/response.utils.js";
 import {
   withTransaction,
   asyncHandler,
   throwNotFound,
+  throwBadRequest,
 } from "../utils/transaction.utils.js";
+import { normalizePath } from "../middleware/upload.middleware.js";
 import fs from "fs";
 import path from "path";
 
 /**
- * Get all lost items
+ * Get lost items statistics
+ * GET /api/lost-items/statistics
+ * All authenticated users
+ */
+export const getLostItemsStatistics = asyncHandler(async (req, res) => {
+  const totalItems = await LostItem.countDocuments();
+  const claimedItems = await LostItem.countDocuments({ status: "claimed" });
+  const unclaimedItems = await LostItem.countDocuments({ status: "unclaimed" });
+
+  // Get recent items (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentItems = await LostItem.countDocuments({
+    createdAt: { $gte: thirtyDaysAgo },
+  });
+
+  // Get items found this month
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const itemsThisMonth = await LostItem.countDocuments({
+    dateFound: { $gte: startOfMonth },
+  });
+
+  const statistics = {
+    totalItems,
+    claimedItems,
+    unclaimedItems,
+    recentItems,
+    itemsThisMonth,
+    claimRate:
+      totalItems > 0 ? ((claimedItems / totalItems) * 100).toFixed(1) : 0,
+  };
+
+  return sendSuccess(
+    res,
+    statistics,
+    "Lost items statistics retrieved successfully"
+  );
+});
+
+/**
+ * Get all lost items with pagination and filters
  * GET /api/lost-items
  * All authenticated users
  */
 export const getLostItems = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, status } = req.query;
+  const { page = 1, limit = 10, status, dateFrom, dateTo, search } = req.query;
+  const skip = (page - 1) * limit;
 
   let query = {};
+
+  // Status filter
   if (status) {
     query.status = status;
   }
 
-  const lostItems = await LostItem.find(query)
-    .populate("createdBy", "name email")
-    .sort({ dateFound: -1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+  // Date range filter
+  if (dateFrom || dateTo) {
+    query.dateFound = {};
+    if (dateFrom) {
+      query.dateFound.$gte = new Date(dateFrom);
+    }
+    if (dateTo) {
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      query.dateFound.$lte = endDate;
+    }
+  }
+
+  // Search filter
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
 
   const total = await LostItem.countDocuments(query);
 
-  // Format items with image URLs
+  const lostItems = await LostItem.find(query)
+    .populate("claimedBy", "name email photoUrl")
+    .sort({ dateFound: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  // Format items with image URLs and claimed by info
   const formattedItems = lostItems.map((item) => ({
-    id: item._id,
+    _id: item._id,
     title: item.title,
     description: item.description,
     dateFound: item.dateFound,
-    imageUrl: item.imagePath ? `/api/lost-items/${item._id}/image` : null,
+    imageUrl: item.imagePath ? normalizePath(item.imagePath) : null,
     status: item.status,
-    createdBy: item.createdBy,
+    claimedBy: item.claimedBy
+      ? {
+          _id: item.claimedBy._id,
+          name: item.claimedBy.name,
+          email: item.claimedBy.email,
+          photoUrl: item.claimedBy.photoUrl,
+        }
+      : null,
+    claimedDate: item.claimedDate,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }));
@@ -48,8 +125,9 @@ export const getLostItems = asyncHandler(async (req, res) => {
       currentPage: parseInt(page),
       totalPages: Math.ceil(total / limit),
       totalItems: total,
-      hasNext: page * limit < total,
-      hasPrev: page > 1,
+      itemsPerPage: parseInt(limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
     },
   };
 
@@ -64,30 +142,108 @@ export const getLostItems = asyncHandler(async (req, res) => {
 export const getLostItemById = asyncHandler(async (req, res) => {
   const { item_id } = req.params;
 
-  const lostItem = await LostItem.findById(item_id)
-    .populate("createdBy", "name email")
-    .populate("updatedBy", "name email");
+  const lostItem = await LostItem.findById(item_id).populate(
+    "claimedBy",
+    "name email photoUrl"
+  );
 
   if (!lostItem) {
     throwNotFound("Lost item");
   }
 
   const formattedItem = {
-    id: lostItem._id,
+    _id: lostItem._id,
     title: lostItem.title,
     description: lostItem.description,
     dateFound: lostItem.dateFound,
-    imageUrl: lostItem.imagePath
-      ? `/api/lost-items/${lostItem._id}/image`
-      : null,
+    imageUrl: lostItem.imagePath ? normalizePath(lostItem.imagePath) : null,
     status: lostItem.status,
-    createdBy: lostItem.createdBy,
-    updatedBy: lostItem.updatedBy,
+    claimedBy: lostItem.claimedBy
+      ? {
+          _id: lostItem.claimedBy._id,
+          name: lostItem.claimedBy.name,
+          email: lostItem.claimedBy.email,
+          photoUrl: lostItem.claimedBy.photoUrl,
+        }
+      : null,
+    claimedDate: lostItem.claimedDate,
     createdAt: lostItem.createdAt,
     updatedAt: lostItem.updatedAt,
   };
 
   return sendSuccess(res, formattedItem, "Lost item retrieved successfully");
+});
+
+/**
+ * Claim lost item by parent email
+ * POST /api/lost-items/:item_id/claim
+ * Admin/Teacher only
+ */
+export const claimLostItem = asyncHandler(async (req, res) => {
+  const { item_id } = req.params;
+  const { parentEmail } = req.body;
+
+  if (!parentEmail) {
+    throwBadRequest("Parent email is required");
+  }
+
+  const result = await withTransaction(async (session) => {
+    // Check if item exists and is unclaimed
+    const lostItem = await LostItem.findById(item_id).session(session);
+    if (!lostItem) {
+      throwNotFound("Lost item");
+    }
+
+    if (lostItem.status === "claimed") {
+      throwBadRequest("Item is already claimed");
+    }
+
+    // Find parent by email
+    const parent = await User.findOne({
+      email: parentEmail.toLowerCase(),
+      role: "parent",
+      is_active: true,
+    }).session(session);
+
+    if (!parent) {
+      throwNotFound("Parent with this email not found");
+    }
+
+    // Update item to claimed
+    const updatedItem = await LostItem.findByIdAndUpdate(
+      item_id,
+      {
+        status: "claimed",
+        claimedBy: parent._id,
+        claimedDate: new Date(),
+      },
+      { new: true, session }
+    ).populate("claimedBy", "name email photoUrl");
+
+    const formattedItem = {
+      _id: updatedItem._id,
+      title: updatedItem.title,
+      description: updatedItem.description,
+      dateFound: updatedItem.dateFound,
+      imageUrl: updatedItem.imagePath
+        ? normalizePath(updatedItem.imagePath)
+        : null,
+      status: updatedItem.status,
+      claimedBy: {
+        _id: updatedItem.claimedBy._id,
+        name: updatedItem.claimedBy.name,
+        email: updatedItem.claimedBy.email,
+        photoUrl: updatedItem.claimedBy.photoUrl,
+      },
+      claimedDate: updatedItem.claimedDate,
+      createdAt: updatedItem.createdAt,
+      updatedAt: updatedItem.updatedAt,
+    };
+
+    return formattedItem;
+  });
+
+  return sendSuccess(res, result, "Lost item claimed successfully");
 });
 
 /**
@@ -106,27 +262,23 @@ export const createLostItem = asyncHandler(async (req, res) => {
       dateFound: dateFound ? new Date(dateFound) : new Date(),
       imagePath,
       status: status || "unclaimed",
-      createdBy: req.user.id,
     });
 
     await newLostItem.save({ session });
 
-    const populatedItem = await LostItem.findById(newLostItem._id)
-      .populate("createdBy", "name email")
-      .session(session);
-
     const formattedItem = {
-      id: populatedItem._id,
-      title: populatedItem.title,
-      description: populatedItem.description,
-      dateFound: populatedItem.dateFound,
-      imageUrl: populatedItem.imagePath
-        ? `/api/lost-items/${populatedItem._id}/image`
+      _id: newLostItem._id,
+      title: newLostItem.title,
+      description: newLostItem.description,
+      dateFound: newLostItem.dateFound,
+      imageUrl: newLostItem.imagePath
+        ? normalizePath(newLostItem.imagePath)
         : null,
-      status: populatedItem.status,
-      createdBy: populatedItem.createdBy,
-      createdAt: populatedItem.createdAt,
-      updatedAt: populatedItem.updatedAt,
+      status: newLostItem.status,
+      claimedBy: null,
+      claimedDate: null,
+      createdAt: newLostItem.createdAt,
+      updatedAt: newLostItem.updatedAt,
     };
 
     return formattedItem;
@@ -151,7 +303,7 @@ export const updateLostItem = asyncHandler(async (req, res) => {
     }
 
     // Update fields
-    const updateData = { updatedBy: req.user.id };
+    const updateData = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (dateFound !== undefined) updateData.dateFound = new Date(dateFound);
@@ -171,21 +323,26 @@ export const updateLostItem = asyncHandler(async (req, res) => {
     const updatedItem = await LostItem.findByIdAndUpdate(item_id, updateData, {
       new: true,
       session,
-    })
-      .populate("createdBy", "name email")
-      .populate("updatedBy", "name email");
+    }).populate("claimedBy", "name email photoUrl");
 
     const formattedItem = {
-      id: updatedItem._id,
+      _id: updatedItem._id,
       title: updatedItem.title,
       description: updatedItem.description,
       dateFound: updatedItem.dateFound,
       imageUrl: updatedItem.imagePath
-        ? `/api/lost-items/${updatedItem._id}/image`
+        ? normalizePath(updatedItem.imagePath)
         : null,
       status: updatedItem.status,
-      createdBy: updatedItem.createdBy,
-      updatedBy: updatedItem.updatedBy,
+      claimedBy: updatedItem.claimedBy
+        ? {
+            _id: updatedItem.claimedBy._id,
+            name: updatedItem.claimedBy.name,
+            email: updatedItem.claimedBy.email,
+            photoUrl: updatedItem.claimedBy.photoUrl,
+          }
+        : null,
+      claimedDate: updatedItem.claimedDate,
       createdAt: updatedItem.createdAt,
       updatedAt: updatedItem.updatedAt,
     };
