@@ -13,15 +13,13 @@ import {
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const API_URL = "http://tallal.info:5500"; // Replace with your actual API base URL
+import { useAuth } from "../../contexts";
 
 const LoginScreen = () => {
   const navigation = useNavigation();
+  const { login, isLoading: authLoading, error: authError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const roles = [
@@ -62,43 +60,23 @@ const LoginScreen = () => {
   const handleLoginPress = async () => {
     if (!validateInputs()) return;
 
-    setIsLoading(true);
     setErrorMessage("");
 
     try {
-      console.log(email, password, roles[selectedRole].id);
+      const result = await login(email, password, roles[selectedRole].id);
 
-      // const response = await fetch(`${API_URL}/api/login`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     email: email,
-      //     password: password,
-      //     role: roles[selectedRole].id,
-      //   }),
-      // });
-
-      // console.log(response);
-
-      // const data = await response.json();
-
-      // if (!response.ok) {
-      //   throw new Error(data.error || 'Login failed');
-      // }
-
-      // // Store the token
-      // await AsyncStorage.setItem('accessToken', data.access_token);
-      // await AsyncStorage.setItem('userRole', data.role);
-
-      // Navigate to Dashboard
-      navigation.navigate("Dashboard", { role: roles[selectedRole].id });
+      if (result.success) {
+        // Navigate to Dashboard
+        navigation.navigate("Dashboard", { role: roles[selectedRole].id });
+      } else {
+        setErrorMessage(result.message || "Login failed");
+        Alert.alert("Login Failed", result.message || "Login failed");
+      }
     } catch (error) {
-      setErrorMessage(error.message);
-      Alert.alert("Login Failed", error.message);
-    } finally {
-      setIsLoading(false);
+      const errorMsg =
+        error.response?.data?.message || error.message || "Login failed";
+      setErrorMessage(errorMsg);
+      Alert.alert("Login Failed", errorMsg);
     }
   };
 
@@ -117,7 +95,7 @@ const LoginScreen = () => {
           <TouchableOpacity
             key={role.id}
             onPress={() => handleRolePress(index)}
-            disabled={isLoading}
+            disabled={authLoading}
           >
             <Animated.View
               style={[
@@ -148,8 +126,8 @@ const LoginScreen = () => {
       </View>
 
       <View style={styles.inputContainer}>
-        {errorMessage ? (
-          <Text style={styles.errorText}>{errorMessage}</Text>
+        {errorMessage || authError ? (
+          <Text style={styles.errorText}>{errorMessage || authError}</Text>
         ) : null}
 
         <View style={styles.inputRow}>
@@ -162,7 +140,7 @@ const LoginScreen = () => {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            editable={!isLoading}
+            editable={!authLoading}
           />
         </View>
 
@@ -175,7 +153,7 @@ const LoginScreen = () => {
             secureTextEntry
             value={password}
             onChangeText={setPassword}
-            editable={!isLoading}
+            editable={!authLoading}
           />
         </View>
       </View>
@@ -183,7 +161,7 @@ const LoginScreen = () => {
       <View style={styles.checkboxContainer}>
         <TouchableOpacity
           onPress={() => setIsChecked(!isChecked)}
-          disabled={isLoading}
+          disabled={authLoading}
         >
           <Icon
             name={isChecked ? "checkbox-marked" : "checkbox-blank-outline"}
@@ -195,11 +173,11 @@ const LoginScreen = () => {
       </View>
 
       <TouchableOpacity
-        style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+        style={[styles.loginButton, authLoading && styles.loginButtonDisabled]}
         onPress={handleLoginPress}
-        disabled={isLoading}
+        disabled={authLoading}
       >
-        {isLoading ? (
+        {authLoading ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.loginButtonText}>LOGIN</Text>
@@ -208,7 +186,7 @@ const LoginScreen = () => {
 
       <TouchableOpacity
         onPress={() => navigation.navigate("ForgotPasswordScreen")}
-        disabled={isLoading}
+        disabled={authLoading}
       >
         <Text style={styles.forgotPassword}>Forgot password?</Text>
       </TouchableOpacity>
