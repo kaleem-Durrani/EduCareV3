@@ -1,11 +1,12 @@
 import React from "react";
 import { Table, Button, Space, Card, Tag, Avatar } from "antd";
-import { 
-  HeartOutlined, 
-  LineChartOutlined, 
+import {
+  HeartOutlined,
+  LineChartOutlined,
   EditOutlined,
-  UserOutlined 
+  UserOutlined,
 } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 
 export default function StudentsHealthTable({
   students,
@@ -25,10 +26,14 @@ export default function StudentsHealthTable({
       key: "fullName",
       render: (text, record) => (
         <Space>
-          <Avatar icon={<UserOutlined />} />
+          <Avatar
+            size={40}
+            src={record.photoUrl ? `${SERVER_URL}/${record.photoUrl}` : null}
+            icon={<UserOutlined />}
+          />
           <div>
-            <div style={{ fontWeight: 'bold' }}>{text}</div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
+            <div style={{ fontWeight: "bold" }}>{text}</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>
               Roll: {record.rollNum}
             </div>
           </div>
@@ -39,33 +44,14 @@ export default function StudentsHealthTable({
       title: "Class",
       dataIndex: "current_class",
       key: "current_class",
-      render: (classInfo) => (
+      render: (classInfo) =>
         classInfo ? (
           <Tag color="blue">{classInfo.name}</Tag>
         ) : (
           <Tag color="default">Not Assigned</Tag>
-        )
-      ),
+        ),
     },
-    {
-      title: "Health Info",
-      key: "healthInfo",
-      render: (_, record) => {
-        const hasHealthInfo = record.healthInfo;
-        return (
-          <Tag color={hasHealthInfo ? "green" : "red"}>
-            {hasHealthInfo ? "Complete" : "Missing"}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: "Metrics Count",
-      key: "metricsCount",
-      render: (_, record) => (
-        <span>{record.metricsCount || 0} records</span>
-      ),
-    },
+
     {
       title: "Actions",
       key: "actions",
@@ -101,11 +87,14 @@ export default function StudentsHealthTable({
     },
   ];
 
+  // Ensure students is always an array to prevent "rawData.some is not a function" error
+  const studentsArray = Array.isArray(students) ? students : [];
+
   return (
-    <Card>
+    <Card title="Students Health Management">
       <Table
         columns={columns}
-        dataSource={students}
+        dataSource={studentsArray}
         loading={loading}
         rowKey="_id"
         pagination={{
@@ -113,10 +102,11 @@ export default function StudentsHealthTable({
           pageSize: pageSize,
           total: total,
           onChange: onPageChange,
-          showSizeChanger: false,
+          showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total, range) =>
             `${range[0]}-${range[1]} of ${total} students`,
+          pageSizeOptions: ["10", "20", "50"],
         }}
       />
     </Card>

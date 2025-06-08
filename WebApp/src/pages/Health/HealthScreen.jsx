@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Space, Typography, message } from "antd";
+import { Space, Typography, Form, message } from "antd";
 import useApi from "../../hooks/useApi";
 import { healthService, studentService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
@@ -22,7 +22,11 @@ export default function HealthScreen() {
   const [currentHealthInfo, setCurrentHealthInfo] = useState(null);
   const [currentMetrics, setCurrentMetrics] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [healthStatistics, setHealthStatistics] = useState(null);
   const pageSize = 10;
+
+  // Form instances
+  const [healthInfoForm] = Form.useForm();
 
   // Fetch students with health data
   const {
@@ -65,6 +69,15 @@ export default function HealthScreen() {
       },
     });
 
+  // Get health statistics API
+  const { request: getHealthStatisticsRequest, isLoading: loadingStatistics } =
+    useApi(healthService.getHealthStatistics, {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    });
+
   // Create health metric API
   const { request: createHealthMetricRequest, isLoading: creatingMetric } =
     useApi(
@@ -94,22 +107,43 @@ export default function HealthScreen() {
     );
 
   useEffect(() => {
-    fetchStudents();
+    fetchStudents({ page: currentPage, limit: pageSize });
+    fetchHealthStatistics();
+  }, [currentPage]);
+
+  useEffect(() => {
+    fetchHealthStatistics();
   }, []);
 
-  const students = studentsData || [];
-  const healthInfos = []; // Will be populated when we fetch health info for each student
-  const healthMetrics = []; // Will be populated when we fetch metrics
+  const fetchHealthStatistics = async () => {
+    try {
+      const stats = await getHealthStatisticsRequest();
+      setHealthStatistics(stats);
+    } catch (error) {
+      console.log("Failed to fetch health statistics");
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Extract students array from API response
+  const students = studentsData?.students || [];
+  const totalStudents = studentsData?.pagination?.totalItems || 0;
 
   const handleViewHealthInfo = async (student) => {
     setSelectedStudent(student);
     setHealthInfoMode("view");
 
     try {
+      console.log("Fetching health info for student:", student._id);
       const healthInfo = await getHealthInfoRequest(student._id);
+      console.log("Health info received:", healthInfo);
       setCurrentHealthInfo(healthInfo);
       setIsHealthInfoModalVisible(true);
     } catch (error) {
+      console.log("Health info fetch error:", error);
       // If no health info exists, show create mode
       setCurrentHealthInfo(null);
       setHealthInfoMode("create");
@@ -155,7 +189,9 @@ export default function HealthScreen() {
       message.success("Health information updated successfully!");
       setIsHealthInfoModalVisible(false);
       setCurrentHealthInfo(null);
-      fetchStudents(); // Refresh data
+      setSelectedStudent(null);
+      // Refresh statistics
+      fetchHealthStatistics();
     } catch (error) {
       console.log("Update health info error handled by useApi");
     }
@@ -170,6 +206,8 @@ export default function HealthScreen() {
       // Refresh metrics
       const updatedMetrics = await getHealthMetricsRequest(selectedStudent._id);
       setCurrentMetrics(updatedMetrics || []);
+      // Refresh statistics
+      fetchHealthStatistics();
     } catch (error) {
       console.log("Create health metric error handled by useApi");
     }
@@ -185,6 +223,8 @@ export default function HealthScreen() {
       // Refresh metrics
       const updatedMetrics = await getHealthMetricsRequest(selectedStudent._id);
       setCurrentMetrics(updatedMetrics || []);
+      // Refresh statistics
+      fetchHealthStatistics();
     } catch (error) {
       console.log("Update health metric error handled by useApi");
     }
@@ -199,6 +239,10 @@ export default function HealthScreen() {
     setIsHealthInfoModalVisible(false);
     setCurrentHealthInfo(null);
     setSelectedStudent(null);
+  };
+
+  const handleSwitchToEdit = () => {
+    setHealthInfoMode("edit");
   };
 
   const handleCancelMetrics = () => {
@@ -216,9 +260,8 @@ export default function HealthScreen() {
 
         {/* Statistics Cards */}
         <HealthStats
-          students={students}
-          healthMetrics={healthMetrics}
-          healthInfos={healthInfos}
+          statistics={healthStatistics}
+          loading={loadingStatistics}
         />
 
         {/* Students Health Table */}
@@ -227,8 +270,8 @@ export default function HealthScreen() {
           loading={loadingStudents}
           currentPage={currentPage}
           pageSize={pageSize}
-          total={studentsData?.total || 0}
-          onPageChange={setCurrentPage}
+          total={totalStudents}
+          onPageChange={handlePageChange}
           onViewHealthInfo={handleViewHealthInfo}
           onViewMetrics={handleViewMetrics}
           onEditHealthInfo={handleEditHealthInfo}
@@ -243,6 +286,8 @@ export default function HealthScreen() {
           selectedStudent={selectedStudent}
           mode={healthInfoMode}
           initialData={currentHealthInfo}
+          form={healthInfoForm}
+          onEdit={handleSwitchToEdit}
         />
 
         {/* Health Metrics Modal */}

@@ -1,14 +1,35 @@
 import React from "react";
 import { Card, Row, Col, Statistic } from "antd";
-import { HeartOutlined, UserOutlined, LineChartOutlined } from "@ant-design/icons";
+import {
+  HeartOutlined,
+  UserOutlined,
+  LineChartOutlined,
+} from "@ant-design/icons";
 
-export default function HealthStats({ students, healthMetrics, healthInfos }) {
-  const totalStudents = students.length;
-  const studentsWithHealthInfo = healthInfos.length;
-  const totalMetrics = healthMetrics.length;
-  const coveragePercentage = totalStudents > 0 
-    ? Math.round((studentsWithHealthInfo / totalStudents) * 100) 
-    : 0;
+export default function HealthStats({ statistics, loading }) {
+  if (loading || !statistics) {
+    return (
+      <Row gutter={16}>
+        {[1, 2, 3, 4].map((i) => (
+          <Col span={6} key={i}>
+            <Card loading={true}>
+              <Statistic title="Loading..." value={0} />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    );
+  }
+
+  const {
+    totalStudents,
+    studentsWithHealthInfo,
+    studentsWithMetrics,
+    totalMetrics,
+    recentMetrics,
+    healthInfoCoverage,
+    metricsCoverage,
+  } = statistics;
 
   return (
     <Row gutter={16}>
@@ -35,8 +56,8 @@ export default function HealthStats({ students, healthMetrics, healthInfos }) {
       <Col span={6}>
         <Card>
           <Statistic
-            title="Health Metrics"
-            value={totalMetrics}
+            title="Students with Metrics"
+            value={studentsWithMetrics}
             prefix={<LineChartOutlined />}
             valueStyle={{ color: "#722ed1" }}
           />
@@ -45,11 +66,10 @@ export default function HealthStats({ students, healthMetrics, healthInfos }) {
       <Col span={6}>
         <Card>
           <Statistic
-            title="Coverage"
-            value={coveragePercentage}
-            suffix="%"
-            prefix={<HeartOutlined />}
-            valueStyle={{ color: coveragePercentage > 80 ? "#3f8600" : "#cf1322" }}
+            title="Recent Metrics (30d)"
+            value={recentMetrics}
+            prefix={<LineChartOutlined />}
+            valueStyle={{ color: "#fa8c16" }}
           />
         </Card>
       </Col>
