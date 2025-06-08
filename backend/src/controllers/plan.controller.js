@@ -1,7 +1,8 @@
 import MonthlyPlan from "../models/monthlyPlan.model.js";
 import Class from "../models/class.model.js";
 import { sendSuccess } from "../utils/response.utils.js";
-import { deleteUploadedFile, getRelativePath } from "../utils/file.utils.js";
+import { deleteUploadedFile } from "../utils/file.utils.js";
+import { normalizePath } from "../middleware/upload.middleware.js";
 import {
   withTransaction,
   asyncHandler,
@@ -23,8 +24,8 @@ export const createMonthlyPlan = asyncHandler(async (req, res) => {
   console.log("Request body:", req.body);
   console.log("Request file:", req.file);
 
-  // Handle uploaded file
-  const imageUrl = req.file ? getRelativePath(req.file.path) : null;
+  // Handle uploaded file (store full path including uploads/)
+  const imageUrl = req.file ? normalizePath(req.file.path) : null;
   console.log("Processed imageUrl:", imageUrl);
 
   const result = await withTransaction(async (session) => {
@@ -126,8 +127,8 @@ export const updateMonthlyPlan = asyncHandler(async (req, res) => {
   const { plan_id } = req.params;
   const { description } = req.body;
 
-  // Handle uploaded file
-  const newImageUrl = req.file ? getRelativePath(req.file.path) : null;
+  // Handle uploaded file (store full path including uploads/)
+  const newImageUrl = req.file ? normalizePath(req.file.path) : null;
 
   const result = await withTransaction(async (session) => {
     const plan = await MonthlyPlan.findById(plan_id)
