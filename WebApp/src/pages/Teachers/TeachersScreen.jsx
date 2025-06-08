@@ -1,42 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { Space, Typography, message } from "antd";
 import useApi from "../../hooks/useApi";
-import { teacherService, classService } from "../../services/index";
+import { teacherService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import {
   TeachersStats,
   TeachersTable,
   CreateTeacherModal,
-  EnrollTeacherModal,
-  WithdrawTeacherModal,
+  TeacherDetailsModal,
 } from "./components";
 
 const { Title } = Typography;
 
 export default function TeachersScreen() {
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
-  const [isEnrollModalVisible, setIsEnrollModalVisible] = useState(false);
-  const [isWithdrawModalVisible, setIsWithdrawModalVisible] = useState(false);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [teacherStatistics, setTeacherStatistics] = useState(null);
   const pageSize = 10;
 
   console.log(selectedTeacher);
 
-  // Fetch teachers data
+  // Fetch teachers data with pagination
   const {
     data: teachersData,
     isLoading: loading,
     request: fetchTeachers,
-  } = useApi(() =>
-    teacherService.getAllTeachers({ page: currentPage, per_page: pageSize })
-  );
+  } = useApi((params) => teacherService.getAllTeachers(params), {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      showValidationDetails: true,
+    },
+  });
 
-  // Fetch classes data
-  const { data: classesData, request: fetchClasses } = useApi(
-    classService.getAllClasses
-  );
+  // Get teacher statistics API
+  const { request: getTeacherStatisticsRequest, isLoading: loadingStatistics } =
+    useApi(teacherService.getTeacherStatistics, {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+      },
+    });
 
   // Create teacher API with enhanced validation error handling
   const { request: createTeacherRequest, isLoading: creating } = useApi(
@@ -50,82 +56,42 @@ export default function TeachersScreen() {
     }
   );
 
-  // Enroll teacher API with enhanced validation error handling
-  const { request: enrollTeacherRequest, isLoading: enrolling } = useApi(
-    ({ classId, teacherId }) =>
-      classService.enrollTeacher(classId, { teacher_id: teacherId }),
-    {
-      errorHandling: {
-        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
-        showValidationDetails: true,
-        title: "Failed to Enroll Teacher",
-      },
-    }
-  );
-
-  // Withdraw teacher API with enhanced error handling
-  const { request: withdrawTeacherRequest, isLoading: withdrawing } = useApi(
-    ({ classId, teacherId }) =>
-      classService.removeTeacherFromClass(classId, teacherId),
-    {
-      errorHandling: {
-        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
-        showValidationDetails: true,
-        title: "Failed to Withdraw Teacher",
-      },
-    }
-  );
+  useEffect(() => {
+    fetchTeachersData();
+    fetchTeacherStatistics();
+  }, []);
 
   useEffect(() => {
-    fetchTeachers();
-    fetchClasses();
+    fetchTeachersData();
   }, [currentPage]);
+
+  const fetchTeachersData = async () => {
+    const params = {
+      page: currentPage,
+      limit: pageSize,
+    };
+    await fetchTeachers(params);
+  };
+
+  const fetchTeacherStatistics = async () => {
+    try {
+      const stats = await getTeacherStatisticsRequest();
+      setTeacherStatistics(stats);
+    } catch (error) {
+      console.log("Failed to fetch teacher statistics");
+    }
+  };
 
   const handleCreateTeacher = async (values) => {
     try {
       await createTeacherRequest(values);
       message.success("Teacher created successfully!");
       setIsCreateModalVisible(false);
-      fetchTeachers();
+      fetchTeachersData();
+      fetchTeacherStatistics(); // Refresh statistics
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Create teacher error handled by useApi");
-    }
-  };
-
-  const handleEnrollTeacher = async (values) => {
-    try {
-      await enrollTeacherRequest({
-        classId: values.class_id,
-        teacherId: selectedTeacher._id,
-      });
-      message.success("Teacher enrolled successfully!");
-      setIsEnrollModalVisible(false);
-      setSelectedTeacher(null);
-      // Refresh both teachers and classes data to update the UI
-      fetchTeachers();
-      fetchClasses();
-    } catch (error) {
-      // Error is automatically handled by useApi with detailed validation messages
-      console.log("Enroll teacher error handled by useApi");
-    }
-  };
-
-  const handleWithdrawTeacher = async (values) => {
-    try {
-      await withdrawTeacherRequest({
-        classId: values.class_id,
-        teacherId: selectedTeacher._id,
-      });
-      message.success("Teacher withdrawn successfully!");
-      setIsWithdrawModalVisible(false);
-      setSelectedTeacher(null);
-      // Refresh both teachers and classes data to update the UI
-      fetchTeachers();
-      fetchClasses();
-    } catch (error) {
-      // Error is automatically handled by useApi with detailed validation messages
-      console.log("Withdraw teacher error handled by useApi");
     }
   };
 
@@ -133,32 +99,27 @@ export default function TeachersScreen() {
     setIsCreateModalVisible(true);
   };
 
-  const handleEnroll = (teacher) => {
+  const handleViewDetails = (teacher) => {
     setSelectedTeacher(teacher);
-    setIsEnrollModalVisible(true);
-  };
-
-  const handleWithdraw = (teacher) => {
-    setSelectedTeacher(teacher);
-    setIsWithdrawModalVisible(true);
+    setIsDetailsModalVisible(true);
   };
 
   const handleCancelCreate = () => {
     setIsCreateModalVisible(false);
   };
 
-  const handleCancelEnroll = () => {
-    setIsEnrollModalVisible(false);
+  const handleCancelDetails = () => {
+    setIsDetailsModalVisible(false);
     setSelectedTeacher(null);
   };
 
-  const handleCancelWithdraw = () => {
-    setIsWithdrawModalVisible(false);
-    setSelectedTeacher(null);
+  const handleRefreshTeachers = () => {
+    fetchTeachersData();
+    fetchTeacherStatistics();
   };
 
-  const teachers = teachersData || [];
-  const classes = classesData || [];
+  const teachers = teachersData?.teachers || [];
+  const pagination = teachersData?.pagination || {};
 
   return (
     <AdminLayout>
@@ -168,7 +129,10 @@ export default function TeachersScreen() {
         </div>
 
         {/* Statistics Cards */}
-        <TeachersStats teachers={teachers} classes={classes} />
+        <TeachersStats
+          statistics={teacherStatistics}
+          loading={loadingStatistics}
+        />
 
         {/* Teachers Table */}
         <TeachersTable
@@ -176,11 +140,10 @@ export default function TeachersScreen() {
           loading={loading}
           currentPage={currentPage}
           pageSize={pageSize}
-          total={teachersData?.total || 0}
+          total={pagination.totalItems || 0}
           onPageChange={setCurrentPage}
           onAdd={handleAdd}
-          onEnroll={handleEnroll}
-          onWithdraw={handleWithdraw}
+          onViewDetails={handleViewDetails}
         />
 
         {/* Create Teacher Modal */}
@@ -191,24 +154,12 @@ export default function TeachersScreen() {
           loading={creating}
         />
 
-        {/* Enroll Teacher Modal */}
-        <EnrollTeacherModal
-          visible={isEnrollModalVisible}
-          onCancel={handleCancelEnroll}
-          onSubmit={handleEnrollTeacher}
-          loading={enrolling}
-          selectedTeacher={selectedTeacher}
-          classes={classes}
-        />
-
-        {/* Withdraw Teacher Modal */}
-        <WithdrawTeacherModal
-          visible={isWithdrawModalVisible}
-          onCancel={handleCancelWithdraw}
-          onSubmit={handleWithdrawTeacher}
-          loading={withdrawing}
-          selectedTeacher={selectedTeacher}
-          classes={classes}
+        {/* Teacher Details Modal */}
+        <TeacherDetailsModal
+          visible={isDetailsModalVisible}
+          onCancel={handleCancelDetails}
+          teacher={selectedTeacher}
+          onRefresh={handleRefreshTeachers}
         />
       </Space>
     </AdminLayout>

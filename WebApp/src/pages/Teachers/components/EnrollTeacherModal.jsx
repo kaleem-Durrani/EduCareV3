@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Modal, Form, Select, Button, Space } from "antd";
-
-const { Option } = Select;
+import { useClassesContext } from "../../../context/ClassesContext";
 
 export default function EnrollTeacherModal({
   visible,
@@ -9,8 +8,8 @@ export default function EnrollTeacherModal({
   onSubmit,
   loading,
   selectedTeacher,
-  classes,
 }) {
+  const { classes } = useClassesContext();
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -43,13 +42,19 @@ export default function EnrollTeacherModal({
           label="Select Class"
           rules={[{ required: true, message: "Please select a class!" }]}
         >
-          <Select placeholder="Choose a class">
-            {classes.map((cls, index) => (
-              <Option key={cls._id || `class-${index}`} value={cls._id}>
-                {cls.name} - {cls.grade} {cls.section}
-              </Option>
-            ))}
-          </Select>
+          <Select
+            placeholder="Choose a class"
+            showSearch
+            optionFilterProp="label"
+            options={classes.map((cls) => ({
+              value: cls.value,
+              label: cls.label,
+            }))}
+            style={{
+              border: "2px solid #d9d9d9",
+              borderRadius: "6px",
+            }}
+          />
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>

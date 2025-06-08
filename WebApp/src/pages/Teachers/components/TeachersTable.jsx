@@ -1,11 +1,6 @@
 import React from "react";
 import { Table, Button, Space, Card } from "antd";
-import {
-  PlusOutlined,
-  UserAddOutlined,
-  DeleteOutlined,
-  TeamOutlined,
-} from "@ant-design/icons";
+import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
 
 export default function TeachersTable({
   teachers,
@@ -15,8 +10,7 @@ export default function TeachersTable({
   total,
   onPageChange,
   onAdd,
-  onEnroll,
-  onWithdraw,
+  onViewDetails,
 }) {
   const columns = [
     {
@@ -31,40 +25,24 @@ export default function TeachersTable({
       key: "email",
     },
     {
-      title: "Classes",
-      dataIndex: "classes",
-      key: "classes",
-      render: (classes) => (
-        <Space>
-          <TeamOutlined />
-          {classes?.length || 0}
-        </Space>
-      ),
+      title: "Phone",
+      dataIndex: "phone",
+      key: "phone",
+      render: (phone) => phone || "N/A",
     },
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
-        <Space>
-          <Button
-            type="primary"
-            ghost
-            icon={<UserAddOutlined />}
-            onClick={() => onEnroll(record)}
-            size="small"
-          >
-            Enroll
-          </Button>
-          <Button
-            type="primary"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => onWithdraw(record)}
-            size="small"
-          >
-            Withdraw
-          </Button>
-        </Space>
+        <Button
+          type="primary"
+          icon={<EyeOutlined />}
+          onClick={() => onViewDetails(record)}
+          size="small"
+          style={{ borderRadius: "4px" }}
+        >
+          Details
+        </Button>
       ),
     },
   ];
