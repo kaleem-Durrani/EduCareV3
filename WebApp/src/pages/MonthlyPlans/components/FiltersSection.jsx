@@ -1,8 +1,6 @@
 import { Card, Row, Col, Select, InputNumber, Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 
-const { Option } = Select;
-
 export default function FiltersSection({
   classes,
   selectedClass,
@@ -12,7 +10,7 @@ export default function FiltersSection({
   onMonthChange,
   onYearChange,
   onAddClick,
-  getMonthName
+  getMonthName,
 }) {
   return (
     <Card title="Filters">
@@ -30,14 +28,9 @@ export default function FiltersSection({
               value={selectedClass?._id}
               onChange={onClassChange}
               showSearch
-              optionFilterProp="children"
-            >
-              {classes.map((cls) => (
-                <Option key={cls._id} value={cls._id}>
-                  {cls.name}
-                </Option>
-              ))}
-            </Select>
+              optionFilterProp="label"
+              options={classes}
+            />
           </div>
         </Col>
         <Col span={6}>

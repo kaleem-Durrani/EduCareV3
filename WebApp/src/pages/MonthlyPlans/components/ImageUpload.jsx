@@ -1,5 +1,6 @@
 import { Upload, Typography, Image } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 
 const { Text } = Typography;
 const { Dragger } = Upload;
@@ -8,7 +9,7 @@ export default function ImageUpload({
   editingPlan,
   uploading,
   onFileSelect,
-  onFileChange
+  onFileChange,
 }) {
   return (
     <>
@@ -18,13 +19,13 @@ export default function ImageUpload({
           <br />
           <Image
             width={100}
-            src={`http://localhost:5000/uploads/${editingPlan.imageUrl}`}
+            src={`${SERVER_URL}/${editingPlan.imageUrl}`}
             alt="Current Plan Image"
             style={{ borderRadius: 4, marginTop: 4 }}
           />
         </div>
       )}
-      
+
       <Dragger
         name="file"
         multiple={false}

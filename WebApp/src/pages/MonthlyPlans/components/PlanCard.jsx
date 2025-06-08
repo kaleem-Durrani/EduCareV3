@@ -1,5 +1,6 @@
 import { Card, Row, Col, Button, Space, Image } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 
 export default function PlanCard({
   plan,
@@ -8,7 +9,7 @@ export default function PlanCard({
   onEdit,
   onDelete,
   deleting,
-  getMonthName
+  getMonthName,
 }) {
   return (
     <Card
@@ -49,7 +50,7 @@ export default function PlanCard({
               <h4>Plan Image:</h4>
               <Image
                 width={200}
-                src={`http://localhost:5000/uploads/${plan.imageUrl}`}
+                src={`${SERVER_URL}/${plan.imageUrl}`}
                 alt="Monthly Plan"
                 style={{ borderRadius: 8 }}
               />

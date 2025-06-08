@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Space, Typography, Form, message } from "antd";
 import useApi from "../../hooks/useApi";
-import { planService, classService } from "../../services/index";
+import { planService } from "../../services/index";
+import { useClassesContext } from "../../context/ClassesContext";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import {
   StatisticsCards,
@@ -22,10 +23,8 @@ export default function MonthlyPlansScreen() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch classes data
-  const { data: classesData, request: fetchClasses } = useApi(
-    classService.getAllClasses
-  );
+  // Use classes from context
+  const { classes } = useClassesContext();
 
   // Fetch plans data
   const {
@@ -54,9 +53,7 @@ export default function MonthlyPlansScreen() {
     planService.deleteMonthlyPlan
   );
 
-  useEffect(() => {
-    fetchClasses();
-  }, []);
+  // Removed fetchClasses useEffect since we use context
 
   useEffect(() => {
     if (selectedClass) {
@@ -217,8 +214,18 @@ export default function MonthlyPlansScreen() {
   };
 
   const handleClassChange = (classId) => {
-    const selectedClassObj = classesData?.find((c) => c._id === classId);
-    setSelectedClass(selectedClassObj);
+    // Context provides {value, label} format, but we need {_id, name} for the API
+    const selectedClassObj = classes?.find((c) => c.value === classId);
+    if (selectedClassObj) {
+      // Create a class object with the structure expected by the rest of the component
+      const classForAPI = {
+        _id: selectedClassObj.value,
+        name: selectedClassObj.label,
+      };
+      setSelectedClass(classForAPI);
+    } else {
+      setSelectedClass(null);
+    }
   };
 
   const getMonthName = (monthNumber) => {
@@ -239,7 +246,6 @@ export default function MonthlyPlansScreen() {
     return months[monthNumber - 1];
   };
 
-  const classes = classesData || [];
   const plans = plansData ? [plansData] : [];
   const totalPlans = plans.length;
 
