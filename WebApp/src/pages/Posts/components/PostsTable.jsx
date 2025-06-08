@@ -1,12 +1,28 @@
-import React from "react";
-import { Table, Button, Space, Tag, Avatar, Popconfirm } from "antd";
 import {
-  EyeOutlined,
+  Table,
+  Button,
+  Tag,
+  Dropdown,
+  Popconfirm,
+  Avatar,
+  Image,
+  Space,
+} from "antd";
+import {
   EditOutlined,
   DeleteOutlined,
+  EyeOutlined,
+  TeamOutlined,
+  MoreOutlined,
+  UserOutlined,
+  GlobalOutlined,
+  PlayCircleOutlined,
+  FileImageOutlined,
   PictureOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
+import dayjs from "dayjs";
 
 export default function PostsTable({
   posts,
@@ -15,149 +31,192 @@ export default function PostsTable({
   pageSize,
   total,
   onPageChange,
-  onViewPost,
-  onEditPost,
-  onDeletePost,
+  onEdit,
+  onDelete,
+  onDetails,
+  onManageAudience,
 }) {
+  const getAudienceDisplay = (audience) => {
+    switch (audience.type) {
+      case "all":
+        return (
+          <Tag color="green" icon={<GlobalOutlined />}>
+            Everyone
+          </Tag>
+        );
+      case "class":
+        return (
+          <Tag color="blue" icon={<TeamOutlined />}>
+            {audience.class_ids?.length || 0} Classes
+          </Tag>
+        );
+      case "individual":
+        return (
+          <Tag color="orange" icon={<UserOutlined />}>
+            {audience.student_ids?.length || 0} Students
+          </Tag>
+        );
+      default:
+        return <Tag>Unknown</Tag>;
+    }
+  };
+
+  const getMediaDisplay = (post) => {
+    const hasImage = post.imageUrl;
+    const hasVideo = post.videoUrl;
+
+    if (hasImage && hasVideo) {
+      return (
+        <div style={{ display: "flex", gap: 4 }}>
+          <FileImageOutlined style={{ color: "#1890ff" }} />
+          <PlayCircleOutlined style={{ color: "#52c41a" }} />
+        </div>
+      );
+    } else if (hasImage) {
+      return <FileImageOutlined style={{ color: "#1890ff" }} />;
+    } else if (hasVideo) {
+      return <PlayCircleOutlined style={{ color: "#52c41a" }} />;
+    }
+    return <span style={{ color: "#ccc" }}>No media</span>;
+  };
   const columns = [
+    {
+      title: "Media",
+      dataIndex: "imageUrl",
+      key: "media",
+      width: 80,
+      render: (imageUrl, record) => {
+        if (imageUrl) {
+          return (
+            <Image
+              width={50}
+              height={50}
+              src={`${SERVER_URL}/${imageUrl}`}
+              alt={record.title}
+              style={{ objectFit: "cover", borderRadius: 4 }}
+              fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+            />
+          );
+        }
+        return getMediaDisplay(record);
+      },
+    },
     {
       title: "Title",
       dataIndex: "title",
       key: "title",
-      render: (title, record) => (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div>
-            <div style={{ fontWeight: "500" }}>{title}</div>
-            <div style={{ fontSize: "12px", color: "#666" }}>
-              {record.content?.substring(0, 50)}...
-            </div>
-          </div>
+      render: (text) => <strong>{text}</strong>,
+      ellipsis: true,
+    },
+    {
+      title: "Content",
+      dataIndex: "content",
+      key: "content",
+      ellipsis: true,
+      render: (text) => (
+        <div style={{ maxWidth: 200 }}>
+          {text?.length > 100 ? `${text.substring(0, 100)}...` : text}
         </div>
       ),
     },
     {
-      title: "Teacher",
-      key: "teacher",
-      render: (_, record) => (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      title: "Author",
+      dataIndex: "teacherId",
+      key: "author",
+      render: (teacher) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Avatar
-            src={record.teacherId?.photoUrl}
-            size="small"
-          >
-            {record.teacherId?.name?.charAt(0)}
-          </Avatar>
-          <div>
-            <div style={{ fontWeight: "500" }}>{record.teacherId?.name}</div>
-            <div style={{ fontSize: "12px", color: "#666" }}>
-              {record.teacherId?.email}
-            </div>
-          </div>
+            size={32}
+            src={teacher?.photoUrl ? `${SERVER_URL}/${teacher.photoUrl}` : null}
+            icon={<UserOutlined />}
+          />
+          <span>{teacher?.name}</span>
         </div>
       ),
     },
     {
       title: "Audience",
+      dataIndex: "audience",
       key: "audience",
-      render: (_, record) => {
-        const audience = record.audience;
-        if (!audience || audience.type === "all") {
-          return <Tag color="blue">All Students</Tag>;
-        }
-        if (audience.type === "class") {
-          return (
-            <Tag color="green">
-              Classes ({audience.class_ids?.length || 0})
-            </Tag>
-          );
-        }
-        if (audience.type === "individual") {
-          return (
-            <Tag color="orange">
-              Students ({audience.student_ids?.length || 0})
-            </Tag>
-          );
-        }
-        return <Tag>Unknown</Tag>;
-      },
-    },
-    {
-      title: "Media",
-      key: "media",
-      render: (_, record) => (
-        <Space>
-          {record.imageUrl && (
-            <Tag icon={<PictureOutlined />} color="cyan">
-              Image
-            </Tag>
-          )}
-          {record.videoUrl && (
-            <Tag icon={<VideoCameraOutlined />} color="purple">
-              Video
-            </Tag>
-          )}
-          {!record.imageUrl && !record.videoUrl && (
-            <span style={{ color: "#999" }}>Text Only</span>
-          )}
-        </Space>
-      ),
+      render: (audience) => getAudienceDisplay(audience),
     },
     {
       title: "Created",
-      key: "created",
-      render: (_, record) => {
-        const date = new Date(record.createdAt);
-        return (
-          <div>
-            <div>{date.toLocaleDateString()}</div>
-            <div style={{ fontSize: "12px", color: "#666" }}>
-              {date.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </div>
-          </div>
-        );
-      },
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => dayjs(date).format("MMM DD, YYYY"),
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            onClick={() => onViewPost(record)}
-            size="small"
-          >
-            View
-          </Button>
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => onEditPost(record)}
-            size="small"
-          >
-            Edit
-          </Button>
-          <Popconfirm
-            title="Delete Post"
-            description="Are you sure you want to delete this post?"
-            onConfirm={() => onDeletePost(record._id)}
-            okText="Yes"
-            cancelText="No"
+      width: 80,
+      render: (_, record) => {
+        const menuItems = [
+          {
+            key: "details",
+            label: "View Details",
+            icon: <EyeOutlined />,
+            onClick: () => onDetails(record),
+          },
+          {
+            key: "edit",
+            label: "Edit",
+            icon: <EditOutlined />,
+            onClick: () => onEdit(record),
+          },
+          ...(record.audience.type !== "all"
+            ? [
+                {
+                  key: "audience",
+                  label: "Manage Audience",
+                  icon: <TeamOutlined />,
+                  onClick: () => onManageAudience(record),
+                },
+              ]
+            : []),
+          {
+            key: "delete",
+            label: (
+              <Popconfirm
+                title="Delete Post"
+                description="Are you sure you want to delete this post?"
+                onConfirm={() => onDelete(record._id)}
+                okText="Yes"
+                cancelText="No"
+                placement="left"
+              >
+                <Button
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  danger
+                  size="small"
+                  style={{ width: "100%", textAlign: "left", border: "none" }}
+                >
+                  Delete
+                </Button>
+              </Popconfirm>
+            ),
+            onClick: (e) => {
+              e.domEvent.stopPropagation();
+            },
+          },
+        ];
+
+        return (
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={["click"]}
+            placement="bottomRight"
           >
             <Button
               type="text"
-              danger
-              icon={<DeleteOutlined />}
+              icon={<MoreOutlined />}
               size="small"
-            >
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
+              style={{ border: "none" }}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -165,8 +224,8 @@ export default function PostsTable({
     <Table
       columns={columns}
       dataSource={posts}
-      rowKey="_id"
       loading={loading}
+      rowKey={(record) => record._id}
       pagination={{
         current: currentPage,
         pageSize: pageSize,
@@ -176,9 +235,6 @@ export default function PostsTable({
         showQuickJumper: true,
         showTotal: (total, range) =>
           `${range[0]}-${range[1]} of ${total} posts`,
-      }}
-      locale={{
-        emptyText: "No posts found",
       }}
     />
   );

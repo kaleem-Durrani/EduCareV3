@@ -1,207 +1,288 @@
 import React, { useState, useEffect } from "react";
-import { Button, message } from "antd";
-import { PlusOutlined, BarChartOutlined } from "@ant-design/icons";
+import { Space, Typography, Button, Card, message, Form } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import useApi from "../../hooks/useApi";
 import { postService } from "../../services/index";
-import PostsStats from "./components/PostsStats";
-import PostsTable from "./components/PostsTable";
-import CreatePostModal from "./components/CreatePostModal";
-import EditPostModal from "./components/EditPostModal";
-import ViewPostModal from "./components/ViewPostModal";
+import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
 import AdminLayout from "../../components/Layout/AdminLayout";
+import {
+  PostsStatistics,
+  PostsFilters,
+  PostsTable,
+  PostFormModal,
+  PostDetailsModal,
+  AudienceManagementModal,
+} from "./components";
+
+const { Title } = Typography;
 
 export default function PostsScreen() {
-  // Modal states
-  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [isViewModalVisible, setIsViewModalVisible] = useState(false);
-  const [currentPost, setCurrentPost] = useState(null);
+  // State management
+  const [isFormModalVisible, setIsFormModalVisible] = useState(false);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
+  const [isAudienceModalVisible, setIsAudienceModalVisible] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [selectedPost, setSelectedPost] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [statistics, setStatistics] = useState(null);
+  const [filters, setFilters] = useState({
+    search: "",
+    audience: "",
+    teacher: "",
+  });
+  const [form] = Form.useForm();
   const pageSize = 10;
 
-  // Fetch paginated posts (EFFICIENT!)
+  // Fetch posts statistics
+  const { request: fetchStatistics, isLoading: loadingStatistics } = useApi(
+    postService.getPostStatistics,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        title: "Failed to Load Statistics",
+      },
+    }
+  );
+
+  // Fetch posts data with pagination and filters
   const {
-    data: paginatedPostsData,
-    request: fetchPaginatedPosts,
-    isLoading: loadingPosts,
-  } = useApi(postService.getPaginatedPosts);
+    data: postsData,
+    isLoading: loading,
+    request: fetchPosts,
+  } = useApi(postService.getPaginatedPosts, {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      title: "Failed to Load Posts",
+    },
+  });
 
-  // Fetch post statistics (SEPARATE ENDPOINT!)
-  const {
-    data: statisticsData,
-    request: fetchStatistics,
-    isLoading: loadingStatistics,
-  } = useApi(postService.getPostStatistics);
-
-  // Create post
-  const { request: createPostRequest, isLoading: creatingPost } = useApi(
-    postService.createPost
+  // Create post API
+  const { request: createPostRequest, isLoading: creating } = useApi(
+    postService.createPost,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+        title: "Failed to Create Post",
+      },
+    }
   );
 
-  // Update post
-  const { request: updatePostRequest, isLoading: updatingPost } = useApi(
-    postService.updatePost
+  // Update post API
+  const { request: updatePostRequest, isLoading: updating } = useApi(
+    postService.updatePost,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+        title: "Failed to Update Post",
+      },
+    }
   );
 
-  // Delete post
-  const { request: deletePostRequest, isLoading: deletingPost } = useApi(
-    postService.deletePost
-  );
+  // Delete post API
+  const { request: deletePostRequest } = useApi(postService.deletePost, {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      title: "Failed to Delete Post",
+    },
+  });
 
-  // Fetch data with pagination support
-  const fetchData = () => {
-    fetchPaginatedPosts(currentPage, pageSize);
-    fetchStatistics(); // Only when needed (frontend controlled!)
-  };
+  // Load data on component mount and when filters change
+  useEffect(() => {
+    fetchStatisticsData();
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [currentPage]); // Refetch when page changes
+    fetchPostsData();
+  }, [currentPage, filters]);
 
-  useEffect(() => {
-    fetchData();
-  }, []); // Initial load
-
-  const posts = paginatedPostsData?.posts || [];
-  const pagination = paginatedPostsData?.pagination || {};
-  const overallStatistics = statisticsData || {};
-
-  // Modal handlers
-  const handleCreatePost = () => {
-    setIsCreateModalVisible(true);
+  const fetchStatisticsData = async () => {
+    try {
+      const stats = await fetchStatistics();
+      setStatistics(stats);
+    } catch (error) {
+      console.log("Statistics error handled by useApi");
+    }
   };
 
-  const handleViewPost = (post) => {
-    setCurrentPost(post);
-    setIsViewModalVisible(true);
+  const fetchPostsData = async () => {
+    try {
+      await fetchPosts(currentPage, pageSize);
+    } catch (error) {
+      console.log("Posts fetch error handled by useApi");
+    }
   };
 
-  const handleEditPost = (post) => {
-    setCurrentPost(post);
-    setIsEditModalVisible(true);
+  // Handler functions
+  const handleAdd = () => {
+    setEditingPost(null);
+    form.resetFields();
+    setIsFormModalVisible(true);
   };
 
-  const handleDeletePost = async (postId) => {
+  const handleEdit = (post) => {
+    setEditingPost(post);
+    form.setFieldsValue({
+      title: post.title,
+      content: post.content,
+      audience: post.audience,
+    });
+    setIsFormModalVisible(true);
+  };
+
+  const handleDetails = (post) => {
+    setSelectedPost(post);
+    setIsDetailsModalVisible(true);
+  };
+
+  const handleDelete = async (postId) => {
     try {
       await deletePostRequest(postId);
       message.success("Post deleted successfully!");
-      // Refresh current page posts AND statistics
-      fetchPaginatedPosts(currentPage, pageSize);
-      fetchStatistics();
+      fetchPostsData();
+      fetchStatisticsData();
     } catch (error) {
-      console.log("Delete post error handled by useApi");
+      console.log("Delete error handled by useApi");
     }
   };
 
-  // Create post handler
-  const handleCreatePostSubmit = async (values) => {
+  const handleManageAudience = (post) => {
+    setSelectedPost(post);
+    setIsAudienceModalVisible(true);
+  };
+
+  const handleFormSubmit = async (values) => {
     try {
-      await createPostRequest(values);
-      message.success("Post created successfully!");
-      setIsCreateModalVisible(false);
-      // Refresh current page posts AND statistics
-      fetchPaginatedPosts(currentPage, pageSize);
-      fetchStatistics();
+      const formData = new FormData();
+
+      // Add form fields
+      Object.keys(values).forEach((key) => {
+        if (key !== "image" && key !== "video" && values[key] !== undefined) {
+          if (key === "audience") {
+            formData.append(key, JSON.stringify(values[key]));
+          } else {
+            formData.append(key, values[key]);
+          }
+        }
+      });
+
+      // Add media files if provided
+      if (values.image && values.image.file) {
+        formData.append("image", values.image.file);
+      }
+      if (values.video && values.video.file) {
+        formData.append("video", values.video.file);
+      }
+
+      if (editingPost) {
+        await updatePostRequest(editingPost._id, formData);
+        message.success("Post updated successfully!");
+      } else {
+        await createPostRequest(formData);
+        message.success("Post created successfully!");
+      }
+
+      setIsFormModalVisible(false);
+      setEditingPost(null);
+      form.resetFields();
+      fetchPostsData();
+      fetchStatisticsData();
     } catch (error) {
-      console.log("Create post error handled by useApi");
+      console.log("Form submit error handled by useApi");
     }
   };
 
-  // Update post handler
-  const handleUpdatePostSubmit = async (values) => {
-    try {
-      await updatePostRequest(currentPost._id, values);
-      message.success("Post updated successfully!");
-      setIsEditModalVisible(false);
-      setCurrentPost(null);
-      // Refresh current page posts AND statistics
-      fetchPaginatedPosts(currentPage, pageSize);
-      fetchStatistics();
-    } catch (error) {
-      console.log("Update post error handled by useApi");
-    }
+  const handleFormCancel = () => {
+    setIsFormModalVisible(false);
+    setEditingPost(null);
+    form.resetFields();
   };
 
-  // Cancel handlers
-  const handleCancelCreate = () => {
-    setIsCreateModalVisible(false);
+  const handleDetailsCancel = () => {
+    setIsDetailsModalVisible(false);
+    setSelectedPost(null);
   };
 
-  const handleCancelEdit = () => {
-    setIsEditModalVisible(false);
-    setCurrentPost(null);
+  const handleAudienceCancel = () => {
+    setIsAudienceModalVisible(false);
+    setSelectedPost(null);
   };
 
-  const handleCancelView = () => {
-    setIsViewModalVisible(false);
-    setCurrentPost(null);
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
   };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Extract data
+  const posts = postsData?.posts || [];
+  const pagination = postsData?.pagination || {};
 
   return (
     <AdminLayout>
-      <div style={{ padding: "24px" }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
-            Posts Management
-          </h1>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreatePost}
-            size="large"
-          >
-            Create Post
-          </Button>
+      <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <div>
+          <Title level={2}>Posts Management</Title>
         </div>
 
         {/* Statistics Cards */}
-        <PostsStats posts={posts} overallStatistics={overallStatistics} />
+        <PostsStatistics statistics={statistics} loading={loadingStatistics} />
+
+        {/* Filters */}
+        <PostsFilters filters={filters} onFilterChange={handleFilterChange} />
 
         {/* Posts Table */}
-        <PostsTable
-          posts={posts}
-          loading={loadingPosts}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          total={pagination.totalPosts || 0}
-          onPageChange={setCurrentPage}
-          onViewPost={handleViewPost}
-          onEditPost={handleEditPost}
-          onDeletePost={handleDeletePost}
+        <Card>
+          <div style={{ marginBottom: 16 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              Create Post
+            </Button>
+          </div>
+
+          <PostsTable
+            posts={posts}
+            loading={loading}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            total={pagination.totalItems || 0}
+            onPageChange={handlePageChange}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDetails={handleDetails}
+            onManageAudience={handleManageAudience}
+          />
+        </Card>
+
+        {/* Post Form Modal */}
+        <PostFormModal
+          visible={isFormModalVisible}
+          editingPost={editingPost}
+          form={form}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          creating={creating}
+          updating={updating}
         />
 
-        {/* Create Post Modal */}
-        <CreatePostModal
-          visible={isCreateModalVisible}
-          onCancel={handleCancelCreate}
-          onSubmit={handleCreatePostSubmit}
-          loading={creatingPost}
+        {/* Post Details Modal */}
+        <PostDetailsModal
+          visible={isDetailsModalVisible}
+          post={selectedPost}
+          onCancel={handleDetailsCancel}
+          onManageAudience={handleManageAudience}
         />
 
-        {/* Edit Post Modal */}
-        <EditPostModal
-          visible={isEditModalVisible}
-          onCancel={handleCancelEdit}
-          onSubmit={handleUpdatePostSubmit}
-          loading={updatingPost}
-          post={currentPost}
+        {/* Audience Management Modal */}
+        <AudienceManagementModal
+          visible={isAudienceModalVisible}
+          post={selectedPost}
+          onCancel={handleAudienceCancel}
         />
-
-        {/* View Post Modal */}
-        <ViewPostModal
-          visible={isViewModalVisible}
-          onCancel={handleCancelView}
-          post={currentPost}
-        />
-      </div>
+      </Space>
     </AdminLayout>
   );
 }
