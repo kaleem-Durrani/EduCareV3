@@ -1,9 +1,12 @@
 import { api } from "./api.js";
 
 export const classService = {
-  getAllClasses: () => api.get("/classes"),
+  getClassStatistics: (params = {}) =>
+    api.get("/classes/statistics", { params }),
+  getAllClasses: (params = {}) => api.get("/classes", { params }),
   getClassesForSelect: () => api.get("/classes/select"),
   getClassById: (classId) => api.get(`/classes/${classId}`),
+  getClassDetails: (classId) => api.get(`/classes/${classId}/details`),
   createClass: (classData) => api.post("/classes", classData),
   updateClass: (classId, classData) =>
     api.put(`/classes/${classId}`, classData),

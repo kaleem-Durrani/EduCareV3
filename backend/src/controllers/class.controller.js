@@ -221,6 +221,16 @@ export const addStudentToClass = asyncHandler(async (req, res) => {
       throwConflict("Student is already in this class");
     }
 
+    // Check if student is already in another class
+    if (
+      student.current_class &&
+      student.current_class.toString() !== class_id
+    ) {
+      throwConflict(
+        "Student is already enrolled in another class. Please transfer the student instead."
+      );
+    }
+
     // Add student to class
     classDoc.students.push(student_id);
     classDoc.updatedBy = req.user.id;
@@ -291,11 +301,14 @@ export const removeStudentFromClass = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get all classes
+ * Get all classes with pagination
  * GET /api/classes
  * Role-based filtering
  */
 export const getClasses = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, search } = req.query;
+  const skip = (page - 1) * limit;
+
   let query = { isActive: true };
 
   // If user is a teacher, only show classes they're assigned to
@@ -303,13 +316,46 @@ export const getClasses = asyncHandler(async (req, res) => {
     query.teachers = req.user.id;
   }
 
+  // Add search functionality
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Get total count for pagination
+  const total = await Class.countDocuments(query);
+
+  // Get paginated classes
   const classes = await Class.find(query)
     .populate("createdBy", "name email")
     .populate("teachers", "name email")
     .populate("students", "fullName rollNum")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
 
-  return sendSuccess(res, classes, "Classes retrieved successfully");
+  // Add student and teacher counts
+  const classesWithCounts = classes.map((classDoc) => ({
+    ...classDoc.toObject(),
+    studentCount: classDoc.students.length,
+    teacherCount: classDoc.teachers.length,
+  }));
+
+  const result = {
+    classes: classesWithCounts,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: parseInt(limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+
+  return sendSuccess(res, result, "Classes retrieved successfully");
 });
 
 /**
@@ -382,4 +428,99 @@ export const getClassesForSelect = asyncHandler(async (req, res) => {
     selectOptions,
     "Classes for select retrieved successfully"
   );
+});
+
+/**
+ * Get class statistics
+ * GET /api/classes/statistics
+ * Admin/Teacher only
+ */
+export const getClassStatistics = asyncHandler(async (req, res) => {
+  const { year } = req.query;
+
+  // Build query for year filter
+  let query = { isActive: true };
+  if (year) {
+    const startDate = new Date(`${year}-01-01`);
+    const endDate = new Date(`${year}-12-31`);
+    query.createdAt = { $gte: startDate, $lte: endDate };
+  }
+
+  // Get class statistics
+  const [
+    totalClasses,
+    activeClasses,
+    totalStudents,
+    totalTeachers,
+    classesWithStudents,
+    classesWithTeachers,
+  ] = await Promise.all([
+    Class.countDocuments(query),
+    Class.countDocuments({ ...query, isActive: true }),
+    Class.aggregate([
+      { $match: query },
+      { $project: { studentCount: { $size: "$students" } } },
+      { $group: { _id: null, total: { $sum: "$studentCount" } } },
+    ]),
+    Class.aggregate([
+      { $match: query },
+      { $project: { teacherCount: { $size: "$teachers" } } },
+      { $group: { _id: null, total: { $sum: "$teacherCount" } } },
+    ]),
+    Class.countDocuments({ ...query, students: { $ne: [] } }),
+    Class.countDocuments({ ...query, teachers: { $ne: [] } }),
+  ]);
+
+  const statistics = {
+    totalClasses,
+    activeClasses,
+    totalStudents: totalStudents[0]?.total || 0,
+    totalTeachers: totalTeachers[0]?.total || 0,
+    classesWithStudents,
+    classesWithTeachers,
+    year: year || new Date().getFullYear(),
+  };
+
+  return sendSuccess(
+    res,
+    statistics,
+    "Class statistics retrieved successfully"
+  );
+});
+
+/**
+ * Get class details with students and teachers
+ * GET /api/classes/:class_id/details
+ * Admin/Teacher only
+ */
+export const getClassDetails = asyncHandler(async (req, res) => {
+  const { class_id } = req.params;
+
+  const classDetails = await Class.findById(class_id)
+    .populate("teachers", "name email phone")
+    .populate("students", "fullName rollNum birthdate")
+    .populate("createdBy", "name email")
+    .populate("updatedBy", "name email");
+
+  if (!classDetails) {
+    throwNotFound("Class");
+  }
+
+  // If user is a teacher, check if they have access to this class
+  if (req.user.role === "teacher") {
+    const hasAccess = classDetails.teachers.some(
+      (teacher) => teacher._id.toString() === req.user.id
+    );
+    if (!hasAccess) {
+      throwForbidden("You don't have access to this class");
+    }
+  }
+
+  const result = {
+    ...classDetails.toObject(),
+    studentCount: classDetails.students.length,
+    teacherCount: classDetails.teachers.length,
+  };
+
+  return sendSuccess(res, result, "Class details retrieved successfully");
 });

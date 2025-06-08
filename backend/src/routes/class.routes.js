@@ -10,6 +10,8 @@ import {
   getEnrolledTeacherClasses,
   getClassById,
   getClassesForSelect,
+  getClassStatistics,
+  getClassDetails,
 } from "../controllers/class.controller.js";
 import { getClassRoster } from "../controllers/student.controller.js";
 import {
@@ -115,6 +117,18 @@ router.delete(
 );
 
 /**
+ * @route   GET /api/classes/statistics
+ * @desc    Get class statistics
+ * @access  Private (Admin/Teacher)
+ */
+router.get(
+  "/classes/statistics",
+  authenticate,
+  requireAdminOrTeacher,
+  getClassStatistics
+);
+
+/**
  * @route   GET /api/classes/select
  * @desc    Get classes for select options (label/value pairs)
  * @access  Private (All authenticated users)
@@ -138,6 +152,20 @@ router.get(
   authenticate,
   requireAdminOrTeacher,
   getEnrolledTeacherClasses
+);
+
+/**
+ * @route   GET /api/classes/:class_id/details
+ * @desc    Get class details with students and teachers
+ * @access  Private (Admin/Teacher)
+ */
+router.get(
+  "/classes/:class_id/details",
+  authenticate,
+  requireAdminOrTeacher,
+  classIdValidation,
+  handleValidationErrors,
+  getClassDetails
 );
 
 /**
