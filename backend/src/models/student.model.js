@@ -25,7 +25,6 @@ const studentSchema = new Schema(
       },
     ],
     current_class: { type: Schema.Types.ObjectId, ref: "Class" }, // Reference to Class schema
-    current_academic_year: { type: String },
     active: { type: Boolean, default: true }, // If student is currently active in school
   },
   { timestamps: true }

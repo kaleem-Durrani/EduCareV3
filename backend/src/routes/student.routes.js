@@ -3,7 +3,6 @@ import {
   getAllStudents,
   createStudent,
   updateStudent,
-  enrollStudent,
   getStudentEnrollmentHistory,
   transferStudent,
   withdrawStudent,
@@ -11,12 +10,19 @@ import {
   getStudentBasicInfoForTeacher,
   getParentStudents,
   getStudentsForSelect,
+  getStudentStatistics,
+  getStudentDetails,
+  updateStudentPhoto,
+  addStudentContact,
+  updateStudentContact,
+  deleteStudentContact,
+  updateStudentActiveStatus,
+  generateEnrollmentNumber,
 } from "../controllers/student.controller.js";
 import {
   createStudentValidation,
   updateStudentValidation,
   studentIdValidation,
-  enrollStudentValidation,
   transferStudentValidation,
   withdrawStudentValidation,
 } from "../validations/student.validation.js";
@@ -27,8 +33,33 @@ import {
   requireAdminOrTeacher,
   requireParent,
 } from "../middleware/auth.middleware.js";
+import { uploadSingle } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
+
+/**
+ * @route   GET /api/students/statistics
+ * @desc    Get student statistics
+ * @access  Private (Admin/Teacher)
+ */
+router.get(
+  "/students/statistics",
+  authenticate,
+  requireAdminOrTeacher,
+  getStudentStatistics
+);
+
+/**
+ * @route   GET /api/students/generate-enrollment-number
+ * @desc    Generate next enrollment number
+ * @access  Private (Admin only)
+ */
+router.get(
+  "/students/generate-enrollment-number",
+  authenticate,
+  requireAdmin,
+  generateEnrollmentNumber
+);
 
 /**
  * @route   GET /api/students/select
@@ -39,7 +70,7 @@ router.get("/students/select", authenticate, getStudentsForSelect);
 
 /**
  * @route   GET /api/students
- * @desc    Get all students (Admin/Teacher)
+ * @desc    Get all students with pagination (Admin/Teacher)
  * @access  Private (Admin/Teacher)
  */
 router.get("/students", authenticate, requireAdminOrTeacher, getAllStudents);
@@ -59,31 +90,31 @@ router.post(
 );
 
 /**
- * @route   PUT /api/student/:student_id
- * @desc    Update student (uses rollNum as student_id)
+ * @route   GET /api/students/:student_id/details
+ * @desc    Get student details with contacts and enrollment info
+ * @access  Private (Admin/Teacher)
+ */
+router.get(
+  "/students/:student_id/details",
+  authenticate,
+  requireAdminOrTeacher,
+  studentIdValidation,
+  handleValidationErrors,
+  getStudentDetails
+);
+
+/**
+ * @route   PUT /api/students/:student_id
+ * @desc    Update student information
  * @access  Private (Admin only)
  */
 router.put(
-  "/student/:student_id",
+  "/students/:student_id",
   authenticate,
   requireAdmin,
   updateStudentValidation,
   handleValidationErrors,
   updateStudent
-);
-
-/**
- * @route   POST /api/students/:student_id/enroll
- * @desc    Enroll student in a class
- * @access  Private (Admin only)
- */
-router.post(
-  "/students/:student_id/enroll",
-  authenticate,
-  requireAdmin,
-  enrollStudentValidation,
-  handleValidationErrors,
-  enrollStudent
 );
 
 /**
@@ -154,6 +185,69 @@ router.get(
   studentIdValidation,
   handleValidationErrors,
   getStudentBasicInfoForTeacher
+);
+
+/**
+ * @route   PUT /api/students/:student_id/photo
+ * @desc    Update student photo
+ * @access  Private (Admin only)
+ */
+router.put(
+  "/students/:student_id/photo",
+  authenticate,
+  requireAdmin,
+  uploadSingle("students"),
+  updateStudentPhoto
+);
+
+/**
+ * @route   PUT /api/students/:student_id/active
+ * @desc    Update student active status
+ * @access  Private (Admin only)
+ */
+router.put(
+  "/students/:student_id/active",
+  authenticate,
+  requireAdmin,
+  updateStudentActiveStatus
+);
+
+/**
+ * @route   POST /api/students/:student_id/contacts
+ * @desc    Add student contact with optional photo
+ * @access  Private (Admin only)
+ */
+router.post(
+  "/students/:student_id/contacts",
+  authenticate,
+  requireAdmin,
+  uploadSingle("contacts"),
+  addStudentContact
+);
+
+/**
+ * @route   PUT /api/students/:student_id/contacts/:contact_id
+ * @desc    Update student contact with optional photo
+ * @access  Private (Admin only)
+ */
+router.put(
+  "/students/:student_id/contacts/:contact_id",
+  authenticate,
+  requireAdmin,
+  uploadSingle("contacts"),
+  updateStudentContact
+);
+
+/**
+ * @route   DELETE /api/students/:student_id/contacts/:contact_id
+ * @desc    Delete student contact
+ * @access  Private (Admin only)
+ */
+router.delete(
+  "/students/:student_id/contacts/:contact_id",
+  authenticate,
+  requireAdmin,
+  deleteStudentContact
 );
 
 /**

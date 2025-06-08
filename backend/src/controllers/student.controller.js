@@ -15,13 +15,19 @@ import {
   throwConflict,
   throwForbidden,
 } from "../utils/transaction.utils.js";
+import { normalizePath } from "../middleware/upload.middleware.js";
+import fs from "fs";
+import path from "path";
 
 /**
- * Get all students
+ * Get all students with pagination
  * GET /api/students
  * Admin/Teacher access
  */
 export const getAllStudents = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, search } = req.query;
+  const skip = (page - 1) * limit;
+
   let query = { active: true };
 
   // If user is a teacher, only show students from their classes
@@ -35,11 +41,37 @@ export const getAllStudents = asyncHandler(async (req, res) => {
     query.current_class = { $in: classIds };
   }
 
+  // Add search functionality
+  if (search) {
+    query.$or = [
+      { fullName: { $regex: search, $options: "i" } },
+      { rollNum: parseInt(search) || 0 },
+    ];
+  }
+
+  // Get total count for pagination
+  const total = await Student.countDocuments(query);
+
+  // Get paginated students
   const students = await Student.find(query)
     .populate("current_class", "name")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
 
-  return sendSuccess(res, students, "Students retrieved successfully");
+  const result = {
+    students,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: parseInt(limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+
+  return sendSuccess(res, result, "Students retrieved successfully");
 });
 
 /**
@@ -108,18 +140,16 @@ export const createStudent = asyncHandler(async (req, res) => {
 
 /**
  * Update student
- * PUT /api/student/:student_id
- * Admin only - uses rollNum as student_id in path for lookup
+ * PUT /api/students/:student_id
+ * Admin only - uses MongoDB _id for lookup
  */
 export const updateStudent = asyncHandler(async (req, res) => {
   const { student_id } = req.params;
   const updateData = req.body;
 
   const result = await withTransaction(async (session) => {
-    // Find student by rollNum (as mentioned in the API spec)
-    const student = await Student.findOne({
-      rollNum: parseInt(student_id),
-    }).session(session);
+    // Find student by _id
+    const student = await Student.findById(student_id).session(session);
 
     if (!student) {
       throwNotFound("Student");
@@ -617,5 +647,292 @@ export const getStudentsForSelect = asyncHandler(async (req, res) => {
     res,
     selectOptions,
     "Students for select retrieved successfully"
+  );
+});
+
+/**
+ * Get student statistics
+ * GET /api/students/statistics
+ * Admin/Teacher access
+ */
+export const getStudentStatistics = asyncHandler(async (req, res) => {
+  const { year } = req.query;
+
+  // Build query for year filter
+  let query = { active: true };
+  if (year) {
+    const startDate = new Date(`${year}-01-01`);
+    const endDate = new Date(`${year}-12-31`);
+    query.createdAt = { $gte: startDate, $lte: endDate };
+  }
+
+  // Get student statistics
+  const [totalStudents, activeStudents, studentsWithClasses, totalClasses] =
+    await Promise.all([
+      Student.countDocuments(query),
+      Student.countDocuments({ ...query, active: true }),
+      Student.countDocuments({ ...query, current_class: { $ne: null } }),
+      Class.countDocuments({ isActive: true }),
+    ]);
+
+  const statistics = {
+    totalStudents,
+    activeStudents,
+    studentsWithClasses,
+    totalClasses,
+    year: year || new Date().getFullYear(),
+  };
+
+  return sendSuccess(
+    res,
+    statistics,
+    "Student statistics retrieved successfully"
+  );
+});
+
+/**
+ * Get student details with contacts and enrollment info
+ * GET /api/students/:student_id/details
+ * Admin/Teacher access
+ */
+export const getStudentDetails = asyncHandler(async (req, res) => {
+  const { student_id } = req.params;
+
+  const student = await Student.findById(student_id)
+    .populate("current_class", "name description")
+    .lean();
+
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  // If user is a teacher, check if they have access to this student
+  if (req.user.role === "teacher") {
+    const teacherClasses = await Class.find({
+      teachers: req.user.id,
+      isActive: true,
+    }).select("_id");
+
+    const classIds = teacherClasses.map((cls) => cls._id.toString());
+
+    if (
+      !student.current_class ||
+      !classIds.includes(student.current_class._id.toString())
+    ) {
+      throwForbidden("You don't have access to this student");
+    }
+  }
+
+  // Get enrollment history
+  const enrollmentHistory = await StudentClassHistory.find({
+    student_id: student_id,
+  })
+    .populate("class_id", "name")
+    .sort({ enrollment_date: -1 })
+    .limit(5);
+
+  const result = {
+    ...student,
+    enrollmentHistory,
+  };
+
+  return sendSuccess(res, result, "Student details retrieved successfully");
+});
+
+/**
+ * Update student photo
+ * PUT /api/students/:student_id/photo
+ * Admin only
+ */
+export const updateStudentPhoto = asyncHandler(async (req, res) => {
+  const { student_id } = req.params;
+
+  // Check if student exists
+  const student = await Student.findById(student_id);
+
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  // Check if file was uploaded
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "No photo file provided",
+    });
+  }
+
+  // Delete old photo if it exists
+  if (student.photoUrl) {
+    const oldPhotoPath = path.join(process.cwd(), "uploads", student.photoUrl);
+    if (fs.existsSync(oldPhotoPath)) {
+      fs.unlinkSync(oldPhotoPath);
+    }
+  }
+
+  // Update student with new photo URL (use full path from multer)
+  student.photoUrl = normalizePath(req.file.path);
+  await student.save();
+
+  return sendSuccess(
+    res,
+    { photoUrl: student.photoUrl },
+    "Student photo updated successfully"
+  );
+});
+
+/**
+ * Update student active status
+ * PUT /api/students/:student_id/active
+ * Admin only
+ */
+export const updateStudentActiveStatus = asyncHandler(async (req, res) => {
+  const { student_id } = req.params;
+  const { active } = req.body;
+
+  const student = await Student.findById(student_id);
+
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  student.active = active;
+  await student.save();
+
+  return sendSuccess(
+    res,
+    student,
+    `Student ${active ? "activated" : "deactivated"} successfully`
+  );
+});
+
+/**
+ * Add student contact
+ * POST /api/students/:student_id/contacts
+ * Admin only
+ */
+export const addStudentContact = asyncHandler(async (req, res) => {
+  const { student_id } = req.params;
+  const contactData = req.body;
+
+  const student = await Student.findById(student_id);
+
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  // Handle photo upload if file is provided
+  if (req.file) {
+    contactData.photoUrl = normalizePath(req.file.path);
+  }
+
+  // Add new contact
+  student.contacts.push(contactData);
+  await student.save();
+
+  return sendSuccess(
+    res,
+    student.contacts[student.contacts.length - 1],
+    "Contact added successfully"
+  );
+});
+
+/**
+ * Update student contact
+ * PUT /api/students/:student_id/contacts/:contact_id
+ * Admin only
+ */
+export const updateStudentContact = asyncHandler(async (req, res) => {
+  const { student_id, contact_id } = req.params;
+  const updateData = req.body;
+
+  const student = await Student.findById(student_id);
+
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  const contact = student.contacts.id(contact_id);
+  if (!contact) {
+    throwNotFound("Contact");
+  }
+
+  // Handle photo upload if file is provided
+  if (req.file) {
+    // Delete old photo if it exists
+    if (contact.photoUrl) {
+      const oldPhotoPath = path.join(
+        process.cwd(),
+        "uploads",
+        contact.photoUrl
+      );
+      if (fs.existsSync(oldPhotoPath)) {
+        fs.unlinkSync(oldPhotoPath);
+      }
+    }
+    updateData.photoUrl = normalizePath(req.file.path);
+  }
+
+  // Update contact
+  Object.assign(contact, updateData);
+  await student.save();
+
+  return sendSuccess(res, contact, "Contact updated successfully");
+});
+
+/**
+ * Delete student contact
+ * DELETE /api/students/:student_id/contacts/:contact_id
+ * Admin only
+ */
+export const deleteStudentContact = asyncHandler(async (req, res) => {
+  const { student_id, contact_id } = req.params;
+
+  const student = await Student.findById(student_id);
+
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  const contact = student.contacts.id(contact_id);
+  if (!contact) {
+    throwNotFound("Contact");
+  }
+
+  // Delete contact photo if it exists
+  if (contact.photoUrl) {
+    const photoPath = path.join(process.cwd(), "uploads", contact.photoUrl);
+    if (fs.existsSync(photoPath)) {
+      fs.unlinkSync(photoPath);
+    }
+  }
+
+  // Remove contact
+  student.contacts.pull(contact_id);
+  await student.save();
+
+  return sendSuccess(res, null, "Contact deleted successfully");
+});
+
+/**
+ * Generate next enrollment number
+ * GET /api/students/generate-enrollment-number
+ * Admin only
+ */
+export const generateEnrollmentNumber = asyncHandler(async (req, res) => {
+  // Find the highest enrollment number (rollNum is a number field)
+  const lastStudent = await Student.findOne({})
+    .sort({ rollNum: -1 })
+    .select("rollNum");
+
+  let nextNumber = 1;
+  if (lastStudent && lastStudent.rollNum) {
+    nextNumber = lastStudent.rollNum + 1;
+  }
+
+  return sendSuccess(
+    res,
+    { enrollmentNumber: nextNumber },
+    "Enrollment number generated successfully"
   );
 });

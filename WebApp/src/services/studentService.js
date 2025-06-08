@@ -1,22 +1,42 @@
 import { api } from "./api.js";
 
 export const studentService = {
-  getAllStudents: () => api.get("/students"),
+  getStudentStatistics: (params = {}) =>
+    api.get("/students/statistics", { params }),
+  generateEnrollmentNumber: () =>
+    api.get("/students/generate-enrollment-number"),
+  getAllStudents: (params = {}) => api.get("/students", { params }),
   getStudentsForSelect: () => api.get("/students/select"),
+  getStudentDetails: (studentId, params = {}) =>
+    api.get(`/students/${studentId}/details`, { params }),
   createStudent: (studentData) => api.post("/student", studentData),
   updateStudent: (studentId, studentData) =>
-    api.put(`/student/${studentId}`, studentData),
-  enrollStudent: (studentId, enrollmentData) =>
-    api.post(`/student/${studentId}/enroll`, enrollmentData),
+    api.put(`/students/${studentId}`, studentData),
+  updateStudentPhoto: (studentId, formData) =>
+    api.put(`/students/${studentId}/photo`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  updateStudentActiveStatus: (studentId, statusData) =>
+    api.put(`/students/${studentId}/active`, statusData),
+  addStudentContact: (studentId, contactData) =>
+    api.post(`/students/${studentId}/contacts`, contactData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  updateStudentContact: (studentId, contactId, contactData) =>
+    api.put(`/students/${studentId}/contacts/${contactId}`, contactData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  deleteStudentContact: (studentId, contactId) =>
+    api.delete(`/students/${studentId}/contacts/${contactId}`),
   getEnrollmentHistory: (studentId) =>
-    api.get(`/student/${studentId}/enrollment-history`),
+    api.get(`/students/${studentId}/enrollment-history`),
   transferStudent: (studentId, transferData) =>
-    api.put(`/student/${studentId}/transfer`, transferData),
+    api.post(`/students/${studentId}/transfer`, transferData),
   withdrawStudent: (studentId, withdrawData) =>
-    api.put(`/student/${studentId}/withdraw`, withdrawData),
+    api.post(`/students/${studentId}/withdraw`, withdrawData),
   getBasicInfoForParent: (studentId) =>
-    api.get(`/student/${studentId}/basic-info-parent`),
+    api.get(`/student/${studentId}/basic-info`),
   getBasicInfoForTeacher: (studentId) =>
-    api.get(`/student/${studentId}/basic-info-teacher`),
-  getParentStudents: () => api.get("/students/parent"),
+    api.get(`/student/${studentId}/basic-info-for-teacher`),
+  getParentStudents: () => api.get("/parent/students"),
 };
