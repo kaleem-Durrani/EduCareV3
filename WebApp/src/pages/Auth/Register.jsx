@@ -35,25 +35,7 @@ export default function Register() {
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
       {/* Left Side - Registration Form */}
       <div className="flex items-center justify-center p-6 sm:p-12">
-        <div
-          className="w-full max-w-md p-8 rounded-2xl bg-white transition-all duration-300 ease-in-out shadow-lg hover:shadow-2xl transform hover:-translate-y-1"
-          style={{
-            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            animation: "float 6s ease-in-out infinite",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow =
-              "0 25px 50px rgba(127, 86, 218, 0.25)";
-            e.currentTarget.style.transform = "translateY(-8px)";
-            e.currentTarget.style.animation = "none";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = "0 10px 25px rgba(0, 0, 0, 0.1)";
-            e.currentTarget.style.transform = "translateY(0px)";
-            e.currentTarget.style.animation = "float 6s ease-in-out infinite";
-          }}
-        >
+        <div className="w-full max-w-md p-8 rounded-2xl bg-white register-form-container">
           <Title level={1} style={{ color: "#2c2143", marginBottom: 8 }}>
             Admin Register
           </Title>
@@ -235,7 +217,7 @@ export default function Register() {
       </div>
 
       {/* CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0%,
           100% {
@@ -244,6 +226,16 @@ export default function Register() {
           50% {
             transform: translateY(-10px);
           }
+        }
+
+        .register-form-container {
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+          transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: float 6s ease-in-out infinite;
+        }
+
+        .register-form-container:hover {
+          box-shadow: 0 25px 50px rgba(127, 86, 218, 0.25);
         }
       `}</style>
     </div>
