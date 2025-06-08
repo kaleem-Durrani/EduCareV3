@@ -6,6 +6,7 @@ import {
   EditOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 
 export default function StudentsDocumentsTable({
   students,
@@ -25,7 +26,11 @@ export default function StudentsDocumentsTable({
       key: "fullName",
       render: (text, record) => (
         <Space>
-          <Avatar icon={<UserOutlined />} />
+          <Avatar
+            size={40}
+            src={record.photoUrl ? `${SERVER_URL}/${record.photoUrl}` : null}
+            icon={<UserOutlined />}
+          />
           <div>
             <div style={{ fontWeight: "bold" }}>{text}</div>
             <div style={{ fontSize: "12px", color: "#666" }}>
