@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { parentService } from "../services";
 import useApi from "../hooks/useApi";
+import { useAuth } from "./AuthContext";
 
 const ParentsContext = createContext({
   parents: [],
@@ -14,6 +15,7 @@ export const useParentsContext = () => useContext(ParentsContext);
 
 export const ParentsProvider = ({ children }) => {
   const [parents, setParents] = useState([]);
+  const { user } = useAuth();
 
   const {
     data: parentsData,
@@ -24,19 +26,25 @@ export const ParentsProvider = ({ children }) => {
   } = useApi(parentService.getParentsForSelect);
 
   const fetchParents = async () => {
-    if (!parents.length) {
+    if (!parents.length && user) {
       await getParents();
     }
   };
 
   const refreshParents = async () => {
     setParents([]);
-    await getParents();
+    if (user) {
+      await getParents();
+    }
   };
 
   useEffect(() => {
-    fetchParents();
-  }, []);
+    if (user) {
+      fetchParents();
+    } else {
+      setParents([]);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (parentsData && parentsData.length > 0) {

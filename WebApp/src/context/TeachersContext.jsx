@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { teacherService } from "../services";
 import useApi from "../hooks/useApi";
+import { useAuth } from "./AuthContext";
 
 const TeachersContext = createContext({
   teachers: [],
@@ -14,6 +15,7 @@ export const useTeachersContext = () => useContext(TeachersContext);
 
 export const TeachersProvider = ({ children }) => {
   const [teachers, setTeachers] = useState([]);
+  const { user } = useAuth();
 
   const {
     data: teachersData,
@@ -24,19 +26,25 @@ export const TeachersProvider = ({ children }) => {
   } = useApi(teacherService.getTeachersForSelect);
 
   const fetchTeachers = async () => {
-    if (!teachers.length) {
+    if (!teachers.length && user) {
       await getTeachers();
     }
   };
 
   const refreshTeachers = async () => {
     setTeachers([]);
-    await getTeachers();
+    if (user) {
+      await getTeachers();
+    }
   };
 
   useEffect(() => {
-    fetchTeachers();
-  }, []);
+    if (user) {
+      fetchTeachers();
+    } else {
+      setTeachers([]);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (teachersData && teachersData.length > 0) {

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { studentService } from "../services";
 import useApi from "../hooks/useApi";
+import { useAuth } from "./AuthContext";
 
 const StudentsContext = createContext({
   students: [],
@@ -14,6 +15,7 @@ export const useStudentsContext = () => useContext(StudentsContext);
 
 export const StudentsProvider = ({ children }) => {
   const [students, setStudents] = useState([]);
+  const { user } = useAuth();
 
   const {
     data: studentsData,
@@ -24,19 +26,25 @@ export const StudentsProvider = ({ children }) => {
   } = useApi(studentService.getStudentsForSelect);
 
   const fetchStudents = async () => {
-    if (!students.length) {
+    if (!students.length && user) {
       await getStudents();
     }
   };
 
   const refreshStudents = async () => {
     setStudents([]);
-    await getStudents();
+    if (user) {
+      await getStudents();
+    }
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    if (user) {
+      fetchStudents();
+    } else {
+      setStudents([]);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (studentsData && studentsData.length > 0) {
