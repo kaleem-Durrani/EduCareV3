@@ -10,8 +10,8 @@ const feeSchema = new Schema(
     deadline: { type: Date, required: true },
     status: {
       type: String,
-      enum: ["Unpaid", "In Progress", "Paid"],
-      default: "Unpaid",
+      enum: ["pending", "paid"],
+      default: "pending",
     },
     // The Python code sets status to 'Paid' by default on creation, which is unusual for a new fee.
     // Feedback mentions notification to parent when status is UNPAID. [cite: 12]

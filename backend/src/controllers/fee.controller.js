@@ -194,8 +194,8 @@ export const updateFeeStatus = asyncHandler(async (req, res) => {
       }
     }
 
-    // Update fee status
-    fee.status = status;
+    // Update fee status - normalize to lowercase
+    fee.status = status.toLowerCase();
     fee.updated_at = new Date();
     await fee.save({ session });
 
@@ -344,4 +344,108 @@ export const getFeeSummary = asyncHandler(async (req, res) => {
   };
 
   return sendSuccess(res, summary, "Fee summary retrieved successfully");
+});
+
+/**
+ * Delete fee
+ * DELETE /api/fees/:fee_id
+ * Admin/Teacher only
+ */
+export const deleteFee = asyncHandler(async (req, res) => {
+  const { fee_id } = req.params;
+
+  const result = await withTransaction(async (session) => {
+    const fee = await Fee.findById(fee_id)
+      .populate("student_id")
+      .session(session);
+    if (!fee) {
+      throwNotFound("Fee");
+    }
+
+    // If user is a teacher, check if they have access to this student
+    if (req.user.role === "teacher") {
+      const teacherClasses = await Class.find({
+        teachers: req.user.id,
+        isActive: true,
+      })
+        .select("_id")
+        .session(session);
+
+      const classIds = teacherClasses.map((cls) => cls._id.toString());
+
+      if (
+        !fee.student_id.current_class ||
+        !classIds.includes(fee.student_id.current_class.toString())
+      ) {
+        throwForbidden("You don't have access to this student");
+      }
+    }
+
+    // Delete associated transactions first
+    const FeeTransaction = (await import("../models/feeTransaction.model.js"))
+      .default;
+    await FeeTransaction.deleteMany({ fee_id }).session(session);
+
+    // Delete the fee
+    await Fee.findByIdAndDelete(fee_id).session(session);
+
+    return { id: fee_id };
+  });
+
+  return sendSuccess(res, result, "Fee deleted successfully");
+});
+
+/**
+ * Get fee statistics for all students
+ * GET /api/fees/statistics
+ * Admin/Teacher only
+ */
+export const getFeeStatistics = asyncHandler(async (req, res) => {
+  const { year } = req.query;
+
+  // Build query for year filter
+  let query = {};
+  if (year) {
+    const startDate = new Date(`${year}-01-01`);
+    const endDate = new Date(`${year}-12-31`);
+    query.created_at = { $gte: startDate, $lte: endDate };
+  }
+
+  // Get fee statistics
+  const [
+    totalFees,
+    paidFees,
+    unpaidFees,
+    totalAmount,
+    paidAmount,
+    unpaidAmount,
+  ] = await Promise.all([
+    Fee.countDocuments(query),
+    Fee.countDocuments({ ...query, status: "paid" }),
+    Fee.countDocuments({ ...query, status: { $in: ["pending", "unpaid"] } }),
+    Fee.aggregate([
+      { $match: query },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+    Fee.aggregate([
+      { $match: { ...query, status: "paid" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+    Fee.aggregate([
+      { $match: { ...query, status: { $in: ["pending", "unpaid"] } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+  ]);
+
+  const statistics = {
+    totalFees,
+    paidFees,
+    unpaidFees,
+    totalAmount: totalAmount[0]?.total || 0,
+    paidAmount: paidAmount[0]?.total || 0,
+    unpaidAmount: unpaidAmount[0]?.total || 0,
+    year: year || new Date().getFullYear(),
+  };
+
+  return sendSuccess(res, statistics, "Fee statistics retrieved successfully");
 });
