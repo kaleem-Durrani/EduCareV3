@@ -1,37 +1,63 @@
 import React, { useState, useEffect } from "react";
-import { Space, Typography, message } from "antd";
+import { Space, Typography, Button, Card, message, Form } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import useApi from "../../hooks/useApi";
-import { parentService, authService } from "../../services/index";
+import { parentService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import {
-  ParentsStats,
+  ParentsStatistics,
+  ParentsFilters,
   ParentsTable,
-  CreateParentModal,
-  CreateRelationModal,
+  ParentFormModal,
+  ParentDetailsModal,
+  AddRelationModal,
 } from "./components";
 
 const { Title } = Typography;
 
 export default function ParentsScreen() {
-  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  // State management
+  const [isFormModalVisible, setIsFormModalVisible] = useState(false);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [isRelationModalVisible, setIsRelationModalVisible] = useState(false);
-  const [selectedParentEmail, setSelectedParentEmail] = useState(null);
+  const [editingParent, setEditingParent] = useState(null);
+  const [selectedParent, setSelectedParent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [statistics, setStatistics] = useState(null);
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "",
+  });
+  const [form] = Form.useForm();
   const pageSize = 10;
 
-  // Fetch parents data
+  // Fetch parents statistics
+  const { request: fetchStatistics, isLoading: loadingStatistics } = useApi(
+    parentService.getParentsStatistics,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        title: "Failed to Load Statistics",
+      },
+    }
+  );
+
+  // Fetch parents data with pagination and filters
   const {
     data: parentsData,
     isLoading: loading,
     request: fetchParents,
-  } = useApi(() =>
-    parentService.getAllParents({ page: currentPage, per_page: pageSize })
-  );
+  } = useApi(parentService.getAllParents, {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      title: "Failed to Load Parents",
+    },
+  });
 
-  // Create parent API with enhanced validation error handling
+  // Create parent API
   const { request: createParentRequest, isLoading: creating } = useApi(
-    (data) => authService.register({ ...data, role: "parent" }),
+    parentService.createParent,
     {
       errorHandling: {
         displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
@@ -41,7 +67,27 @@ export default function ParentsScreen() {
     }
   );
 
-  // Create relation API with enhanced validation error handling
+  // Update parent API
+  const { request: updateParentRequest, isLoading: updating } = useApi(
+    parentService.updateParent,
+    {
+      errorHandling: {
+        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+        showValidationDetails: true,
+        title: "Failed to Update Parent",
+      },
+    }
+  );
+
+  // Delete parent API
+  const { request: deleteParentRequest } = useApi(parentService.deleteParent, {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      title: "Failed to Delete Parent",
+    },
+  });
+
+  // Create relation API
   const { request: createRelationRequest, isLoading: creatingRelation } =
     useApi(parentService.createStudentParentRelation, {
       errorHandling: {
@@ -51,59 +97,150 @@ export default function ParentsScreen() {
       },
     });
 
+  // Load data on component mount and when filters change
   useEffect(() => {
-    fetchParents();
-  }, [currentPage]);
+    fetchStatisticsData();
+  }, []);
 
-  const handleCreateParent = async (values) => {
+  useEffect(() => {
+    fetchParentsData();
+  }, [currentPage, filters]);
+
+  const fetchStatisticsData = async () => {
     try {
-      await createParentRequest(values);
-      message.success("Parent created successfully!");
-      setIsCreateModalVisible(false);
-      fetchParents();
+      const stats = await fetchStatistics();
+      setStatistics(stats);
     } catch (error) {
-      // Error is automatically handled by useApi with detailed validation messages
-      console.log("Create parent error handled by useApi");
+      console.log("Statistics error handled by useApi");
     }
   };
 
-  const handleCreateRelation = async (values) => {
+  const fetchParentsData = async () => {
+    try {
+      await fetchParents({
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+      });
+    } catch (error) {
+      console.log("Parents fetch error handled by useApi");
+    }
+  };
+
+  // Handler functions
+  const handleAdd = () => {
+    setEditingParent(null);
+    form.resetFields();
+    setIsFormModalVisible(true);
+  };
+
+  const handleEdit = (parent) => {
+    setEditingParent(parent);
+    form.setFieldsValue({
+      name: parent.name,
+      email: parent.email,
+      phone: parent.phone,
+      address: parent.address,
+    });
+    setIsFormModalVisible(true);
+  };
+
+  const handleDetails = (parent) => {
+    setSelectedParent(parent);
+    setIsDetailsModalVisible(true);
+  };
+
+  const handleDelete = async (parentId) => {
+    try {
+      await deleteParentRequest(parentId);
+      message.success("Parent deleted successfully!");
+      fetchParentsData();
+      fetchStatisticsData();
+    } catch (error) {
+      console.log("Delete error handled by useApi");
+    }
+  };
+
+  const handleFormSubmit = async (values) => {
+    try {
+      const formData = new FormData();
+
+      // Add form fields
+      Object.keys(values).forEach((key) => {
+        if (key !== "photo" && values[key] !== undefined) {
+          formData.append(key, values[key]);
+        }
+      });
+
+      // Add photo if provided
+      if (values.photo && values.photo.file) {
+        formData.append("photo", values.photo.file);
+      }
+
+      if (editingParent) {
+        await updateParentRequest(editingParent._id, formData);
+        message.success("Parent updated successfully!");
+      } else {
+        await createParentRequest(formData);
+        message.success("Parent created successfully!");
+      }
+
+      setIsFormModalVisible(false);
+      setEditingParent(null);
+      form.resetFields();
+      fetchParentsData();
+      fetchStatisticsData();
+    } catch (error) {
+      console.log("Form submit error handled by useApi");
+    }
+  };
+
+  const handleFormCancel = () => {
+    setIsFormModalVisible(false);
+    setEditingParent(null);
+    form.resetFields();
+  };
+
+  const handleDetailsCancel = () => {
+    setIsDetailsModalVisible(false);
+    setSelectedParent(null);
+  };
+
+  const handleAddRelation = (parent = null) => {
+    setSelectedParent(parent);
+    setIsRelationModalVisible(true);
+  };
+
+  const handleRelationSubmit = async (values) => {
     try {
       await createRelationRequest(values);
-      message.success("Parent-student relation created successfully!");
+      message.success("Relation created successfully!");
       setIsRelationModalVisible(false);
-      setSelectedParentEmail(null);
-      fetchParents();
+      setSelectedParent(null);
+      fetchParentsData();
+      fetchStatisticsData();
     } catch (error) {
-      // Error is automatically handled by useApi with detailed validation messages
-      console.log("Create relation error handled by useApi");
+      console.log("Relation submit error handled by useApi");
     }
   };
 
-  const handleAddParent = () => {
-    setIsCreateModalVisible(true);
-  };
-
-  const handleAddRelation = () => {
-    setSelectedParentEmail(null);
-    setIsRelationModalVisible(true);
-  };
-
-  const handleAddChildToParent = (parent) => {
-    setSelectedParentEmail(parent.email);
-    setIsRelationModalVisible(true);
-  };
-
-  const handleCancelCreate = () => {
-    setIsCreateModalVisible(false);
-  };
-
-  const handleCancelRelation = () => {
+  const handleRelationCancel = () => {
     setIsRelationModalVisible(false);
-    setSelectedParentEmail(null);
+    setSelectedParent(null);
   };
 
-  const parents = parentsData || [];
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Extract data
+  const parents = parentsData?.parents || [];
+  const pagination = parentsData?.pagination || {};
 
   return (
     <AdminLayout>
@@ -113,36 +250,62 @@ export default function ParentsScreen() {
         </div>
 
         {/* Statistics Cards */}
-        <ParentsStats parents={parents} />
+        <ParentsStatistics
+          statistics={statistics}
+          loading={loadingStatistics}
+        />
+
+        {/* Filters */}
+        <ParentsFilters filters={filters} onFilterChange={handleFilterChange} />
 
         {/* Parents Table */}
-        <ParentsTable
-          parents={parents}
-          loading={loading}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          total={parentsData?.total || 0}
-          onPageChange={setCurrentPage}
-          onAddParent={handleAddParent}
+        <Card>
+          <div style={{ marginBottom: 16 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              Add Parent
+            </Button>
+          </div>
+
+          <ParentsTable
+            parents={parents}
+            loading={loading}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            total={pagination.totalItems || 0}
+            onPageChange={handlePageChange}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDetails={handleDetails}
+            onAddRelation={handleAddRelation}
+          />
+        </Card>
+
+        {/* Parent Form Modal */}
+        <ParentFormModal
+          visible={isFormModalVisible}
+          editingParent={editingParent}
+          form={form}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          creating={creating}
+          updating={updating}
+        />
+
+        {/* Parent Details Modal */}
+        <ParentDetailsModal
+          visible={isDetailsModalVisible}
+          parent={selectedParent}
+          onCancel={handleDetailsCancel}
           onAddRelation={handleAddRelation}
-          onAddChildToParent={handleAddChildToParent}
         />
 
-        {/* Create Parent Modal */}
-        <CreateParentModal
-          visible={isCreateModalVisible}
-          onCancel={handleCancelCreate}
-          onSubmit={handleCreateParent}
-          loading={creating}
-        />
-
-        {/* Create Relation Modal */}
-        <CreateRelationModal
+        {/* Add Relation Modal */}
+        <AddRelationModal
           visible={isRelationModalVisible}
-          onCancel={handleCancelRelation}
-          onSubmit={handleCreateRelation}
+          selectedParent={selectedParent}
+          onSubmit={handleRelationSubmit}
+          onCancel={handleRelationCancel}
           loading={creatingRelation}
-          initialParentEmail={selectedParentEmail}
         />
       </Space>
     </AdminLayout>
