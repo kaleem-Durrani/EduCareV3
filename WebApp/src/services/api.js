@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL } from "../constants/api.js";
+import { API_BASE_URL, SERVER_URL } from "../constants/api.js";
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
@@ -126,5 +126,8 @@ export { boxService } from "./boxService.js";
 export { documentService } from "./documentService.js";
 export { postService } from "./postService.js";
 export { lostItemService } from "./lostItemService.js";
+
+// Export SERVER_URL for use in components (e.g., for image URLs)
+export { SERVER_URL };
 
 export default apiClient;
