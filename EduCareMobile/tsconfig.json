@@ -4,6 +4,8 @@
     "strict": false,
     "allowJs": true,
     "checkJs": false,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "skipLibCheck": true,
+    "noImplicitAny": false
   }
 }
