@@ -3,6 +3,7 @@ import { PlusOutlined, DeleteOutlined, UserOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useTeachersContext } from "../../../context/TeachersContext";
 import { classService } from "../../../services/index";
+import { handleApiError } from "../../../utils/errorHandler";
 
 export default function TeachersModal({
   visible,
@@ -18,7 +19,8 @@ export default function TeachersModal({
 
   // Filter out teachers already in the class
   const availableTeachers = allTeachers.filter(
-    (teacher) => !teachers.some((classTeacher) => classTeacher._id === teacher.value)
+    (teacher) =>
+      !teachers.some((classTeacher) => classTeacher._id === teacher.value)
   );
 
   const handleAddTeacher = async () => {
@@ -36,7 +38,8 @@ export default function TeachersModal({
       setSelectedTeacherId(null);
       onRefresh(); // Refresh the class data
     } catch (error) {
-      message.error("Failed to add teacher to class");
+      // Use the error handler to display the actual error message from the API
+      handleApiError(error);
     } finally {
       setAddingTeacher(false);
     }
@@ -49,7 +52,8 @@ export default function TeachersModal({
       message.success("Teacher removed from class successfully!");
       onRefresh(); // Refresh the class data
     } catch (error) {
-      message.error("Failed to remove teacher from class");
+      // Use the error handler to display the actual error message from the API
+      handleApiError(error);
     } finally {
       setRemovingTeacher(null);
     }
@@ -114,7 +118,14 @@ export default function TeachersModal({
       destroyOnHidden
     >
       {/* Add Teacher Section */}
-      <div style={{ marginBottom: 16, padding: 16, backgroundColor: "#f5f5f5", borderRadius: "6px" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 16,
+          backgroundColor: "#f5f5f5",
+          borderRadius: "6px",
+        }}
+      >
         <Space.Compact style={{ width: "100%" }}>
           <Select
             style={{ flex: 1 }}

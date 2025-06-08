@@ -3,6 +3,7 @@ import { PlusOutlined, DeleteOutlined, UserOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useStudentsContext } from "../../../context/StudentsContext";
 import { classService } from "../../../services/index";
+import { handleApiError } from "../../../utils/errorHandler";
 
 export default function StudentsModal({
   visible,
@@ -18,7 +19,8 @@ export default function StudentsModal({
 
   // Filter out students already in the class
   const availableStudents = allStudents.filter(
-    (student) => !students.some((classStudent) => classStudent._id === student.value)
+    (student) =>
+      !students.some((classStudent) => classStudent._id === student.value)
   );
 
   const handleAddStudent = async () => {
@@ -36,7 +38,8 @@ export default function StudentsModal({
       setSelectedStudentId(null);
       onRefresh(); // Refresh the class data
     } catch (error) {
-      message.error("Failed to add student to class");
+      // Use the error handler to display the actual error message from the API
+      handleApiError(error);
     } finally {
       setAddingStudent(false);
     }
@@ -49,7 +52,8 @@ export default function StudentsModal({
       message.success("Student removed from class successfully!");
       onRefresh(); // Refresh the class data
     } catch (error) {
-      message.error("Failed to remove student from class");
+      // Use the error handler to display the actual error message from the API
+      handleApiError(error);
     } finally {
       setRemovingStudent(null);
     }
@@ -68,7 +72,7 @@ export default function StudentsModal({
       ),
     },
     {
-      title: "Roll Number",
+      title: "Enrollment #",
       dataIndex: "rollNum",
       key: "rollNum",
     },
@@ -117,7 +121,14 @@ export default function StudentsModal({
       destroyOnHidden
     >
       {/* Add Student Section */}
-      <div style={{ marginBottom: 16, padding: 16, backgroundColor: "#f5f5f5", borderRadius: "6px" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 16,
+          backgroundColor: "#f5f5f5",
+          borderRadius: "6px",
+        }}
+      >
         <Space.Compact style={{ width: "100%" }}>
           <Select
             style={{ flex: 1 }}
