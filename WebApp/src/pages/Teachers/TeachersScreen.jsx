@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Space, Typography, message } from "antd";
 import useApi from "../../hooks/useApi";
 import { teacherService } from "../../services/index";
@@ -17,9 +17,14 @@ export default function TeachersScreen() {
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [teacherStatistics, setTeacherStatistics] = useState(null);
-  const pageSize = 10;
+
+  // Pagination and filter state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("active");
+  const [searchFilter, setSearchFilter] = useState("");
+  const [sortConfig, setSortConfig] = useState({});
 
   console.log(selectedTeacher);
 
@@ -56,22 +61,30 @@ export default function TeachersScreen() {
     }
   );
 
-  useEffect(() => {
-    fetchTeachersData();
-    fetchTeacherStatistics();
-  }, []);
-
-  useEffect(() => {
-    fetchTeachersData();
-  }, [currentPage]);
-
-  const fetchTeachersData = async () => {
+  // Smart refresh function that preserves current state
+  const refreshTeachersData = async () => {
     const params = {
       page: currentPage,
       limit: pageSize,
+      status: statusFilter,
     };
+
+    if (searchFilter) {
+      params.search = searchFilter;
+    }
+
+    if (sortConfig.field) {
+      params.sortBy = sortConfig.field;
+      params.sortOrder = sortConfig.order === "ascend" ? "asc" : "desc";
+    }
+
     await fetchTeachers(params);
   };
+
+  useEffect(() => {
+    refreshTeachersData();
+    fetchTeacherStatistics();
+  }, [currentPage, pageSize, statusFilter, searchFilter, sortConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTeacherStatistics = async () => {
     try {
@@ -87,7 +100,7 @@ export default function TeachersScreen() {
       await createTeacherRequest(values);
       message.success("Teacher created successfully!");
       setIsCreateModalVisible(false);
-      fetchTeachersData();
+      refreshTeachersData(); // Use smart refresh
       fetchTeacherStatistics(); // Refresh statistics
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
@@ -100,8 +113,31 @@ export default function TeachersScreen() {
   };
 
   const handleViewDetails = (teacher) => {
-    setSelectedTeacher(teacher);
+    // Only pass the teacher ID and basic info needed for modal title
+    setSelectedTeacher({ _id: teacher._id, name: teacher.name });
     setIsDetailsModalVisible(true);
+  };
+
+  const handleTableChange = ({
+    page,
+    pageSize: newPageSize,
+    sorter,
+    filters,
+    status,
+  }) => {
+    // Update state variables
+    if (page) setCurrentPage(page);
+    if (newPageSize) setPageSize(newPageSize);
+    if (status !== undefined) setStatusFilter(status);
+    if (filters?.search !== undefined) setSearchFilter(filters.search);
+    if (sorter) {
+      setSortConfig({
+        field: sorter.field,
+        order: sorter.order,
+      });
+    }
+
+    // The useEffect will automatically trigger refreshTeachersData when state changes
   };
 
   const handleCancelCreate = () => {
@@ -114,7 +150,7 @@ export default function TeachersScreen() {
   };
 
   const handleRefreshTeachers = () => {
-    fetchTeachersData();
+    refreshTeachersData(); // Use smart refresh
     fetchTeacherStatistics();
   };
 
@@ -138,12 +174,11 @@ export default function TeachersScreen() {
         <TeachersTable
           teachers={teachers}
           loading={loading}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          total={pagination.totalItems || 0}
-          onPageChange={setCurrentPage}
+          pagination={pagination}
+          statusFilter={statusFilter}
           onAdd={handleAdd}
           onViewDetails={handleViewDetails}
+          onTableChange={handleTableChange}
         />
 
         {/* Create Teacher Modal */}

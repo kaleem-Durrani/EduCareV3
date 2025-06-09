@@ -1,18 +1,41 @@
 import React from "react";
-import { Table, Button, Space, Card } from "antd";
-import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import { Table, Button, Space, Card, Select, Avatar } from "antd";
+import { PlusOutlined, EyeOutlined, UserOutlined } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 
 export default function TeachersTable({
   teachers,
   loading,
-  currentPage,
-  pageSize,
-  total,
-  onPageChange,
+  pagination,
+  statusFilter,
   onAdd,
   onViewDetails,
+  onTableChange,
 }) {
+  const getPhotoUrl = (teacher) => {
+    if (teacher?.photoUrl) {
+      return `${SERVER_URL}/${teacher.photoUrl}`;
+    }
+    return null;
+  };
+
   const columns = [
+    {
+      title: "Avatar",
+      dataIndex: "avatar",
+      key: "avatar",
+      width: 80,
+      render: (_, record) => (
+        <Avatar
+          size={40}
+          src={getPhotoUrl(record)}
+          style={{ backgroundColor: "#1890ff" }}
+          icon={!getPhotoUrl(record) ? <UserOutlined /> : null}
+        >
+          {!getPhotoUrl(record) && record.name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+      ),
+    },
     {
       title: "Name",
       dataIndex: "name",
@@ -47,12 +70,46 @@ export default function TeachersTable({
     },
   ];
 
+  const handleStatusChange = (value) => {
+    if (onTableChange) {
+      onTableChange({
+        page: 1,
+        pageSize: pagination?.itemsPerPage || 10,
+        status: value,
+      });
+    }
+  };
+
   return (
     <Card>
-      <div style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
-          Add New Teacher
-        </Button>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+            Add New Teacher
+          </Button>
+        </div>
+        <div>
+          <Space>
+            <span>Status:</span>
+            <Select
+              value={statusFilter}
+              onChange={handleStatusChange}
+              style={{ width: 120 }}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+                { value: "all", label: "All" },
+              ]}
+            />
+          </Space>
+        </div>
       </div>
 
       <Table
@@ -61,10 +118,19 @@ export default function TeachersTable({
         loading={loading}
         rowKey="_id"
         pagination={{
-          current: currentPage,
-          pageSize: pageSize,
-          total: total,
-          onChange: onPageChange,
+          current: pagination?.currentPage || 1,
+          pageSize: pagination?.itemsPerPage || 10,
+          total: pagination?.totalItems || 0,
+          onChange: (page, pageSize) => {
+            if (onTableChange) {
+              onTableChange({ page, pageSize });
+            }
+          },
+          onShowSizeChange: (_, size) => {
+            if (onTableChange) {
+              onTableChange({ page: 1, pageSize: size });
+            }
+          },
           showSizeChanger: false,
           showQuickJumper: true,
           showTotal: (total, range) =>

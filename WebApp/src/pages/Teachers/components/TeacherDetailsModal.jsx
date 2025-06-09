@@ -14,13 +14,13 @@ import {
   Divider,
   Form,
   Input,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
   DeleteOutlined,
   TeamOutlined,
   UserOutlined,
-  UploadOutlined,
   CameraOutlined,
   EditOutlined,
   SaveOutlined,
@@ -29,6 +29,8 @@ import {
 import { useState, useEffect } from "react";
 import { useClassesContext } from "../../../context/ClassesContext";
 import { teacherService, SERVER_URL } from "../../../services/index";
+import useApi from "../../../hooks/useApi";
+import { handleApiError } from "../../../utils/errorHandler";
 
 export default function TeacherDetailsModal({
   visible,
@@ -49,23 +51,51 @@ export default function TeacherDetailsModal({
   const { classes: allClasses } = useClassesContext();
   const [form] = Form.useForm();
 
+  // Use the useApi hook for fetching teacher data
+  const {
+    request: fetchTeacherData,
+    isLoading: teacherLoading,
+    data: currentTeacher,
+    error: fetchError,
+  } = useApi(teacherService.getTeacherById);
+
+  // Smart refresh function for modal data
+  const refreshModalData = () => {
+    if (teacher?._id) {
+      fetchTeacherData(teacher._id);
+    }
+  };
+
   // Filter out classes already enrolled
   const availableClasses = allClasses.filter(
     (cls) => !enrolledClasses.some((enrolled) => enrolled._id === cls.value)
   );
 
   useEffect(() => {
-    if (visible && teacher) {
+    if (visible && teacher?._id) {
+      fetchTeacherData(teacher._id);
       fetchTeacherDetails();
-      // Populate form with teacher data
+    }
+  }, [visible, teacher?._id, currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show error message if fetch fails
+  useEffect(() => {
+    if (fetchError) {
+      message.error("Failed to load teacher details");
+    }
+  }, [fetchError]);
+
+  // Update form when teacher data is loaded
+  useEffect(() => {
+    if (currentTeacher) {
       form.setFieldsValue({
-        name: teacher.name || "",
-        email: teacher.email || "",
-        phone: teacher.phone || "",
-        address: teacher.address || "",
+        name: currentTeacher.name || "",
+        email: currentTeacher.email || "",
+        phone: currentTeacher.phone || "",
+        address: currentTeacher.address || "",
       });
     }
-  }, [visible, teacher, currentPage, form]);
+  }, [currentTeacher, form]);
 
   const fetchTeacherDetails = async () => {
     if (!teacher) return;
@@ -100,9 +130,10 @@ export default function TeacherDetailsModal({
       message.success("Teacher enrolled in class successfully!");
       setSelectedClassId(null);
       fetchTeacherDetails();
+      refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table
     } catch (error) {
-      message.error("Failed to enroll teacher in class");
+      handleApiError(error);
     } finally {
       setAddingClass(false);
     }
@@ -114,9 +145,10 @@ export default function TeacherDetailsModal({
       await teacherService.removeTeacherFromClass(classId, teacher._id);
       message.success("Teacher removed from class successfully!");
       fetchTeacherDetails();
+      refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table
     } catch (error) {
-      message.error("Failed to remove teacher from class");
+      handleApiError(error);
     } finally {
       setRemovingClass(null);
     }
@@ -130,10 +162,11 @@ export default function TeacherDetailsModal({
 
       await teacherService.updateTeacherPhoto(teacher._id, formData);
       message.success("Teacher photo updated successfully!");
+      refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table to show new photo
       return false; // Prevent default upload behavior
     } catch (error) {
-      message.error("Failed to upload teacher photo");
+      handleApiError(error);
       return false;
     } finally {
       setUploadingPhoto(false);
@@ -144,10 +177,10 @@ export default function TeacherDetailsModal({
     if (isEditing) {
       // Cancel editing - reset form to original values
       form.setFieldsValue({
-        name: teacher.name || "",
-        email: teacher.email || "",
-        phone: teacher.phone || "",
-        address: teacher.address || "",
+        name: currentTeacher?.name || "",
+        email: currentTeacher?.email || "",
+        phone: currentTeacher?.phone || "",
+        address: currentTeacher?.address || "",
       });
     }
     setIsEditing(!isEditing);
@@ -163,9 +196,10 @@ export default function TeacherDetailsModal({
           await teacherService.updateTeacher(teacher._id, values);
           message.success("Teacher information updated successfully!");
           setIsEditing(false);
-          onRefresh(); // Refresh main table and modal data
+          refreshModalData(); // Refresh modal data
+          onRefresh(); // Refresh main table
         } catch (error) {
-          message.error("Failed to update teacher information");
+          handleApiError(error);
         } finally {
           setUpdatingTeacher(false);
         }
@@ -236,253 +270,265 @@ export default function TeacherDetailsModal({
   ];
 
   const getPhotoUrl = () => {
-    if (teacher?.photoUrl) {
+    if (currentTeacher?.photoUrl) {
       // Use the SERVER_URL from environment variables
-      return `${SERVER_URL}/${teacher.photoUrl}`;
+      return `${SERVER_URL}/${currentTeacher.photoUrl}`;
     }
     return null;
   };
 
   return (
     <Modal
-      title={`Teacher Details - ${teacher?.name || "Unknown"}`}
+      title={`Teacher Details - ${
+        currentTeacher?.name || teacher?.name || "Unknown"
+      }`}
       open={visible}
       onCancel={onCancel}
       width={1000}
       footer={null}
       destroyOnHidden
     >
-      {/* Teacher Info Section */}
-      <Card
-        style={{ marginBottom: 16 }}
-        extra={
-          <Space>
-            {isEditing ? (
-              <>
-                <Button
-                  type="primary"
-                  icon={<SaveOutlined />}
-                  loading={updatingTeacher}
-                  onClick={() => form.submit()}
-                  style={{ borderRadius: "4px" }}
-                >
-                  Save
-                </Button>
-                <Button
-                  icon={<CloseOutlined />}
-                  onClick={handleEditToggle}
-                  style={{ borderRadius: "4px" }}
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <Button
-                type="primary"
-                icon={<EditOutlined />}
-                onClick={handleEditToggle}
-                style={{ borderRadius: "4px" }}
-              >
-                Edit Info
-              </Button>
-            )}
-          </Space>
-        }
-      >
-        <Row gutter={16} align="middle">
-          <Col span={4}>
-            <div style={{ textAlign: "center" }}>
-              <Avatar
-                size={80}
-                src={getPhotoUrl()}
-                style={{ backgroundColor: "#1890ff", fontSize: "24px" }}
-              >
-                {teacher?.name?.charAt(0)?.toUpperCase()}
-              </Avatar>
-              <div style={{ marginTop: 8 }}>
-                <Upload
-                  beforeUpload={handlePhotoUpload}
-                  showUploadList={false}
-                  accept="image/*"
-                >
+      {teacherLoading ? (
+        <div style={{ textAlign: "center", padding: "50px" }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16 }}>Loading teacher details...</div>
+        </div>
+      ) : (
+        <>
+          {/* Teacher Info Section */}
+          <Card
+            style={{ marginBottom: 16 }}
+            extra={
+              <Space>
+                {isEditing ? (
+                  <>
+                    <Button
+                      type="primary"
+                      icon={<SaveOutlined />}
+                      loading={updatingTeacher}
+                      onClick={() => form.submit()}
+                      style={{ borderRadius: "4px" }}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      icon={<CloseOutlined />}
+                      onClick={handleEditToggle}
+                      style={{ borderRadius: "4px" }}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
                   <Button
-                    icon={<CameraOutlined />}
-                    loading={uploadingPhoto}
-                    size="small"
+                    type="primary"
+                    icon={<EditOutlined />}
+                    onClick={handleEditToggle}
                     style={{ borderRadius: "4px" }}
                   >
-                    {uploadingPhoto ? "Uploading..." : "Change Photo"}
+                    Edit Info
                   </Button>
-                </Upload>
-              </div>
-            </div>
-          </Col>
-          <Col span={20}>
-            {isEditing ? (
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleUpdateTeacher}
-              >
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Form.Item
-                      name="name"
-                      label="Name"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please enter teacher name!",
-                        },
-                        {
-                          min: 2,
-                          message: "Name must be at least 2 characters!",
-                        },
-                      ]}
-                    >
-                      <Input
-                        placeholder="Enter teacher name"
-                        style={{
-                          border: "2px solid #d9d9d9",
-                          borderRadius: "6px",
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      name="email"
-                      label="Email"
-                      rules={[
-                        { required: true, message: "Please enter email!" },
-                        {
-                          type: "email",
-                          message: "Please enter a valid email!",
-                        },
-                      ]}
-                    >
-                      <Input
-                        placeholder="Enter email address"
-                        style={{
-                          border: "2px solid #d9d9d9",
-                          borderRadius: "6px",
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="phone" label="Phone">
-                      <Input
-                        placeholder="Enter phone number"
-                        style={{
-                          border: "2px solid #d9d9d9",
-                          borderRadius: "6px",
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="address" label="Address">
-                      <Input
-                        placeholder="Enter address"
-                        style={{
-                          border: "2px solid #d9d9d9",
-                          borderRadius: "6px",
-                        }}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </Form>
-            ) : (
-              <Row gutter={[16, 8]}>
-                <Col span={12}>
-                  <strong>Name:</strong> {teacher?.name}
-                </Col>
-                <Col span={12}>
-                  <strong>Email:</strong> {teacher?.email}
-                </Col>
-                <Col span={12}>
-                  <strong>Phone:</strong> {teacher?.phone || "N/A"}
-                </Col>
-                <Col span={12}>
-                  <strong>Address:</strong> {teacher?.address || "N/A"}
-                </Col>
-              </Row>
-            )}
-          </Col>
-        </Row>
-      </Card>
-
-      <Divider>Enrolled Classes</Divider>
-
-      {/* Add Class Section */}
-      <div
-        style={{
-          marginBottom: 16,
-          padding: 16,
-          backgroundColor: "#f5f5f5",
-          borderRadius: "6px",
-        }}
-      >
-        <Space.Compact style={{ width: "100%" }}>
-          <Select
-            style={{ flex: 1 }}
-            placeholder="Select a class to enroll teacher"
-            value={selectedClassId}
-            onChange={setSelectedClassId}
-            showSearch
-            optionFilterProp="label"
-            options={availableClasses.map((cls) => ({
-              value: cls.value,
-              label: cls.label,
-            }))}
-          />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAddClass}
-            loading={addingClass}
-            disabled={!selectedClassId}
-            style={{ borderRadius: "0 6px 6px 0" }}
+                )}
+              </Space>
+            }
           >
-            Enroll in Class
-          </Button>
-        </Space.Compact>
-        {availableClasses.length === 0 && (
-          <div style={{ marginTop: 8, color: "#666", fontSize: "12px" }}>
-            Teacher is enrolled in all available classes
+            <Row gutter={16} align="middle">
+              <Col span={4}>
+                <div style={{ textAlign: "center" }}>
+                  <Avatar
+                    size={80}
+                    src={getPhotoUrl()}
+                    style={{ backgroundColor: "#1890ff", fontSize: "24px" }}
+                  >
+                    {currentTeacher?.name?.charAt(0)?.toUpperCase()}
+                  </Avatar>
+                  <div style={{ marginTop: 8 }}>
+                    <Upload
+                      beforeUpload={handlePhotoUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                    >
+                      <Button
+                        icon={<CameraOutlined />}
+                        loading={uploadingPhoto}
+                        size="small"
+                        style={{ borderRadius: "4px" }}
+                      >
+                        {uploadingPhoto ? "Uploading..." : "Change Photo"}
+                      </Button>
+                    </Upload>
+                  </div>
+                </div>
+              </Col>
+              <Col span={20}>
+                {isEditing ? (
+                  <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={handleUpdateTeacher}
+                  >
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          name="name"
+                          label="Name"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter teacher name!",
+                            },
+                            {
+                              min: 2,
+                              message: "Name must be at least 2 characters!",
+                            },
+                          ]}
+                        >
+                          <Input
+                            placeholder="Enter teacher name"
+                            style={{
+                              border: "2px solid #d9d9d9",
+                              borderRadius: "6px",
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          name="email"
+                          label="Email"
+                          rules={[
+                            { required: true, message: "Please enter email!" },
+                            {
+                              type: "email",
+                              message: "Please enter a valid email!",
+                            },
+                          ]}
+                        >
+                          <Input
+                            placeholder="Enter email address"
+                            style={{
+                              border: "2px solid #d9d9d9",
+                              borderRadius: "6px",
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="phone" label="Phone">
+                          <Input
+                            placeholder="Enter phone number"
+                            style={{
+                              border: "2px solid #d9d9d9",
+                              borderRadius: "6px",
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="address" label="Address">
+                          <Input
+                            placeholder="Enter address"
+                            style={{
+                              border: "2px solid #d9d9d9",
+                              borderRadius: "6px",
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </Form>
+                ) : (
+                  <Row gutter={[16, 8]}>
+                    <Col span={12}>
+                      <strong>Name:</strong> {currentTeacher?.name}
+                    </Col>
+                    <Col span={12}>
+                      <strong>Email:</strong> {currentTeacher?.email}
+                    </Col>
+                    <Col span={12}>
+                      <strong>Phone:</strong> {currentTeacher?.phone || "N/A"}
+                    </Col>
+                    <Col span={12}>
+                      <strong>Address:</strong>{" "}
+                      {currentTeacher?.address || "N/A"}
+                    </Col>
+                  </Row>
+                )}
+              </Col>
+            </Row>
+          </Card>
+
+          <Divider>Enrolled Classes</Divider>
+
+          {/* Add Class Section */}
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 16,
+              backgroundColor: "#f5f5f5",
+              borderRadius: "6px",
+            }}
+          >
+            <Space.Compact style={{ width: "100%" }}>
+              <Select
+                style={{ flex: 1 }}
+                placeholder="Select a class to enroll teacher"
+                value={selectedClassId}
+                onChange={setSelectedClassId}
+                showSearch
+                optionFilterProp="label"
+                options={availableClasses.map((cls) => ({
+                  value: cls.value,
+                  label: cls.label,
+                }))}
+              />
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAddClass}
+                loading={addingClass}
+                disabled={!selectedClassId}
+                style={{ borderRadius: "0 6px 6px 0" }}
+              >
+                Enroll in Class
+              </Button>
+            </Space.Compact>
+            {availableClasses.length === 0 && (
+              <div style={{ marginTop: 8, color: "#666", fontSize: "12px" }}>
+                Teacher is enrolled in all available classes
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Classes Table */}
-      <Table
-        columns={columns}
-        dataSource={enrolledClasses}
-        rowKey="_id"
-        loading={loading}
-        pagination={{
-          current: currentPage,
-          pageSize: pagination.itemsPerPage || 10,
-          total: pagination.totalItems || 0,
-          onChange: setCurrentPage,
-          showSizeChanger: false,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} classes`,
-        }}
-        locale={{
-          emptyText: "Teacher is not enrolled in any classes",
-        }}
-      />
+          {/* Classes Table */}
+          <Table
+            columns={columns}
+            dataSource={enrolledClasses}
+            rowKey="_id"
+            loading={loading}
+            pagination={{
+              current: currentPage,
+              pageSize: pagination.itemsPerPage || 10,
+              total: pagination.totalItems || 0,
+              onChange: setCurrentPage,
+              showSizeChanger: false,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} classes`,
+            }}
+            locale={{
+              emptyText: "Teacher is not enrolled in any classes",
+            }}
+          />
 
-      {/* Footer */}
-      <div style={{ marginTop: 16, textAlign: "right" }}>
-        <Button onClick={onCancel} style={{ borderRadius: "6px" }}>
-          Close
-        </Button>
-      </div>
+          {/* Footer */}
+          <div style={{ marginTop: 16, textAlign: "right" }}>
+            <Button onClick={onCancel} style={{ borderRadius: "6px" }}>
+              Close
+            </Button>
+          </div>
+        </>
+      )}
     </Modal>
   );
 }
