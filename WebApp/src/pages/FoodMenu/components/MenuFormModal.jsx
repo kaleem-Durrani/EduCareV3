@@ -7,12 +7,16 @@ import {
   Button,
   Typography,
   Divider,
+  Input,
+  Select,
+  Tag,
 } from "antd";
 import dayjs from "dayjs";
 import DayMenuEditor from "./DayMenuEditor";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
 export default function MenuFormModal({
   visible,
@@ -34,9 +38,12 @@ export default function MenuFormModal({
 
   useEffect(() => {
     if (visible) {
-      if (mode === "edit" && initialData) {
-        // Set form values for edit mode
+      if ((mode === "edit" || mode === "view") && initialData) {
+        // Set form values for edit/view mode
         form.setFieldsValue({
+          title: initialData.title || "",
+          description: initialData.description || "",
+          status: initialData.status || "draft",
           dateRange: [dayjs(initialData.startDate), dayjs(initialData.endDate)],
         });
 
@@ -45,7 +52,17 @@ export default function MenuFormModal({
           initialData.menuData?.filter(
             (item) => item.day !== "Saturday" && item.day !== "Sunday"
           ) || [];
-        setMenuData(filteredMenuData);
+        setMenuData(
+          filteredMenuData.length > 0
+            ? filteredMenuData
+            : [
+                { day: "Monday", items: [] },
+                { day: "Tuesday", items: [] },
+                { day: "Wednesday", items: [] },
+                { day: "Thursday", items: [] },
+                { day: "Friday", items: [] },
+              ]
+        );
       } else {
         // Reset for create mode
         form.resetFields();
@@ -64,6 +81,9 @@ export default function MenuFormModal({
     const [startDate, endDate] = values.dateRange;
 
     const formData = {
+      title: values.title,
+      description: values.description,
+      status: values.status || "draft",
       startDate: startDate.format("YYYY-MM-DD"),
       endDate: endDate.format("YYYY-MM-DD"),
       menuData: menuData,
@@ -98,28 +118,84 @@ export default function MenuFormModal({
       open={visible}
       onCancel={handleCancel}
       footer={null}
-      width={800}
+      width={900}
       destroyOnClose
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
-          name="dateRange"
-          label="Menu Period"
-          rules={[{ required: true, message: "Please select menu period!" }]}
+          name="title"
+          label="Menu Title"
+          rules={[{ required: true, message: "Please enter menu title!" }]}
         >
-          <RangePicker
+          <Input
+            placeholder="Enter menu title (e.g., 'Week 1 - January 2024')"
+            disabled={mode === "view"}
             style={{
-              width: "100%",
               border: "2px solid #d9d9d9",
               borderRadius: "6px",
               fontSize: "14px",
               padding: "8px 12px",
               height: "45px",
             }}
-            format="YYYY-MM-DD"
-            placeholder={["Start Date", "End Date"]}
           />
         </Form.Item>
+
+        <Form.Item name="description" label="Description (Optional)">
+          <TextArea
+            placeholder="Enter menu description..."
+            disabled={mode === "view"}
+            rows={3}
+            style={{
+              border: "2px solid #d9d9d9",
+              borderRadius: "6px",
+              fontSize: "14px",
+            }}
+          />
+        </Form.Item>
+
+        <Space style={{ width: "100%" }} size="large">
+          <Form.Item
+            name="dateRange"
+            label="Menu Period"
+            rules={[{ required: true, message: "Please select menu period!" }]}
+            style={{ flex: 1 }}
+          >
+            <RangePicker
+              disabled={mode === "view"}
+              style={{
+                width: "100%",
+                border: "2px solid #d9d9d9",
+                borderRadius: "6px",
+                fontSize: "14px",
+                padding: "8px 12px",
+                height: "45px",
+              }}
+              format="YYYY-MM-DD"
+              placeholder={["Start Date", "End Date"]}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="Status"
+            rules={[{ required: true, message: "Please select status!" }]}
+            style={{ minWidth: 150 }}
+          >
+            <Select
+              disabled={mode === "view"}
+              style={{
+                border: "2px solid #d9d9d9",
+                borderRadius: "6px",
+                height: "45px",
+              }}
+              options={[
+                { value: "draft", label: "Draft" },
+                { value: "active", label: "Active" },
+                { value: "archived", label: "Archived" },
+              ]}
+            />
+          </Form.Item>
+        </Space>
 
         <Divider>Daily Menu Items</Divider>
 
@@ -143,19 +219,28 @@ export default function MenuFormModal({
                 day={dayMenu.day}
                 items={dayMenu.items}
                 onItemsChange={(items) => updateDayMenu(dayMenu.day, items)}
+                disabled={mode === "view"}
               />
             </div>
           ))}
         </div>
 
-        <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              {mode === "edit" ? "Update Menu" : "Create Menu"}
-            </Button>
-            <Button onClick={handleCancel}>Cancel</Button>
-          </Space>
-        </Form.Item>
+        {mode !== "view" && (
+          <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                {mode === "edit" ? "Update Menu" : "Create Menu"}
+              </Button>
+              <Button onClick={handleCancel}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        )}
+
+        {mode === "view" && (
+          <div style={{ marginTop: 24, textAlign: "right" }}>
+            <Button onClick={handleCancel}>Close</Button>
+          </div>
+        )}
       </Form>
     </Modal>
   );
