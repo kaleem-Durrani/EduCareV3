@@ -6,6 +6,7 @@ export const studentService = {
   generateEnrollmentNumber: () =>
     api.get("/students/generate-enrollment-number"),
   getAllStudents: (params = {}) => api.get("/students", { params }),
+  getStudentById: (studentId) => api.get(`/students/${studentId}`),
   getStudentsForSelect: () => api.get("/students/select"),
   getStudentDetails: (studentId, params = {}) =>
     api.get(`/students/${studentId}/details`, { params }),

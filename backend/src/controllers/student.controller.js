@@ -25,10 +25,18 @@ import path from "path";
  * Admin/Teacher access
  */
 export const getAllStudents = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, search } = req.query;
+  const { page = 1, limit = 10, search, status = "active" } = req.query;
   const skip = (page - 1) * limit;
 
-  let query = { active: true };
+  let query = {};
+
+  // Handle status filter
+  if (status === "active") {
+    query.active = true;
+  } else if (status === "inactive") {
+    query.active = false;
+  }
+  // If status === "all", don't add active filter
 
   // If user is a teacher, only show students from their classes
   if (req.user.role === "teacher") {
@@ -72,6 +80,28 @@ export const getAllStudents = asyncHandler(async (req, res) => {
   };
 
   return sendSuccess(res, result, "Students retrieved successfully");
+});
+
+/**
+ * Get student by ID (detailed view for modals)
+ * GET /api/students/:student_id
+ * Admin/Teacher access
+ */
+export const getStudentById = asyncHandler(async (req, res) => {
+  const { student_id } = req.params;
+
+  const student = await Student.findById(student_id).populate([
+    {
+      path: "current_class",
+      select: "name grade section",
+    },
+  ]);
+
+  if (!student) {
+    return sendNotFound(res, "Student not found");
+  }
+
+  sendSuccess(res, student, "Student retrieved successfully");
 });
 
 /**

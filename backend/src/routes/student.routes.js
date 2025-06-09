@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getAllStudents,
+  getStudentById,
   createStudent,
   updateStudent,
   getStudentEnrollmentHistory,
@@ -74,6 +75,20 @@ router.get("/students/select", authenticate, getStudentsForSelect);
  * @access  Private (Admin/Teacher)
  */
 router.get("/students", authenticate, requireAdminOrTeacher, getAllStudents);
+
+/**
+ * @route   GET /api/students/:student_id
+ * @desc    Get student by ID (detailed view for modals)
+ * @access  Private (Admin/Teacher)
+ */
+router.get(
+  "/students/:student_id",
+  authenticate,
+  requireAdminOrTeacher,
+  studentIdValidation,
+  handleValidationErrors,
+  getStudentById
+);
 
 /**
  * @route   POST /api/student
