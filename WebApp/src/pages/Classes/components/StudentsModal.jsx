@@ -1,5 +1,15 @@
-import { Modal, Table, Button, Space, Select, message, Popconfirm } from "antd";
+import {
+  Modal,
+  Table,
+  Button,
+  Space,
+  Select,
+  message,
+  Popconfirm,
+  Avatar,
+} from "antd";
 import { PlusOutlined, DeleteOutlined, UserOutlined } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 import { useState } from "react";
 import { useStudentsContext } from "../../../context/StudentsContext";
 import { classService } from "../../../services/index";
@@ -59,17 +69,35 @@ export default function StudentsModal({
     }
   };
 
+  const getPhotoUrl = (student) => {
+    if (student?.photoUrl) {
+      return `${SERVER_URL}/${student.photoUrl}`;
+    }
+    return null;
+  };
+
   const columns = [
+    {
+      title: "Avatar",
+      dataIndex: "avatar",
+      key: "avatar",
+      width: 80,
+      render: (_, record) => (
+        <Avatar
+          size={40}
+          src={getPhotoUrl(record)}
+          style={{ backgroundColor: "#1890ff" }}
+          icon={!getPhotoUrl(record) ? <UserOutlined /> : null}
+        >
+          {!getPhotoUrl(record) && record.fullName?.charAt(0)?.toUpperCase()}
+        </Avatar>
+      ),
+    },
     {
       title: "Student Name",
       dataIndex: "fullName",
       key: "fullName",
-      render: (text) => (
-        <Space>
-          <UserOutlined style={{ color: "#1890ff" }} />
-          <strong>{text}</strong>
-        </Space>
-      ),
+      render: (text) => <strong>{text}</strong>,
     },
     {
       title: "Enrollment #",

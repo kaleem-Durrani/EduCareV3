@@ -1,5 +1,15 @@
-import { Modal, Table, Button, Space, Select, message, Popconfirm } from "antd";
+import {
+  Modal,
+  Table,
+  Button,
+  Space,
+  Select,
+  message,
+  Popconfirm,
+  Avatar,
+} from "antd";
 import { PlusOutlined, DeleteOutlined, UserOutlined } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services/index";
 import { useState } from "react";
 import { useTeachersContext } from "../../../context/TeachersContext";
 import { classService } from "../../../services/index";
@@ -59,17 +69,35 @@ export default function TeachersModal({
     }
   };
 
+  const getPhotoUrl = (teacher) => {
+    if (teacher?.photoUrl) {
+      return `${SERVER_URL}/${teacher.photoUrl}`;
+    }
+    return null;
+  };
+
   const columns = [
+    {
+      title: "Avatar",
+      dataIndex: "avatar",
+      key: "avatar",
+      width: 80,
+      render: (_, record) => (
+        <Avatar
+          size={40}
+          src={getPhotoUrl(record)}
+          style={{ backgroundColor: "#52c41a" }}
+          icon={!getPhotoUrl(record) ? <UserOutlined /> : null}
+        >
+          {!getPhotoUrl(record) && record.name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+      ),
+    },
     {
       title: "Teacher Name",
       dataIndex: "name",
       key: "name",
-      render: (text) => (
-        <Space>
-          <UserOutlined style={{ color: "#52c41a" }} />
-          <strong>{text}</strong>
-        </Space>
-      ),
+      render: (text) => <strong>{text}</strong>,
     },
     {
       title: "Email",
