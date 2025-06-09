@@ -1,16 +1,18 @@
-import { Table, Button, Space, Tag, Card, Modal, Avatar } from "antd";
+import { Table, Button, Space, Tag, Card, Modal, Avatar, Select } from "antd";
 import {
   PlusOutlined,
   DeleteOutlined,
   EyeOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+
 import { SERVER_URL } from "../../../services/index";
 
 export default function StudentsTable({
   students,
   loading,
   pagination,
+  statusFilter,
   onAdd,
   onDelete,
   onViewDetails,
@@ -96,12 +98,46 @@ export default function StudentsTable({
     });
   };
 
+  const handleStatusChange = (value) => {
+    if (onTableChange) {
+      onTableChange({
+        page: 1,
+        pageSize: pagination?.itemsPerPage || 10,
+        status: value,
+      });
+    }
+  };
+
   return (
     <Card>
-      <div style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
-          Add New Student
-        </Button>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+            Add New Student
+          </Button>
+        </div>
+        <div>
+          <Space>
+            <span>Status:</span>
+            <Select
+              value={statusFilter}
+              onChange={handleStatusChange}
+              style={{ width: 120 }}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+                { value: "all", label: "All" },
+              ]}
+            />
+          </Space>
+        </div>
       </div>
 
       <Table
@@ -124,7 +160,7 @@ export default function StudentsTable({
                     onTableChange({ page, pageSize });
                   }
                 },
-                onShowSizeChange: (current, size) => {
+                onShowSizeChange: (_, size) => {
                   if (onTableChange) {
                     onTableChange({ page: 1, pageSize: size });
                   }

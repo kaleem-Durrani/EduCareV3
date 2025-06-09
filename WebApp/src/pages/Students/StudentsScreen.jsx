@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Space, Typography, message } from "antd";
 import useApi from "../../hooks/useApi";
 import { studentService } from "../../services/index";
@@ -15,6 +15,13 @@ export default function StudentsScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+
+  // Pagination and filter state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("active");
+  const [searchFilter, setSearchFilter] = useState("");
+  const [sortConfig, setSortConfig] = useState({});
 
   // Fetch students data
   const {
@@ -37,16 +44,36 @@ export default function StudentsScreen() {
 
   // Removed update functionality since we only use create mode
 
+  // Smart refresh function that preserves current state
+  const refreshStudentsData = () => {
+    const params = {
+      page: currentPage,
+      limit: pageSize,
+      status: statusFilter,
+    };
+
+    if (searchFilter) {
+      params.search = searchFilter;
+    }
+
+    if (sortConfig.field) {
+      params.sortBy = sortConfig.field;
+      params.sortOrder = sortConfig.order === "ascend" ? "asc" : "desc";
+    }
+
+    fetchStudents(params);
+  };
+
   useEffect(() => {
-    fetchStudents({});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    refreshStudentsData();
+  }, [currentPage, pageSize, statusFilter, searchFilter, sortConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateStudent = async (values) => {
     try {
       await createStudentRequest(values);
       message.success("Student created successfully!");
       setIsModalVisible(false);
-      fetchStudents({});
+      refreshStudentsData(); // Use smart refresh
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Create student error handled by useApi");
@@ -67,7 +94,8 @@ export default function StudentsScreen() {
   };
 
   const handleViewDetails = (student) => {
-    setSelectedStudent(student);
+    // Only pass the student ID and basic info needed for modal title
+    setSelectedStudent({ _id: student._id, fullName: student.fullName });
     setIsDetailsModalVisible(true);
   };
 
@@ -80,24 +108,26 @@ export default function StudentsScreen() {
     setSelectedStudent(null);
   };
 
-  const handleTableChange = ({ page, pageSize, sorter, filters }) => {
-    const params = {
-      page: page || 1,
-      limit: pageSize || 10,
-    };
-
-    // Add search if needed
-    if (filters?.search) {
-      params.search = filters.search;
+  const handleTableChange = ({
+    page,
+    pageSize: newPageSize,
+    sorter,
+    filters,
+    status,
+  }) => {
+    // Update state variables
+    if (page) setCurrentPage(page);
+    if (newPageSize) setPageSize(newPageSize);
+    if (status !== undefined) setStatusFilter(status);
+    if (filters?.search !== undefined) setSearchFilter(filters.search);
+    if (sorter) {
+      setSortConfig({
+        field: sorter.field,
+        order: sorter.order,
+      });
     }
 
-    // Add sorting if needed
-    if (sorter?.field) {
-      params.sortBy = sorter.field;
-      params.sortOrder = sorter.order === "ascend" ? "asc" : "desc";
-    }
-
-    fetchStudents(params);
+    // The useEffect will automatically trigger refreshStudentsData when state changes
   };
 
   // Extract students array from paginated response
@@ -119,6 +149,7 @@ export default function StudentsScreen() {
           students={studentsData}
           loading={loading}
           pagination={paginationData}
+          statusFilter={statusFilter}
           onAdd={handleAdd}
           onDelete={handleDelete}
           onViewDetails={handleViewDetails}
@@ -140,7 +171,7 @@ export default function StudentsScreen() {
           visible={isDetailsModalVisible}
           onCancel={handleDetailsCancel}
           student={selectedStudent}
-          onRefresh={() => fetchStudents({})}
+          onRefresh={refreshStudentsData}
         />
       </Space>
     </AdminLayout>

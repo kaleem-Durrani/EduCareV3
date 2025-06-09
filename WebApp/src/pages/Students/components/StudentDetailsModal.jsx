@@ -8,24 +8,17 @@ import {
   Button,
   Upload,
   Switch,
-  Divider,
   Tag,
-  Space,
   message,
+  Spin,
 } from "antd";
-import {
-  UserOutlined,
-  CameraOutlined,
-  EditOutlined,
-  SaveOutlined,
-  CloseOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
+import { CameraOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { studentService, SERVER_URL } from "../../../services/index";
+import useApi from "../../../hooks/useApi";
+import { handleApiError } from "../../../utils/errorHandler";
 import StudentBasicInfo from "./StudentBasicInfo";
 import StudentContactsManager from "./StudentContactsManager";
-import StudentEnrollmentHistory from "./StudentEnrollmentHistory";
 
 export default function StudentDetailsModal({
   visible,
@@ -33,15 +26,36 @@ export default function StudentDetailsModal({
   student,
   onRefresh,
 }) {
-  const [currentStudent, setCurrentStudent] = useState(student);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  useEffect(() => {
-    if (visible && student) {
-      setCurrentStudent(student);
+  // Use the useApi hook for fetching student data
+  const {
+    request: fetchStudentData,
+    isLoading: loading,
+    data: currentStudent,
+    error: fetchError,
+  } = useApi(studentService.getStudentById);
+
+  // Smart refresh function for modal data
+  const refreshModalData = () => {
+    if (student?._id) {
+      fetchStudentData(student._id);
     }
-  }, [visible, student]);
+  };
+
+  useEffect(() => {
+    if (visible && student?._id) {
+      fetchStudentData(student._id);
+    }
+  }, [visible, student?._id]);
+
+  // Show error message if fetch fails
+  useEffect(() => {
+    if (fetchError) {
+      message.error("Failed to load student details");
+    }
+  }, [fetchError]);
 
   const getPhotoUrl = () => {
     if (currentStudent?.photoUrl) {
@@ -56,22 +70,15 @@ export default function StudentDetailsModal({
       const formData = new FormData();
       formData.append("photo", file);
 
-      const response = await studentService.updateStudentPhoto(
-        currentStudent._id,
-        formData
-      );
+      await studentService.updateStudentPhoto(currentStudent._id, formData);
       message.success("Student photo updated successfully!");
 
-      // Update the current student state with new photo URL
-      setCurrentStudent((prev) => ({
-        ...prev,
-        photoUrl: response.photoUrl,
-      }));
-
+      // Refresh both modal and main table data
+      refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table
       return false; // Prevent default upload behavior
     } catch (error) {
-      message.error("Failed to upload student photo");
+      handleApiError(error);
       return false;
     } finally {
       setUploadingPhoto(false);
@@ -94,15 +101,11 @@ export default function StudentDetailsModal({
             `Student ${active ? "activated" : "deactivated"} successfully!`
           );
 
-          // Update the current student state
-          setCurrentStudent((prev) => ({
-            ...prev,
-            active,
-          }));
-
+          // Refresh both modal and main table data
+          refreshModalData(); // Refresh modal data
           onRefresh(); // Refresh main table
         } catch (error) {
-          message.error("Failed to update student status");
+          handleApiError(error);
         } finally {
           setUpdatingStatus(false);
         }
@@ -117,9 +120,9 @@ export default function StudentDetailsModal({
       children: (
         <StudentBasicInfo
           student={currentStudent}
-          onUpdate={(updatedStudent) => {
-            setCurrentStudent(updatedStudent);
-            onRefresh();
+          onUpdate={() => {
+            refreshModalData(); // Refresh modal data
+            onRefresh(); // Refresh main table
           }}
         />
       ),
@@ -130,9 +133,9 @@ export default function StudentDetailsModal({
       children: (
         <StudentContactsManager
           student={currentStudent}
-          onUpdate={(updatedStudent) => {
-            setCurrentStudent(updatedStudent);
-            onRefresh();
+          onUpdate={() => {
+            refreshModalData(); // Refresh modal data
+            onRefresh(); // Refresh main table
           }}
         />
       ),
@@ -158,77 +161,86 @@ export default function StudentDetailsModal({
       footer={null}
       destroyOnClose
     >
-      {/* Student Header Section */}
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={16} align="middle">
-          <Col span={4}>
-            <div style={{ textAlign: "center" }}>
-              <Avatar
-                size={80}
-                src={getPhotoUrl()}
-                style={{ backgroundColor: "#1890ff", fontSize: "24px" }}
-              >
-                {currentStudent?.fullName?.charAt(0)?.toUpperCase()}
-              </Avatar>
-              <div style={{ marginTop: 8 }}>
-                <Upload
-                  beforeUpload={handlePhotoUpload}
-                  showUploadList={false}
-                  accept="image/*"
-                >
-                  <Button
-                    icon={<CameraOutlined />}
-                    loading={uploadingPhoto}
-                    size="small"
-                    style={{ borderRadius: "4px" }}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "50px" }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16 }}>Loading student details...</div>
+        </div>
+      ) : (
+        <>
+          {/* Student Header Section */}
+          <Card style={{ marginBottom: 16 }}>
+            <Row gutter={16} align="middle">
+              <Col span={4}>
+                <div style={{ textAlign: "center" }}>
+                  <Avatar
+                    size={80}
+                    src={getPhotoUrl()}
+                    style={{ backgroundColor: "#1890ff", fontSize: "24px" }}
                   >
-                    {uploadingPhoto ? "Uploading..." : "Change Photo"}
-                  </Button>
-                </Upload>
-              </div>
-            </div>
-          </Col>
-          <Col span={16}>
-            <Row gutter={[16, 8]}>
-              <Col span={12}>
-                <strong>Name:</strong> {currentStudent?.fullName}
+                    {currentStudent?.fullName?.charAt(0)?.toUpperCase()}
+                  </Avatar>
+                  <div style={{ marginTop: 8 }}>
+                    <Upload
+                      beforeUpload={handlePhotoUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                    >
+                      <Button
+                        icon={<CameraOutlined />}
+                        loading={uploadingPhoto}
+                        size="small"
+                        style={{ borderRadius: "4px" }}
+                      >
+                        {uploadingPhoto ? "Uploading..." : "Change Photo"}
+                      </Button>
+                    </Upload>
+                  </div>
+                </div>
               </Col>
-              <Col span={12}>
-                <strong>Enrollment #:</strong> {currentStudent?.rollNum}
+              <Col span={16}>
+                <Row gutter={[16, 8]}>
+                  <Col span={12}>
+                    <strong>Name:</strong> {currentStudent?.fullName}
+                  </Col>
+                  <Col span={12}>
+                    <strong>Enrollment #:</strong> {currentStudent?.rollNum}
+                  </Col>
+                  <Col span={12}>
+                    <strong>Date of Birth:</strong>{" "}
+                    {currentStudent?.birthdate
+                      ? new Date(currentStudent.birthdate).toLocaleDateString()
+                      : "N/A"}
+                  </Col>
+                  <Col span={12}>
+                    <strong>Current Class:</strong>{" "}
+                    {currentStudent?.current_class?.name || "Not Assigned"}
+                  </Col>
+                </Row>
               </Col>
-              <Col span={12}>
-                <strong>Date of Birth:</strong>{" "}
-                {currentStudent?.birthdate
-                  ? new Date(currentStudent.birthdate).toLocaleDateString()
-                  : "N/A"}
-              </Col>
-              <Col span={12}>
-                <strong>Current Class:</strong>{" "}
-                {currentStudent?.current_class?.name || "Not Assigned"}
+              <Col span={4}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ marginBottom: 8 }}>
+                    <Tag color={currentStudent?.active ? "green" : "red"}>
+                      {currentStudent?.active ? "Active" : "Inactive"}
+                    </Tag>
+                  </div>
+                  <Switch
+                    checked={currentStudent?.active}
+                    loading={updatingStatus}
+                    onChange={handleStatusToggle}
+                    checkedChildren="Active"
+                    unCheckedChildren="Inactive"
+                  />
+                </div>
               </Col>
             </Row>
-          </Col>
-          <Col span={4}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ marginBottom: 8 }}>
-                <Tag color={currentStudent?.active ? "green" : "red"}>
-                  {currentStudent?.active ? "Active" : "Inactive"}
-                </Tag>
-              </div>
-              <Switch
-                checked={currentStudent?.active}
-                loading={updatingStatus}
-                onChange={handleStatusToggle}
-                checkedChildren="Active"
-                unCheckedChildren="Inactive"
-              />
-            </div>
-          </Col>
-        </Row>
-      </Card>
+          </Card>
 
-      {/* Tabs Section */}
-      <Tabs items={tabItems} />
+          {/* Tabs Section */}
+          <Tabs items={tabItems} />
+        </>
+      )}
     </Modal>
   );
 }

@@ -20,6 +20,7 @@ import {
 } from "@ant-design/icons";
 import { useState } from "react";
 import { studentService, SERVER_URL } from "../../../services/index";
+import { handleApiError } from "../../../utils/errorHandler";
 
 export default function StudentContactsManager({ student, onUpdate }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -39,7 +40,7 @@ export default function StudentContactsManager({ student, onUpdate }) {
       render: (photoUrl, record) => (
         <Avatar
           size={40}
-          src={photoUrl ? `${SERVER_URL}/uploads/${photoUrl}` : null}
+          src={photoUrl ? `${SERVER_URL}/${photoUrl}` : null}
           style={{ backgroundColor: "#1890ff" }}
         >
           {record.name?.charAt(0)?.toUpperCase()}
@@ -113,7 +114,7 @@ export default function StudentContactsManager({ student, onUpdate }) {
       };
       onUpdate(updatedStudent);
     } catch (error) {
-      message.error("Failed to delete contact");
+      handleApiError(error);
     } finally {
       setLoading(false);
     }
@@ -122,6 +123,15 @@ export default function StudentContactsManager({ student, onUpdate }) {
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
+      // Debug: Check if student and student._id exist
+      console.log("Student object:", student);
+      console.log("Student ID:", student?._id);
+
+      if (!student?._id) {
+        message.error("Student ID is missing. Please refresh and try again.");
+        return;
+      }
+
       // Create FormData for file upload
       const formData = new FormData();
       Object.keys(values).forEach((key) => {
@@ -172,7 +182,7 @@ export default function StudentContactsManager({ student, onUpdate }) {
       form.resetFields();
       setUploadedPhoto(null);
     } catch (error) {
-      message.error(`Failed to ${editingContact ? "update" : "add"} contact`);
+      handleApiError(error);
     } finally {
       setLoading(false);
     }
@@ -209,7 +219,7 @@ export default function StudentContactsManager({ student, onUpdate }) {
           columns={columns}
           dataSource={contacts}
           loading={loading}
-          rowKey="_id"
+          rowKey={(record, index) => record._id || `contact-${index}`}
           pagination={false}
           locale={{
             emptyText: "No contacts added yet",
