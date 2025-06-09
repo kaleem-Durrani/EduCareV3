@@ -371,7 +371,7 @@ export const getEnrolledTeacherClasses = asyncHandler(async (req, res) => {
     isActive: true,
   })
     .populate("teachers", "name email")
-    .populate("students", "fullName rollNum")
+    .populate("students", "fullName rollNum photoUrl")
     .sort({ createdAt: -1 });
 
   return sendSuccess(res, classes, "Enrolled classes retrieved successfully");
@@ -395,7 +395,7 @@ export const getClassById = asyncHandler(async (req, res) => {
   const classDoc = await Class.findOne(query)
     .populate("createdBy", "name email")
     .populate("updatedBy", "name email")
-    .populate("teachers", "name email phone")
+    .populate("teachers", "name email phone photoUrl")
     .populate("students", "fullName rollNum birthdate photoUrl");
 
   if (!classDoc) {
@@ -497,8 +497,8 @@ export const getClassDetails = asyncHandler(async (req, res) => {
   const { class_id } = req.params;
 
   const classDetails = await Class.findById(class_id)
-    .populate("teachers", "name email phone")
-    .populate("students", "fullName rollNum birthdate")
+    .populate("teachers", "name email phone photoUrl")
+    .populate("students", "fullName rollNum birthdate photoUrl")
     .populate("createdBy", "name email")
     .populate("updatedBy", "name email");
 
