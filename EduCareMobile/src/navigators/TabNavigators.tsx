@@ -18,6 +18,7 @@ export type ParentTabParamList = {
 export type TeacherTabParamList = {
   Home: undefined;
   Note: undefined;
+  Settings: undefined;
 };
 
 const ParentTab = createBottomTabNavigator<ParentTabParamList>();
@@ -77,6 +78,8 @@ export const TeacherTabNavigator = () => (
           iconName = focused ? "home" : "home-outline";
         } else if (route.name === "Note") {
           iconName = focused ? "document-text" : "document-text-outline";
+        } else if (route.name === "Settings") {
+          iconName = focused ? "settings" : "settings-outline";
         } else {
           iconName = "help-outline";
         }
@@ -96,6 +99,11 @@ export const TeacherTabNavigator = () => (
       name="Note"
       component={NotesNavigator}
       options={{ title: "Notes" }}
+    />
+    <TeacherTab.Screen
+      name="Settings"
+      component={SettingsScreen}
+      options={{ headerShown: false }}
     />
   </TeacherTab.Navigator>
 );
