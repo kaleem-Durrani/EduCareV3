@@ -66,8 +66,8 @@ const LoginScreen = () => {
       const result = await login(email, password, roles[selectedRole].id);
 
       if (result.success) {
-        // Navigate to Dashboard
-        navigation.navigate("Dashboard", { role: roles[selectedRole].id });
+        // Navigation will be handled automatically by RootNavigator based on auth state
+        // No need to manually navigate
       } else {
         setErrorMessage(result.message || "Login failed");
         Alert.alert("Login Failed", result.message || "Login failed");
