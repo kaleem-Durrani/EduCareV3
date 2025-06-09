@@ -38,9 +38,9 @@ const AdminDashboard = () => {
           </Col>
 
           {/* Recent Activities */}
-          <Col xs={24} lg={12}>
+          {/* <Col xs={24} lg={12}>
             <RecentActivities />
-          </Col>
+          </Col> */}
         </Row>
       </Space>
     </AdminLayout>
