@@ -1,8 +1,12 @@
 import express from "express";
 import {
   createWeeklyMenu,
+  getAllMenus,
   getCurrentWeeklyMenu,
+  getMenuStatistics,
+  getMenuById,
   updateWeeklyMenu,
+  updateMenuStatus,
   deleteWeeklyMenu,
 } from "../controllers/menu.controller.js";
 import {
@@ -11,20 +15,45 @@ import {
   menuIdValidation,
 } from "../validations/menu.validation.js";
 import { handleValidationErrors } from "../middleware/validation.middleware.js";
-import {
-  authenticate,
-  requireAdmin,
-} from "../middleware/auth.middleware.js";
+import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 /**
- * @route   POST /api/menu/weekly
+ * @route   GET /api/menus/statistics
+ * @desc    Get menu statistics
+ * @access  Private (Admin only)
+ */
+router.get("/menus/statistics", authenticate, requireAdmin, getMenuStatistics);
+
+/**
+ * @route   GET /api/menus
+ * @desc    Get all menus with pagination, search, and filters
+ * @access  Private (Admin only)
+ */
+router.get("/menus", authenticate, requireAdmin, getAllMenus);
+
+/**
+ * @route   GET /api/menu/current
+ * @desc    Get current week's menu or active menu
+ * @access  Private (All authenticated users)
+ */
+router.get("/menu/current", authenticate, getCurrentWeeklyMenu);
+
+/**
+ * @route   GET /api/menus/:menu_id
+ * @desc    Get menu by ID
+ * @access  Private (Admin only)
+ */
+router.get("/menus/:menu_id", authenticate, requireAdmin, getMenuById);
+
+/**
+ * @route   POST /api/menus
  * @desc    Create weekly menu
  * @access  Private (Admin only)
  */
 router.post(
-  "/menu/weekly",
+  "/menus",
   authenticate,
   requireAdmin,
   createMenuValidation,
@@ -33,19 +62,12 @@ router.post(
 );
 
 /**
- * @route   GET /api/menu/weekly
- * @desc    Get current week's menu
- * @access  Private (All authenticated users)
- */
-router.get("/menu/weekly", authenticate, getCurrentWeeklyMenu);
-
-/**
- * @route   PUT /api/menu/weekly/:menu_id
+ * @route   PUT /api/menus/:menu_id
  * @desc    Update weekly menu
  * @access  Private (Admin only)
  */
 router.put(
-  "/menu/weekly/:menu_id",
+  "/menus/:menu_id",
   authenticate,
   requireAdmin,
   updateMenuValidation,
@@ -54,12 +76,24 @@ router.put(
 );
 
 /**
- * @route   DELETE /api/menu/weekly/:menu_id
+ * @route   PUT /api/menus/:menu_id/status
+ * @desc    Update menu status
+ * @access  Private (Admin only)
+ */
+router.put(
+  "/menus/:menu_id/status",
+  authenticate,
+  requireAdmin,
+  updateMenuStatus
+);
+
+/**
+ * @route   DELETE /api/menus/:menu_id
  * @desc    Delete weekly menu
  * @access  Private (Admin only)
  */
 router.delete(
-  "/menu/weekly/:menu_id",
+  "/menus/:menu_id",
   authenticate,
   requireAdmin,
   menuIdValidation,

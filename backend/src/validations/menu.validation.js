@@ -1,6 +1,19 @@
 import { body, param } from "express-validator";
 
 export const createMenuValidation = [
+  body("title")
+    .notEmpty()
+    .withMessage("Menu title is required")
+    .isLength({ max: 100 })
+    .withMessage("Title must be less than 100 characters"),
+  body("description")
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage("Description must be less than 500 characters"),
+  body("status")
+    .optional()
+    .isIn(["draft", "active", "archived"])
+    .withMessage("Status must be draft, active, or archived"),
   body("startDate")
     .isISO8601()
     .withMessage("Please provide a valid start date"),
@@ -14,11 +27,29 @@ export const createMenuValidation = [
   body("menuData.*.items").isArray().withMessage("Items must be an array"),
   body("menuData.*.items.*")
     .isString()
-    .withMessage("Each menu item must be a string"),
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage(
+      "Each menu item must be a non-empty string with max 100 characters"
+    ),
 ];
 
 export const updateMenuValidation = [
   param("menu_id").isMongoId().withMessage("Invalid menu ID"),
+  body("title")
+    .optional()
+    .notEmpty()
+    .withMessage("Menu title cannot be empty")
+    .isLength({ max: 100 })
+    .withMessage("Title must be less than 100 characters"),
+  body("description")
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage("Description must be less than 500 characters"),
+  body("status")
+    .optional()
+    .isIn(["draft", "active", "archived"])
+    .withMessage("Status must be draft, active, or archived"),
   body("startDate")
     .optional()
     .isISO8601()
@@ -42,7 +73,11 @@ export const updateMenuValidation = [
   body("menuData.*.items.*")
     .optional()
     .isString()
-    .withMessage("Each menu item must be a string"),
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage(
+      "Each menu item must be a non-empty string with max 100 characters"
+    ),
 ];
 
 export const menuIdValidation = [
