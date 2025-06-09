@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
 import Class from "../models/class.model.js";
 import { sendSuccess } from "../utils/response.utils.js";
+import { normalizePath } from "../middleware/upload.middleware.js";
 import {
   withTransaction,
   asyncHandler,
@@ -263,15 +264,14 @@ export const updateTeacherPhoto = asyncHandler(async (req, res) => {
 
   // Delete old photo if it exists
   if (teacher.photoUrl) {
-    const oldPhotoPath = path.join(process.cwd(), "uploads", teacher.photoUrl);
+    const oldPhotoPath = path.join(process.cwd(), teacher.photoUrl);
     if (fs.existsSync(oldPhotoPath)) {
       fs.unlinkSync(oldPhotoPath);
     }
   }
 
-  // Update teacher with new photo URL
-  const photoUrl = `users/${req.file.filename}`;
-  teacher.photoUrl = photoUrl;
+  // Update teacher with new photo URL (use full path from multer)
+  teacher.photoUrl = normalizePath(req.file.path);
   await teacher.save();
 
   return sendSuccess(
