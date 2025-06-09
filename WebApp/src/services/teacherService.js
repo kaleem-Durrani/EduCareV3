@@ -4,6 +4,7 @@ export const teacherService = {
   getTeacherStatistics: (params = {}) =>
     api.get("/teachers/statistics", { params }),
   getAllTeachers: (params = {}) => api.get("/teachers/all", { params }),
+  getTeacherById: (teacherId) => api.get(`/teachers/${teacherId}`),
   getTeachersForSelect: () => api.get("/teachers/select"),
   getTeacherDetails: (teacherId, params = {}) =>
     api.get(`/teachers/${teacherId}/details`, { params }),

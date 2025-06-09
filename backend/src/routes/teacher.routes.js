@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getAllTeachers,
+  getTeacherById,
   createTeacher,
   getTeachersForSelect,
   getTeacherStatistics,
@@ -40,6 +41,13 @@ router.get("/teachers/select", authenticate, getTeachersForSelect);
  * @access  Private (Admin only)
  */
 router.get("/teachers/all", authenticate, requireAdmin, getAllTeachers);
+
+/**
+ * @route   GET /api/teachers/:teacher_id
+ * @desc    Get teacher by ID (detailed view for modals)
+ * @access  Private (Admin only)
+ */
+router.get("/teachers/:teacher_id", authenticate, requireAdmin, getTeacherById);
 
 /**
  * @route   GET /api/teachers/:teacher_id/details

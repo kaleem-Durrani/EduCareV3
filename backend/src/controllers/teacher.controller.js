@@ -18,10 +18,18 @@ import path from "path";
  * Admin only
  */
 export const getAllTeachers = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, search } = req.query;
+  const { page = 1, limit = 10, search, status = "active" } = req.query;
   const skip = (page - 1) * limit;
 
-  let query = { role: "teacher", is_active: true };
+  let query = { role: "teacher" };
+
+  // Handle status filter
+  if (status === "active") {
+    query.is_active = true;
+  } else if (status === "inactive") {
+    query.is_active = false;
+  }
+  // If status === "all", don't add is_active filter
 
   // Add search functionality
   if (search) {
@@ -57,6 +65,26 @@ export const getAllTeachers = asyncHandler(async (req, res) => {
   };
 
   return sendSuccess(res, result, "Teachers retrieved successfully");
+});
+
+/**
+ * Get teacher by ID (detailed view for modals)
+ * GET /api/teachers/:teacher_id
+ * Admin only
+ */
+export const getTeacherById = asyncHandler(async (req, res) => {
+  const { teacher_id } = req.params;
+
+  const teacher = await User.findOne(
+    { _id: teacher_id, role: "teacher" },
+    { password_hash: 0, resetPasswordToken: 0, resetPasswordExpires: 0 }
+  );
+
+  if (!teacher) {
+    return sendNotFound(res, "Teacher not found");
+  }
+
+  sendSuccess(res, teacher, "Teacher retrieved successfully");
 });
 
 /**
