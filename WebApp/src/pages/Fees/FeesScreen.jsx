@@ -23,20 +23,26 @@ export default function FeesScreen() {
   const [pageSize, setPageSize] = useState(10);
   const [feeStatistics, setFeeStatistics] = useState(null);
 
-  // Fetch fees data with pagination
+  // Pagination and filter state
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [studentFilter, setStudentFilter] = useState("");
+  const [dateRange, setDateRange] = useState([]);
+  const [sortConfig, setSortConfig] = useState({
+    field: "deadline",
+    order: "desc",
+  });
+
+  // Fetch all fees data with pagination and filters
   const {
     data: feesData,
     isLoading: loading,
     request: fetchFees,
-  } = useApi(
-    (studentId, params) => feeService.getStudentFees(studentId, params),
-    {
-      errorHandling: {
-        displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
-        showValidationDetails: true,
-      },
-    }
-  );
+  } = useApi(feeService.getAllFees, {
+    errorHandling: {
+      displayType: ERROR_DISPLAY_TYPES.NOTIFICATION,
+      showValidationDetails: true,
+    },
+  });
 
   // Get fee statistics API
   const { request: getFeeStatisticsRequest, isLoading: loadingStatistics } =
@@ -80,26 +86,65 @@ export default function FeesScreen() {
     }
   );
 
-  useEffect(() => {
-    fetchFeeStatistics();
-  }, []);
-
-  useEffect(() => {
-    if (selectedStudentId) {
+  // Smart refresh function that preserves current state
+  const refreshFeesData = async () => {
+    try {
       const params = {
         page: currentPage,
         limit: pageSize,
+        sortBy: sortConfig.field,
+        sortOrder: sortConfig.order,
       };
-      fetchFees(selectedStudentId, params);
+
+      // Only add status if it's not "all"
+      if (statusFilter && statusFilter !== "all") {
+        params.status = statusFilter;
+      }
+
+      // Only add student filter if it's a valid value
+      if (studentFilter && studentFilter !== "all") {
+        params.student_id = studentFilter;
+      }
+
+      // Only add date range if both dates are selected
+      if (dateRange && dateRange.length === 2) {
+        params.startDate = dateRange[0].format("YYYY-MM-DD");
+        params.endDate = dateRange[1].format("YYYY-MM-DD");
+      }
+
+      await fetchFees(params);
+    } catch (error) {
+      console.log("Fetch fees error handled by useApi");
     }
-  }, [selectedStudentId, currentPage, pageSize]);
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await refreshFeesData();
+        await fetchFeeStatistics();
+      } catch (error) {
+        console.log("Error loading fees data:", error);
+      }
+    };
+
+    loadData();
+  }, [
+    currentPage,
+    pageSize,
+    statusFilter,
+    studentFilter,
+    dateRange,
+    sortConfig,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchFeeStatistics = async () => {
     try {
       const stats = await getFeeStatisticsRequest();
       setFeeStatistics(stats);
     } catch (error) {
-      console.log("Failed to fetch fee statistics");
+      console.log("Failed to fetch fee statistics:", error);
+      // Don't throw error, just log it
     }
   };
 
@@ -115,15 +160,8 @@ export default function FeesScreen() {
       message.success("Fee created successfully!");
       setIsModalVisible(false);
       form.resetFields();
-      if (selectedStudentId) {
-        const params = {
-          page: currentPage,
-          limit: pageSize,
-        };
-        fetchFees(selectedStudentId, params);
-      }
-      // Refresh statistics
-      fetchFeeStatistics();
+      refreshFeesData(); // Use smart refresh
+      fetchFeeStatistics(); // Refresh statistics
     } catch (error) {
       console.log("Create fee error handled by useApi");
     }
@@ -140,15 +178,8 @@ export default function FeesScreen() {
         `Fee marked as ${newStatus === "paid" ? "paid" : "unpaid"}!`
       );
 
-      if (selectedStudentId) {
-        const params = {
-          page: currentPage,
-          limit: pageSize,
-        };
-        fetchFees(selectedStudentId, params);
-      }
-      // Refresh statistics
-      fetchFeeStatistics();
+      refreshFeesData(); // Use smart refresh
+      fetchFeeStatistics(); // Refresh statistics
     } catch (error) {
       console.log("Update fee status error handled by useApi");
     }
@@ -158,15 +189,8 @@ export default function FeesScreen() {
     try {
       await deleteFeeRequest(feeId);
       message.success("Fee deleted successfully!");
-      if (selectedStudentId) {
-        const params = {
-          page: currentPage,
-          limit: pageSize,
-        };
-        fetchFees(selectedStudentId, params);
-      }
-      // Refresh statistics
-      fetchFeeStatistics();
+      refreshFeesData(); // Use smart refresh
+      fetchFeeStatistics(); // Refresh statistics
     } catch (error) {
       console.log("Delete fee error handled by useApi");
     }
@@ -175,9 +199,6 @@ export default function FeesScreen() {
   const handleAdd = () => {
     setEditingFee(null);
     form.resetFields();
-    if (selectedStudentId) {
-      form.setFieldsValue({ student_id: selectedStudentId });
-    }
     setIsModalVisible(true);
   };
 
@@ -187,19 +208,36 @@ export default function FeesScreen() {
     form.resetFields();
   };
 
-  const handleStudentChange = (studentId) => {
-    setSelectedStudentId(studentId);
-    setCurrentPage(1); // Reset to first page when changing student
-  };
-
-  const handlePageChange = (page, size) => {
-    setCurrentPage(page);
-    if (size !== pageSize) {
-      setPageSize(size);
+  const handleTableChange = ({
+    page,
+    pageSize: newPageSize,
+    sorter,
+    filters,
+  }) => {
+    // Update state variables
+    if (page !== undefined) setCurrentPage(page);
+    if (newPageSize !== undefined) setPageSize(newPageSize);
+    if (filters?.status !== undefined) setStatusFilter(filters.status || "all");
+    if (filters?.student !== undefined) setStudentFilter(filters.student || "");
+    if (filters?.dateRange !== undefined) setDateRange(filters.dateRange || []);
+    if (sorter && sorter.field) {
+      setSortConfig({
+        field: sorter.field,
+        order: sorter.order || "desc",
+      });
     }
+
+    // The useEffect will automatically trigger refreshFeesData when state changes
   };
 
-  const fees = feesData || [];
+  const handleRefreshFees = () => {
+    refreshFeesData(); // Use smart refresh
+    fetchFeeStatistics();
+  };
+
+  // Get data from API response
+  const fees = feesData?.fees || [];
+  const paginationData = feesData?.pagination || {};
 
   return (
     <AdminLayout>
@@ -214,24 +252,19 @@ export default function FeesScreen() {
           loading={loadingStatistics}
         />
 
-        {/* Student Selection */}
-        <StudentSelector
-          selectedStudentId={selectedStudentId}
-          onStudentChange={handleStudentChange}
-          onAddFee={handleAdd}
-        />
-
         {/* Fees Table */}
         <FeesTable
-          selectedStudentId={selectedStudentId}
           fees={fees}
           loading={loading}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          total={fees.length} // This will be updated when backend supports pagination
-          onPageChange={handlePageChange}
+          pagination={paginationData}
+          statusFilter={statusFilter}
+          studentFilter={studentFilter}
+          dateRange={dateRange}
+          onAdd={handleAdd}
           onUpdateStatus={handleUpdateFeeStatus}
           onDeleteFee={handleDeleteFee}
+          onTableChange={handleTableChange}
+          onRefresh={handleRefreshFees}
           updating={updating}
           deleting={deleting}
         />

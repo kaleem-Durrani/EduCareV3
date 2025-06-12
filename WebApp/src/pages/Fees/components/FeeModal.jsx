@@ -46,21 +46,15 @@ export default function FeeModal({
           <Select
             placeholder="Choose a student"
             showSearch
-            optionFilterProp="label"
+            filterOption={(input, option) =>
+              option?.label?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
             size="large"
             style={{
               border: "2px solid #d9d9d9",
               borderRadius: "6px",
             }}
-            options={students.map((student) => ({
-              value: student.value,
-              label: (
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <UserOutlined style={{ marginRight: 8, color: "#1890ff" }} />
-                  {student.label}
-                </div>
-              ),
-            }))}
+            options={students}
           />
         </Form.Item>
 

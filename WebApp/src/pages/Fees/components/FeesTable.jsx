@@ -1,35 +1,66 @@
-import { Table, Card, Space, Button, Tag, Popconfirm, Empty } from "antd";
+import {
+  Table,
+  Card,
+  Space,
+  Button,
+  Tag,
+  Popconfirm,
+  Select,
+  DatePicker,
+  Input,
+} from "antd";
 import {
   DollarOutlined,
   UserOutlined,
   DeleteOutlined,
+  PlusOutlined,
+  SearchOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { useStudentsContext } from "../../../context/StudentsContext";
 import dayjs from "dayjs";
 
+const { RangePicker } = DatePicker;
+const { Search } = Input;
+
 export default function FeesTable({
-  selectedStudentId,
   fees,
   loading,
-  currentPage,
-  pageSize,
-  total,
-  onPageChange,
+  pagination,
+  statusFilter,
+  studentFilter,
+  dateRange,
+  onAdd,
   onUpdateStatus,
   onDeleteFee,
+  onTableChange,
+  onRefresh,
   updating,
   deleting,
 }) {
   const { students } = useStudentsContext();
 
-  // Find the selected student from context
-  const selectedStudent = students.find((s) => s.value === selectedStudentId);
   const columns = [
     {
       title: "Title",
       dataIndex: "title",
       key: "title",
       render: (text) => <strong>{text}</strong>,
+      sorter: true,
+    },
+    {
+      title: "Student",
+      dataIndex: ["student_id", "fullName"],
+      key: "student",
+      render: (_, record) => (
+        <Space>
+          <UserOutlined />
+          <span>{record.student_id?.fullName || "Unknown"}</span>
+          {record.student_id?.rollNum && (
+            <Tag color="blue">#{record.student_id.rollNum}</Tag>
+          )}
+        </Space>
+      ),
     },
     {
       title: "Amount",
@@ -40,7 +71,7 @@ export default function FeesTable({
           <DollarOutlined />${parseFloat(amount).toFixed(2)}
         </Space>
       ),
-      sorter: (a, b) => parseFloat(a.amount) - parseFloat(b.amount),
+      sorter: true,
     },
     {
       title: "Deadline",
@@ -73,17 +104,7 @@ export default function FeesTable({
           </span>
         );
       },
-      sorter: (a, b) => {
-        // Handle sorting for DD/MM/YYYY format
-        const parseDate = (date) => {
-          if (typeof date === "string" && date.includes("/")) {
-            const [day, month, year] = date.split("/");
-            return dayjs(`${year}-${month}-${day}`);
-          }
-          return dayjs(date);
-        };
-        return parseDate(a.deadline).unix() - parseDate(b.deadline).unix();
-      },
+      sorter: true,
     },
     {
       title: "Status",
@@ -97,15 +118,11 @@ export default function FeesTable({
 
         return <Tag color={color}>{displayStatus.toUpperCase()}</Tag>;
       },
-      filters: [
-        { text: "Paid", value: "paid" },
-        { text: "Unpaid", value: "pending" },
-      ],
-      onFilter: (value, record) => record.status?.toLowerCase() === value,
     },
     {
       title: "Actions",
       key: "actions",
+      width: 200,
       render: (_, record) => (
         <Space>
           <Button
@@ -152,42 +169,99 @@ export default function FeesTable({
 
   return (
     <Card>
-      {selectedStudent ? (
-        <div>
-          <div style={{ marginBottom: 16 }}>
-            <Space>
-              <UserOutlined style={{ color: "#1890ff" }} />
-              <span style={{ fontWeight: 500, fontSize: "16px" }}>
-                Fees for: {selectedStudent.label}
-              </span>
-            </Space>
-          </div>
-
-          <Table
-            columns={columns}
-            dataSource={fees}
-            loading={loading}
-            rowKey={(record) => record.id || record._id}
-            pagination={{
-              current: currentPage,
-              pageSize: pageSize,
-              total: total,
-              onChange: onPageChange,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} of ${total} fees`,
-              pageSizeOptions: ["10", "20", "50"],
-            }}
-            scroll={{ x: 800 }}
-          />
+      {/* Header with Add Button and Filters */}
+      <div style={{ marginBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
+          <h3 style={{ margin: 0 }}>All Fees</h3>
+          <Space>
+            <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+              Add New Fee
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={onRefresh}>
+              Refresh
+            </Button>
+          </Space>
         </div>
-      ) : (
-        <Empty
-          description="Please select a student to view fees"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-      )}
+
+        {/* Filters */}
+        <Space wrap style={{ marginBottom: 16 }}>
+          <Select
+            placeholder="Filter by Status"
+            style={{ width: 150 }}
+            value={statusFilter}
+            onChange={(value) => onTableChange({ filters: { status: value } })}
+            allowClear
+          >
+            <Select.Option value="all">All Status</Select.Option>
+            <Select.Option value="paid">Paid</Select.Option>
+            <Select.Option value="pending">Unpaid</Select.Option>
+          </Select>
+
+          <Select
+            placeholder="Filter by Student"
+            style={{ width: 200 }}
+            value={studentFilter || undefined}
+            onChange={(value) =>
+              onTableChange({ filters: { student: value || "" } })
+            }
+            allowClear
+            showSearch
+            optionFilterProp="children"
+          >
+            {students.map((student) => (
+              <Select.Option key={student.value} value={student.value}>
+                {student.label}
+              </Select.Option>
+            ))}
+          </Select>
+
+          <RangePicker
+            placeholder={["Start Date", "End Date"]}
+            value={dateRange}
+            onChange={(dates) =>
+              onTableChange({ filters: { dateRange: dates } })
+            }
+            style={{ width: 250 }}
+          />
+        </Space>
+      </div>
+
+      {/* Table */}
+      <Table
+        columns={columns}
+        dataSource={fees}
+        loading={loading}
+        rowKey={(record) => record.id || record._id}
+        pagination={{
+          current: pagination.currentPage || 1,
+          pageSize: pagination.itemsPerPage || 10,
+          total: pagination.totalItems || 0,
+          onChange: (page, pageSize) => onTableChange({ page, pageSize }),
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} of ${total} fees`,
+          pageSizeOptions: ["10", "20", "50"],
+        }}
+        onChange={(pagination, filters, sorter) => {
+          onTableChange({
+            page: pagination.current,
+            pageSize: pagination.pageSize,
+            sorter: {
+              field: sorter.field,
+              order: sorter.order,
+            },
+          });
+        }}
+        scroll={{ x: 1000 }}
+      />
     </Card>
   );
 }
