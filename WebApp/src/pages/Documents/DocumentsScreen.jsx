@@ -214,6 +214,8 @@ export default function DocumentsScreen() {
       fetchDocumentTypes(); // Refresh document types dropdown
       fetchDocTypesModalData(); // Refresh modal table
       fetchStatistics(); // Refresh statistics since document types changed
+      fetchPaginatedStudents(currentPage, pageSize); // Refresh students list to show new document status
+      message.success("Document type created successfully!");
     } catch (error) {
       console.log("Create document type error handled by useApi");
     }
@@ -225,6 +227,8 @@ export default function DocumentsScreen() {
       fetchDocumentTypes(); // Refresh document types dropdown
       fetchDocTypesModalData(); // Refresh modal table
       fetchStatistics(); // Refresh statistics since document types changed
+      fetchPaginatedStudents(currentPage, pageSize); // Refresh students list to show updated document status
+      message.success("Document type updated successfully!");
     } catch (error) {
       console.log("Update document type error handled by useApi");
     }
@@ -236,6 +240,8 @@ export default function DocumentsScreen() {
       fetchDocumentTypes(); // Refresh document types dropdown
       fetchDocTypesModalData(); // Refresh modal table
       fetchStatistics(); // Refresh statistics since document types changed
+      fetchPaginatedStudents(currentPage, pageSize); // Refresh students list to show updated document status
+      message.success("Document type deleted successfully!");
     } catch (error) {
       console.log("Delete document type error handled by useApi");
     }
