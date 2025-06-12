@@ -119,18 +119,18 @@ const AdminLayout = ({ children }) => {
 
   // User dropdown menu
   const userMenuItems = [
-    {
-      key: "profile",
-      icon: <UserOutlined />,
-      label: "Profile",
-      onClick: () => navigate(PROTECTED_ROUTES.PROFILE),
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Settings",
-      onClick: () => navigate(PROTECTED_ROUTES.SETTINGS),
-    },
+    // {
+    //   key: "profile",
+    //   icon: <UserOutlined />,
+    //   label: "Profile",
+    //   onClick: () => navigate(PROTECTED_ROUTES.PROFILE),
+    // },
+    // {
+    //   key: "settings",
+    //   icon: <SettingOutlined />,
+    //   label: "Settings",
+    //   onClick: () => navigate(PROTECTED_ROUTES.SETTINGS),
+    // },
     {
       type: "divider",
     },
