@@ -1,6 +1,7 @@
 import { api } from "./api.js";
 
 export const feeService = {
+  getAllFees: (params = {}) => api.get("/fees/all", { params }),
   getFeeStatistics: (params = {}) => api.get("/fees/statistics", { params }),
   getStudentFees: (studentId, params = {}) =>
     api.get(`/fees/${studentId}`, { params }),

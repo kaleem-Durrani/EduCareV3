@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Fee from "../models/fee.model.js";
 import FeeTransaction from "../models/feeTransaction.model.js";
 import Student from "../models/student.model.js";
@@ -9,6 +10,95 @@ import {
   throwNotFound,
   throwForbidden,
 } from "../utils/transaction.utils.js";
+
+/**
+ * Get all fees with pagination and filters
+ * GET /api/fees
+ * Admin/Teacher only
+ */
+export const getAllFees = asyncHandler(async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    status,
+    student_id,
+    startDate,
+    endDate,
+    sortBy = "deadline",
+    sortOrder = "desc",
+  } = req.query;
+
+  const skip = (page - 1) * limit;
+
+  // Build query
+  let query = {};
+
+  // Status filter
+  if (status && status !== "all") {
+    query.status = status;
+  }
+
+  // Student filter - only add if it's a valid ObjectId
+  if (student_id && student_id !== "all") {
+    // Check if student_id is a valid ObjectId format
+    if (mongoose.Types.ObjectId.isValid(student_id)) {
+      query.student_id = student_id;
+    }
+  }
+
+  // Date range filter
+  if (startDate || endDate) {
+    query.deadline = {};
+    if (startDate) {
+      query.deadline.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      query.deadline.$lte = new Date(endDate);
+    }
+  }
+
+  // Sort configuration
+  const sortConfig = {};
+  sortConfig[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+  // Get total count for pagination
+  const total = await Fee.countDocuments(query);
+
+  // Get paginated fees
+  const fees = await Fee.find(query)
+    .populate("student_id", "fullName rollNum")
+    .populate("createdBy", "name email")
+    .sort(sortConfig)
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  // Format fees
+  const formattedFees = fees.map((fee) => ({
+    id: fee._id,
+    title: fee.title,
+    amount: fee.amount,
+    deadline: fee.deadline.toLocaleDateString("en-GB"),
+    status: fee.status,
+    student_id: fee.student_id,
+    createdBy: fee.createdBy,
+    created_at: fee.createdAt,
+    updated_at: fee.updatedAt,
+  }));
+
+  const result = {
+    fees: formattedFees,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: parseInt(limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
+
+  return sendSuccess(res, result, "Fees retrieved successfully");
+});
 
 /**
  * Get fees for a student
@@ -82,8 +172,8 @@ export const getStudentFees = asyncHandler(async (req, res) => {
     status: fee.status,
     student_id: fee.student_id,
     createdBy: fee.createdBy,
-    created_at: fee.created_at,
-    updated_at: fee.updated_at,
+    created_at: fee.createdAt,
+    updated_at: fee.updatedAt,
   }));
 
   return sendSuccess(res, formattedFees, "Student fees retrieved successfully");
@@ -150,8 +240,8 @@ export const createFee = asyncHandler(async (req, res) => {
       status: populatedFee.status,
       student_id: populatedFee.student_id,
       createdBy: populatedFee.createdBy,
-      created_at: populatedFee.created_at,
-      updated_at: populatedFee.updated_at,
+      created_at: populatedFee.createdAt,
+      updated_at: populatedFee.updatedAt,
     };
   });
 
@@ -196,21 +286,18 @@ export const updateFeeStatus = asyncHandler(async (req, res) => {
 
     // Update fee status - normalize to lowercase
     fee.status = status.toLowerCase();
-    fee.updated_at = new Date();
     await fee.save({ session });
 
     // Create transaction record if status is paid
-    if (status === "paid") {
+    if (status.toLowerCase() === "paid") {
       const FeeTransaction = (await import("../models/feeTransaction.model.js"))
         .default;
       const transaction = new FeeTransaction({
         fee_id,
+        student_id: fee.student_id._id, // Add required student_id
         amount: fee.amount,
-        payment_method: payment_method || "cash",
-        transaction_reference,
-        notes,
-        processed_by: req.user.id,
-        created_at: new Date(),
+        paymentMethod: payment_method || "cash", // Use correct field name
+        processedBy: req.user.id, // Use correct field name
       });
 
       await transaction.save({ session });
@@ -229,8 +316,8 @@ export const updateFeeStatus = asyncHandler(async (req, res) => {
       status: updatedFee.status,
       student_id: updatedFee.student_id,
       createdBy: updatedFee.createdBy,
-      created_at: updatedFee.created_at,
-      updated_at: updatedFee.updated_at,
+      created_at: updatedFee.createdAt,
+      updated_at: updatedFee.updatedAt,
     };
   });
 

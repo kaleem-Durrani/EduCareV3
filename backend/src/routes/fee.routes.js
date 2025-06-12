@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getAllFees,
   getStudentFees,
   createFee,
   updateFeeStatus,
@@ -25,6 +26,13 @@ router.get(
   requireAdminOrTeacher,
   getFeeStatistics
 );
+
+/**
+ * @route   GET /api/fees/all
+ * @desc    Get all fees with pagination and filters
+ * @access  Private (Admin/Teacher only)
+ */
+router.get("/fees/all", authenticate, requireAdminOrTeacher, getAllFees);
 
 /**
  * @route   GET /api/fees/summary/:student_id
