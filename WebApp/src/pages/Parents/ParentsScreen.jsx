@@ -4,6 +4,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import useApi from "../../hooks/useApi";
 import { parentService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
+import { useParentsContext } from "../../context/ParentsContext";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import {
   ParentsStatistics,
@@ -31,6 +32,9 @@ export default function ParentsScreen() {
   });
   const [form] = Form.useForm();
   const pageSize = 10;
+
+  // Get context refresh function
+  const { refreshParents } = useParentsContext();
 
   // Fetch parents statistics
   const { request: fetchStatistics, isLoading: loadingStatistics } = useApi(
@@ -156,6 +160,7 @@ export default function ParentsScreen() {
       message.success("Parent deleted successfully!");
       fetchParentsData();
       fetchStatisticsData();
+      refreshParents(); // Update context for dropdowns
     } catch (error) {
       console.log("Delete error handled by useApi");
     }
@@ -190,6 +195,7 @@ export default function ParentsScreen() {
       form.resetFields();
       fetchParentsData();
       fetchStatisticsData();
+      refreshParents(); // Update context for dropdowns
     } catch (error) {
       console.log("Form submit error handled by useApi");
     }
@@ -219,6 +225,7 @@ export default function ParentsScreen() {
       setSelectedParent(null);
       fetchParentsData();
       fetchStatisticsData();
+      refreshParents(); // Update context for dropdowns
     } catch (error) {
       console.log("Relation submit error handled by useApi");
     }
