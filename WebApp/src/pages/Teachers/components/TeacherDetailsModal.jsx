@@ -28,6 +28,7 @@ import {
 } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { useClassesContext } from "../../../context/ClassesContext";
+import { useTeachersContext } from "../../../context/TeachersContext";
 import { teacherService, SERVER_URL } from "../../../services/index";
 import useApi from "../../../hooks/useApi";
 import { handleApiError } from "../../../utils/errorHandler";
@@ -49,6 +50,7 @@ export default function TeacherDetailsModal({
   const [isEditing, setIsEditing] = useState(false);
   const [updatingTeacher, setUpdatingTeacher] = useState(false);
   const { classes: allClasses } = useClassesContext();
+  const { refreshTeachers } = useTeachersContext();
   const [form] = Form.useForm();
 
   // Use the useApi hook for fetching teacher data
@@ -132,6 +134,7 @@ export default function TeacherDetailsModal({
       fetchTeacherDetails();
       refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table
+      refreshTeachers(); // Update context for dropdowns
     } catch (error) {
       handleApiError(error);
     } finally {
@@ -147,6 +150,7 @@ export default function TeacherDetailsModal({
       fetchTeacherDetails();
       refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table
+      refreshTeachers(); // Update context for dropdowns
     } catch (error) {
       handleApiError(error);
     } finally {
@@ -164,6 +168,7 @@ export default function TeacherDetailsModal({
       message.success("Teacher photo updated successfully!");
       refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table to show new photo
+      refreshTeachers(); // Update context for dropdowns
       return false; // Prevent default upload behavior
     } catch (error) {
       handleApiError(error);
@@ -198,6 +203,7 @@ export default function TeacherDetailsModal({
           setIsEditing(false);
           refreshModalData(); // Refresh modal data
           onRefresh(); // Refresh main table
+          refreshTeachers(); // Update context for dropdowns
         } catch (error) {
           handleApiError(error);
         } finally {

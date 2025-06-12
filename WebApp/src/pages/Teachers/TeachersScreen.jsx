@@ -3,6 +3,7 @@ import { Space, Typography, message } from "antd";
 import useApi from "../../hooks/useApi";
 import { teacherService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
+import { useTeachersContext } from "../../context/TeachersContext";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import {
   TeachersStats,
@@ -18,6 +19,9 @@ export default function TeachersScreen() {
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [teacherStatistics, setTeacherStatistics] = useState(null);
+
+  // Get context refresh function
+  const { refreshTeachers } = useTeachersContext();
 
   // Pagination and filter state
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,6 +106,7 @@ export default function TeachersScreen() {
       setIsCreateModalVisible(false);
       refreshTeachersData(); // Use smart refresh
       fetchTeacherStatistics(); // Refresh statistics
+      refreshTeachers(); // Update context for dropdowns
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Create teacher error handled by useApi");
@@ -152,6 +157,7 @@ export default function TeachersScreen() {
   const handleRefreshTeachers = () => {
     refreshTeachersData(); // Use smart refresh
     fetchTeacherStatistics();
+    refreshTeachers(); // Update context for dropdowns
   };
 
   const teachers = teachersData?.teachers || [];
