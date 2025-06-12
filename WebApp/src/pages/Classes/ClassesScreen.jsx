@@ -3,6 +3,7 @@ import { Space, Typography, message } from "antd";
 import useApi from "../../hooks/useApi";
 import { classService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
+import { useClassesContext } from "../../context/ClassesContext";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import {
   ClassesStats,
@@ -19,6 +20,9 @@ export default function ClassesScreen() {
   const [editingClass, setEditingClass] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [classStatistics, setClassStatistics] = useState(null);
+
+  // Get context refresh function
+  const { refreshClasses } = useClassesContext();
   const [studentsModalVisible, setStudentsModalVisible] = useState(false);
   const [teachersModalVisible, setTeachersModalVisible] = useState(false);
   const [selectedClassForModal, setSelectedClassForModal] = useState(null);
@@ -104,6 +108,7 @@ export default function ClassesScreen() {
       setIsModalVisible(false);
       fetchClassesData();
       fetchClassStatistics(); // Refresh statistics
+      refreshClasses(); // Update context for dropdowns
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Create class error handled by useApi");
@@ -118,6 +123,7 @@ export default function ClassesScreen() {
       setEditingClass(null);
       fetchClassesData();
       fetchClassStatistics(); // Refresh statistics
+      refreshClasses(); // Update context for dropdowns
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Update class error handled by useApi");
@@ -191,6 +197,7 @@ export default function ClassesScreen() {
         // Also refresh the main classes list
         fetchClassesData();
         fetchClassStatistics();
+        refreshClasses(); // Update context for dropdowns
       } catch (error) {
         console.error("Error refreshing class data:", error);
       }
