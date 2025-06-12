@@ -3,6 +3,7 @@ import { Space, Typography, message } from "antd";
 import useApi from "../../hooks/useApi";
 import { studentService } from "../../services/index";
 import { ERROR_DISPLAY_TYPES } from "../../utils/errorHandler";
+import { useStudentsContext } from "../../context/StudentsContext";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import StudentsTable from "./components/StudentsTable";
 import StudentFormModal from "./components/StudentFormModal";
@@ -15,6 +16,9 @@ export default function StudentsScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+
+  // Get context refresh function
+  const { refreshStudents } = useStudentsContext();
 
   // Pagination and filter state
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,6 +78,7 @@ export default function StudentsScreen() {
       message.success("Student created successfully!");
       setIsModalVisible(false);
       refreshStudentsData(); // Use smart refresh
+      refreshStudents(); // Update context for dropdowns
     } catch (error) {
       // Error is automatically handled by useApi with detailed validation messages
       console.log("Create student error handled by useApi");

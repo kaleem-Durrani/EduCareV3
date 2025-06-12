@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { studentService, SERVER_URL } from "../../../services/index";
 import useApi from "../../../hooks/useApi";
 import { handleApiError } from "../../../utils/errorHandler";
+import { useStudentsContext } from "../../../context/StudentsContext";
 import StudentBasicInfo from "./StudentBasicInfo";
 import StudentContactsManager from "./StudentContactsManager";
 
@@ -28,6 +29,9 @@ export default function StudentDetailsModal({
 }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Get context refresh function
+  const { refreshStudents } = useStudentsContext();
 
   // Use the useApi hook for fetching student data
   const {
@@ -76,6 +80,7 @@ export default function StudentDetailsModal({
       // Refresh both modal and main table data
       refreshModalData(); // Refresh modal data
       onRefresh(); // Refresh main table
+      refreshStudents(); // Update context for dropdowns
       return false; // Prevent default upload behavior
     } catch (error) {
       handleApiError(error);
@@ -104,6 +109,7 @@ export default function StudentDetailsModal({
           // Refresh both modal and main table data
           refreshModalData(); // Refresh modal data
           onRefresh(); // Refresh main table
+          refreshStudents(); // Update context for dropdowns
         } catch (error) {
           handleApiError(error);
         } finally {
@@ -123,6 +129,7 @@ export default function StudentDetailsModal({
           onUpdate={() => {
             refreshModalData(); // Refresh modal data
             onRefresh(); // Refresh main table
+            refreshStudents(); // Update context for dropdowns
           }}
         />
       ),
@@ -136,6 +143,7 @@ export default function StudentDetailsModal({
           onUpdate={() => {
             refreshModalData(); // Refresh modal data
             onRefresh(); // Refresh main table
+            refreshStudents(); // Update context for dropdowns
           }}
         />
       ),
