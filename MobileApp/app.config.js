@@ -5,7 +5,7 @@ export default {
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
-    userInterfaceStyle: "automatic",
+    userInterfaceStyle: "light", // Changed from "automatic" to match your working app.json
     splash: {
       image: "./assets/splash.png",
       resizeMode: "contain",
@@ -27,7 +27,7 @@ export default {
       favicon: "./assets/favicon.png"
     },
     plugins: [
-      "nativewind/babel"
+      "nativewind/babel" // This is the key addition for NativeWind
     ],
     experiments: {
       tsconfigPaths: true
