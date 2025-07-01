@@ -26,6 +26,12 @@ export default {
     web: {
       favicon: "./assets/favicon.png"
     },
+    plugins: [
+      "nativewind/babel"
+    ],
+    experiments: {
+      tsconfigPaths: true
+    },
     extra: {
       // Environment variables for the app
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:5500/api",
