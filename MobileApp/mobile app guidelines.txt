@@ -1,0 +1,379 @@
+Educare Mobile App Specification
+This document details the requirements for developing the Educare mobile application. The application will feature two distinct user interfaces: one for Parents and one for Teachers, each tailored to their specific needs and access levels.
+
+General Application Principles
+Branding Consistency: The app will feature the "Centro Infantil EDUCARE" logo prominently. A consistent black line will extend across the entire screen, side-to-side, directly under the logo on every page.
+
+User Interface (UI) / User Experience (UX): The design should prioritize readability, ease of navigation, and responsiveness across various mobile devices. All interactive elements should be clearly identifiable and provide appropriate feedback.
+
+Authentication: The application will include a robust login system.
+
+Module Display: On home/start pages, modules will be organized into three boxes per row, maintaining the specified colors and icons.
+
+Parent Application Interface
+The Parent interface is designed for viewing information specific to their own child. Parents will not have access to information about other children.
+
+1. Login Page
+Purpose: Authenticate parent users.
+
+Elements: Input fields for email/username and password.
+
+Functionality:
+
+Upon successful login, the user will be directed to the Parent Start Page.
+
+Instead of a "Terms and Conditions" checkbox, the page will display the text: "By logging in, you agree to our Terms of Service and Privacy Policy." The "Terms of Service" and "Privacy Policy" phrases will be hyperlinked to external web pages.
+
+The "Hotline" text will not be present.
+
+A "Forgot Password" function will be implemented, allowing users to initiate a password recovery process via email.
+
+2. Start Page (Home)
+Purpose: Provide a summary of the child and a main menu for navigation.
+
+Elements:
+
+A section displaying the child's photo and a summary of their basic information.
+
+A menu area presenting various app modules as clickable options, arranged in three boxes per row.
+
+Functionality: This page will load without any "Failed to fetch student information" error messages.
+
+3. Basic Information
+Purpose: Display detailed basic information about the child.
+
+Elements:
+
+The child's photo and summary will be displayed at the top.
+
+Key information will be presented in rows, including: Full name, Class, Schedule, First name, Age (with date of birth), Allergies, Likes/Dislikes, Additional information, and Authorized photos/videos status.
+
+Design Notes: Text for fields like "Full name," "Age," and "Allergies," along with all information below these headings, will use the color code #4169e1.
+
+Permissions: This screen will be view-only for parents. An "Edit info" button will be present but only visible to administrators.
+
+4. Contacts
+Purpose: Display contact information for the child's family members.
+
+Elements:
+
+The child's photo and summary will be displayed at the top.
+
+A list of family members, each showing a photo, their relationship to the child (e.g., "Mom," "Dad," "Aunt"), and their name.
+
+For each family member, phone and WhatsApp icons will be displayed.
+
+Functionality: Tapping the phone icon will initiate a call to the registered number. Tapping the WhatsApp icon will open WhatsApp with the registered number for direct messaging.
+
+Design Notes: Family photos will be enlarged to facilitate identity verification.
+
+Permissions: This screen will be view-only for parents. An "Edit info" button will be present but only visible to administrators.
+
+5. Weekly Menu
+Purpose: Display the child's weekly food menu.
+
+Elements:
+
+A section indicating the date range (e.g., "25-29 September") and the current month, accompanied by a relevant food image.
+
+The daily menu items (e.g., Fruit, Juice, Grain) will be listed in text format for each weekday.
+
+Functionality: Users will be able to navigate to previous or future weekly menus.
+
+Design Notes: Dates will feature curved text (e.g., "20-25 December") and a consistent, agreed-upon font. The menu will only display weekdays (Monday to Friday); Saturday and Sunday will not be included.
+
+Permissions: This screen will be view-only for parents. Only administrators will have editing capabilities for the menu.
+
+6. Weekly Report
+Purpose: Display the child's weekly activity and status report.
+
+Elements:
+
+A section indicating the date range (e.g., "1-7 December").
+
+Four distinct icons representing categories (e.g., Toilet, Food, Friends, Studies).
+
+Text-based ratings or statuses for each icon, presented in rows for each day of the week.
+
+Functionality: Users will be able to navigate to previous or future weekly reports.
+
+Design Notes: Weekdays will be represented by single letters (M, T, W, T, F) to optimize space within the report boxes.
+
+Content Mapping: The report will use the following mappings for categories: "Pee" will be "Toilet," "Poop" will be "Food," "Food" will be "Friends," and "Mood" will be "Studies."
+
+Permissions: This screen will be view-only for parents. An "Edit info" button will be present but only visible to administrators.
+
+7. Monthly Plan
+Purpose: Display the monthly educational plan and objectives.
+
+Elements:
+
+The current month will be prominently displayed, potentially with a relevant image.
+
+A yellow text box will contain detailed monthly information and objectives.
+
+Functionality: The screen will implement the previously agreed-upon design.
+
+Permissions: This screen will be view-only for parents. Only administrators will have editing capabilities.
+
+8. My Box
+Purpose: Display the status of items belonging to the child.
+
+Elements: A list of items (e.g., Shirt, Pants, Toothbrush) with their "In stock" status indicated as "YES" or "NO."
+
+Functionality: Parents will only be able to view the status of items; they will not be able to change the "YES" or "NO" options. If an item's status is "NO," the parent will receive a daily notification on their phone.
+
+Permissions: This screen will be view-only for parents. An "Edit info" button will be present but only visible to administrators.
+
+9. My Documents
+Purpose: Display the status of documents related to the child.
+
+Elements: A list of documents (e.g., Registration form, ID copy, Document 1) with their "On file" status indicated as "YES" or "NO."
+
+Functionality: If a document's status is "NO," the parent will receive a daily notification on their phone.
+
+Permissions: This screen will be view-only for parents. Only administrators will have access to modify document statuses.
+
+10. Activities
+Purpose: Provide an overview of upcoming and past activities, with detailed information for each.
+
+Elements:
+
+A calendar-like overview displaying activities in rows, including date, activity name, and a brief description.
+
+Each activity entry will have a "Read more" button.
+
+Functionality:
+
+Tapping "Read more" will navigate to a subpage displaying comprehensive activity details, including: Activity name, Location, Date, Hour, Participants, and Additional information.
+
+The subpage will also feature an activity icon and additional information as depicted in the mockups.
+
+Permissions: This screen will be view-only for parents. Only administrators will have editing capabilities.
+
+11. Wall
+Purpose: Display posts and updates from teachers.
+
+Elements: Each post will show the sender's photo and name (teacher), date of publication, and the content, which can include text, photos, or videos.
+
+Functionality: The page will display posts according to the previously agreed-upon design. It will support viewing various media types (text, images, videos) within a single post (e.g., multiple images in a blog-like format).
+
+Permissions: This screen will be view-only for parents. Only administrators and teachers will have posting/editing capabilities.
+
+12. Notes
+Purpose: Display notes about the child from teachers.
+
+Elements:
+
+The child's photo and summary will be displayed at the top.
+
+A list of text notes, each with its corresponding date.
+
+Each note entry will have a "Read more" button.
+
+Functionality: Tapping "Read more" will display the full content of the note.
+
+Permissions: This screen will be view-only for parents. Only administrators and teachers will have note creation/editing capabilities.
+
+13. Lost Items
+Purpose: Display information regarding lost and found items.
+
+Elements: A clear list or display of lost items.
+
+Functionality: This module will be fully enabled.
+
+14. Health
+Purpose: Display the child's health-related information.
+
+Elements: Fields for relevant health data.
+
+Functionality: The screen will be implemented according to the design, using the app's specified color palette. The "Information" section will be omitted. Height and Weight will be presented as two separate, distinct options, with "Weight" replacing the former "Information" section.
+
+15. Payment
+Purpose: Display payment summary and status.
+
+Elements:
+
+A top summary box with the background color #ffde59 (yellow).
+
+A bold title: SUMMARY.
+
+Payment details for each transaction.
+
+Functionality: The "Total fees" field will not be present. The light green background boxes on each post with a coin icon will be omitted. The system will send notifications to parents when a payment status is "unpaid."
+
+16. Driver
+Purpose: This module's functionality from a parent's perspective requires clarification. It needs to be determined if it appears on the login page and the specific process flow for this module. (Further clarification needed from client).
+
+17. Notifications
+Purpose: Display application notifications.
+
+Elements: A list of notifications.
+
+Design Notes: The screen will feature the same header and title type (with a vertical bar under the title) as other modules.
+
+18. Settings
+Purpose: Allow parents to manage app settings.
+
+Elements: A list of setting options.
+
+Functionality:
+
+All setting options will be functional.
+
+The purple color previously used will be replaced with the correct blue color code.
+
+A "Contact" option will be included, which, when tapped, will directly open WhatsApp to the director's number: +59163090969.
+
+A "Feedback" option will be included, leading to a form where users can submit app feedback.
+
+Teacher Application Interface
+The Teacher interface is designed to allow teachers to view and manage information for all children within their assigned classes, with specific editing rights.
+
+1. Login Page
+Purpose: Authenticate teacher users.
+
+Elements: Input fields for email/username and password.
+
+Functionality: (Same as Parent Login Page)
+
+2. Start Page (Home)
+Purpose: Provide an overview for the teacher and access to teacher-specific functionalities.
+
+Elements:
+
+A header at the top of the page.
+
+A section displaying the teacher's name, photo, and basic information, similar to the child summary in the parent app.
+
+A menu below this summary, presenting teacher-relevant app modules (e.g., Our Kids, Wall, Activities, Notes, Weekly Report), arranged in three boxes per row.
+
+Functionality: This page will load without any "Failed to fetch student information" error messages.
+
+3. Our Kids (Class List)
+Purpose: Allow teachers to view and select students within their assigned classes.
+
+Elements:
+
+A class list, designed as per the mockup.
+
+When a teacher selects a class they are assigned to, only children belonging to that specific class will be presented in a list.
+
+Functionality:
+
+Teachers can be assigned to one, two, or three classes, and the system will accurately filter students based on the selected class.
+
+Selecting a child from the list will navigate the teacher to that child's personal profile page.
+
+Permissions: Teachers will have read-only access to student profile information on this page.
+
+4. Basic Information (for a selected student)
+Purpose: View detailed basic information about a specific child.
+
+Elements: (Same as Parent App Basic Information)
+
+Permissions: This screen will be view-only for teachers. An "Edit info" button will be present but only visible to administrators.
+
+5. Contacts (for a selected student)
+Purpose: View contact information for a specific child's family members.
+
+Elements: (Same as Parent App Contacts)
+
+Permissions: This screen will be view-only for teachers. An "Edit info" button will be present but only visible to administrators.
+
+6. Weekly Menu
+Purpose: View the weekly food menu.
+
+Elements: (Same as Parent App Weekly Menu)
+
+Permissions: This screen will be view-only for teachers. Only administrators will have editing capabilities.
+
+7. Weekly Report (Teacher View)
+Purpose: Create and manage weekly reports for students in their class.
+
+Elements:
+
+A "Select Student" page featuring a dropdown menu that displays only students associated with the logged-in teacher.
+
+After selecting a student, the report input area will display four distinct icons for rating categories and fields for text-based ratings/statuses.
+
+Functionality:
+
+The "Create report" button will not be present.
+
+The box at the bottom containing "Week start, week end, actions" will be omitted.
+
+Once a student is selected via the dropdown, the option to select a student again within the report creation interface will be disabled.
+
+The "Select Date" option will be fully functional.
+
+When creating a report, the following mappings will be used: "Pee" will be "Toilet," "Poop" will be "Food," "Food" will be "Friends," and "Mood" will be "Studies."
+
+Permissions: Teachers will have edit rights for weekly reports for their specific students.
+
+8. Monthly Plan
+Purpose: View the monthly educational plan and objectives.
+
+Elements: (Same as Parent App Monthly Plan)
+
+Permissions: This screen will be view-only for teachers. Only administrators will have editing capabilities.
+
+9. My Box
+Purpose: View and manage the status of items belonging to children in their class.
+
+Elements: A list of items with their "In stock" status (YES/NO).
+
+Functionality: This module will be fully enabled. Teachers will have edit rights for "My Box" for their specific students.
+
+10. My Documents
+Purpose: View the status of documents related to children in their class.
+
+Elements: (Same as Parent App My Documents)
+
+Permissions: This screen will be view-only for teachers. Only administrators will have access to this function.
+
+11. Activities (Teacher View)
+Purpose: Create and manage activities.
+
+Elements: (Similar to Parent App Activities view, but with creation/editing capabilities).
+
+Functionality: This module will be fully enabled. Teachers will have edit rights for "Activities."
+
+Audience: When creating an activity, teachers will be able to specify the audience: visible to all children, a single class, or an individual child.
+
+12. Wall Post (Teacher View)
+Purpose: Create and publish posts for parents/children.
+
+Elements: A form to create new posts, including fields for text, and options to upload photos or videos.
+
+Functionality: This module will be fully enabled. Teachers will have edit rights for "Wall Post." It will support posting various media types (text, images, videos) within a single post (e.g., multiple images in a blog-like format).
+
+Audience: When creating a post, teachers will be able to specify the audience: visible to all children, a single class, or an individual child. For example, a teacher of the "Red class" can post only to parents of children in the "Red class."
+
+13. Notes (Teacher View)
+Purpose: Create and manage notes for individual children in their class.
+
+Elements:
+
+A "Select Student" option will be presented first.
+
+After selecting a student, the screen will display the child's photo and summary.
+
+A list of existing text notes with dates, and an interface to create new notes or edit existing ones.
+
+Functionality: This module will be fully enabled. Teachers will have edit rights for "Notes" for their specific students. A "Read more" button will be present to view the full content of notes.
+
+14. Settings (Teacher View)
+Purpose: Allow teachers to manage app settings relevant to their role.
+
+Elements: A list of setting options.
+
+Functionality:
+
+All setting options will be functional.
+
+The purple color previously used will be replaced with the correct blue color code.
+
+A "Contact" option will be included, which, when tapped, will directly open WhatsApp to the director's number: +59163090969.
+
+A "Feedback" option will be included, leading to a form where users can submit app feedback.
