@@ -4,3 +4,5 @@ export { default as api } from './api';
 export * from './authService';
 export * from './classService';
 export * from './studentService';
+export * from './menuService';
+export * from './monthlyPlanService';
