@@ -1,51 +1,51 @@
 import { useState } from 'react';
+import { ApiResponse } from '../types';
 
 export interface UseApiState<T> {
   isLoading: boolean;
-  error: any;
+  error: string | null;
   data: T | null;
-  response: any;
+  success: boolean;
 }
 
 export interface UseApiReturn<T> extends UseApiState<T> {
-  request: (...args: any[]) => Promise<T>;
+  request: (...args: any[]) => Promise<void>;
   clearData: () => void;
 }
 
 export default function useApi<T = any>(
-  apiCall: (...args: any[]) => Promise<any>
+  apiCall: (...args: any[]) => Promise<ApiResponse<T>>
 ): UseApiReturn<T> {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<T | null>(null);
-  const [response, setResponse] = useState<any>(null);
+  const [success, setSuccess] = useState(false);
 
-  const request = async (...args: any[]): Promise<T> => {
+  const request = async (...args: any[]): Promise<void> => {
     setIsLoading(true);
     setError(null);
     setData(null);
+    setSuccess(false);
 
-    try {
-      const response = await apiCall(...args);
+    // No try-catch here - error handling is done in the API service layer
+    const response = await apiCall(...args);
 
-      // Axios successful response structure
-      setData(response.data);
-      setResponse(response);
-      return response.data; // Return data for easier access
-    } catch (err) {
-      setError(err);
-      // Re-throw the error so components can still catch it if needed
-      throw err;
-    } finally {
-      setIsLoading(false);
+    if (response.success) {
+      setData(response.data || null);
+      setSuccess(true);
+    } else {
+      setError(response.message || response.error || 'An error occurred');
+      setSuccess(false);
     }
+
+    setIsLoading(false);
   };
 
   const clearData = () => {
     setIsLoading(false);
     setError(null);
     setData(null);
-    setResponse(null);
+    setSuccess(false);
   };
 
   return {
@@ -53,7 +53,7 @@ export default function useApi<T = any>(
     isLoading,
     error,
     data,
-    response,
+    success,
     clearData,
   };
 }
