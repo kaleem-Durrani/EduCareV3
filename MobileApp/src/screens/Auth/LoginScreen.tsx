@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../contexts';
+import { useTheme, useAuth } from '../../contexts';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../types';
 
@@ -13,24 +13,30 @@ interface Props {
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { colors } = useTheme();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'parent' | 'teacher'>('parent');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     if (!email || !password) {
+      setError('Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
-    try {
-      // TODO: Implement actual login logic
-      console.log('Login attempt:', { email, password });
-    } catch (error) {
-      console.error('Login error:', error);
-    } finally {
-      setIsLoading(false);
+    setError('');
+
+    const result = await login({ email, password, role });
+
+    if (!result.success) {
+      setError(result.message || 'Login failed');
     }
+    // If successful, navigation will be handled automatically by the auth context
+
+    setIsLoading(false);
   };
 
   const openTermsOfService = () => {
@@ -67,9 +73,55 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       <View className="flex-1 px-6 justify-center">
         {/* Login Form */}
         <View className="space-y-4">
+          {/* Role Selection */}
+          <View>
+            <Text
+              className="text-sm font-medium mb-2"
+              style={{ color: colors.textPrimary }}
+            >
+              I am a
+            </Text>
+            <View className="flex-row space-x-4">
+              <TouchableOpacity
+                className="flex-1 p-4 rounded-lg border"
+                style={{
+                  backgroundColor: role === 'parent' ? colors.primary : colors.surface,
+                  borderColor: role === 'parent' ? colors.primary : colors.border,
+                }}
+                onPress={() => setRole('parent')}
+              >
+                <Text
+                  className="text-center font-medium"
+                  style={{
+                    color: role === 'parent' ? colors.textOnPrimary : colors.textPrimary
+                  }}
+                >
+                  Parent
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 p-4 rounded-lg border"
+                style={{
+                  backgroundColor: role === 'teacher' ? colors.primary : colors.surface,
+                  borderColor: role === 'teacher' ? colors.primary : colors.border,
+                }}
+                onPress={() => setRole('teacher')}
+              >
+                <Text
+                  className="text-center font-medium"
+                  style={{
+                    color: role === 'teacher' ? colors.textOnPrimary : colors.textPrimary
+                  }}
+                >
+                  Teacher
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           {/* Email Input */}
           <View>
-            <Text 
+            <Text
               className="text-sm font-medium mb-2"
               style={{ color: colors.textPrimary }}
             >
@@ -77,7 +129,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
             <TextInput
               className="w-full p-4 rounded-lg border"
-              style={{ 
+              style={{
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
                 color: colors.textPrimary
@@ -85,7 +137,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               placeholder="Enter your email"
               placeholderTextColor={colors.textMuted}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setError(''); // Clear error when user types
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -93,7 +148,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Password Input */}
           <View>
-            <Text 
+            <Text
               className="text-sm font-medium mb-2"
               style={{ color: colors.textPrimary }}
             >
@@ -101,7 +156,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
             <TextInput
               className="w-full p-4 rounded-lg border"
-              style={{ 
+              style={{
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
                 color: colors.textPrimary
@@ -109,19 +164,37 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               placeholder="Enter your password"
               placeholderTextColor={colors.textMuted}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setError(''); // Clear error when user types
+              }}
               secureTextEntry
             />
           </View>
 
+          {/* Error Message */}
+          {error ? (
+            <View className="mt-2">
+              <Text
+                className="text-sm text-center"
+                style={{ color: colors.error }}
+              >
+                {error}
+              </Text>
+            </View>
+          ) : null}
+
           {/* Login Button */}
           <TouchableOpacity
             className="w-full py-4 rounded-lg mt-6"
-            style={{ backgroundColor: colors.primary }}
+            style={{
+              backgroundColor: (isLoading || !email || !password) ? colors.textMuted : colors.primary,
+              opacity: (isLoading || !email || !password) ? 0.6 : 1
+            }}
             onPress={handleLogin}
             disabled={isLoading || !email || !password}
           >
-            <Text 
+            <Text
               className="text-center font-semibold text-lg"
               style={{ color: colors.textOnPrimary }}
             >

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts';
+import { authService } from '../../services';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../types';
 
@@ -16,22 +17,27 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   const handleForgotPassword = async () => {
     if (!email) {
+      setError('Please enter your email address');
       return;
     }
 
     setIsLoading(true);
-    try {
-      // TODO: Implement actual forgot password logic
-      console.log('Forgot password for:', email);
+    setError('');
+    setMessage('');
+
+    const result = await authService.forgotPassword({ email });
+
+    if (result.success) {
       setMessage('Password reset instructions have been sent to your email.');
-    } catch (error) {
-      console.error('Forgot password error:', error);
-    } finally {
-      setIsLoading(false);
+    } else {
+      setError(result.message || 'Failed to send reset instructions');
     }
+
+    setIsLoading(false);
   };
 
   return (
@@ -72,15 +78,30 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Success Message */}
         {message ? (
-          <View 
+          <View
             className="p-4 rounded-lg mb-4"
             style={{ backgroundColor: colors.success + '20' }}
           >
-            <Text 
+            <Text
               className="text-center"
               style={{ color: colors.success }}
             >
               {message}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Error Message */}
+        {error ? (
+          <View
+            className="p-4 rounded-lg mb-4"
+            style={{ backgroundColor: colors.error + '20' }}
+          >
+            <Text
+              className="text-center"
+              style={{ color: colors.error }}
+            >
+              {error}
             </Text>
           </View>
         ) : null}
@@ -103,7 +124,11 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             placeholder="Enter your email"
             placeholderTextColor={colors.textMuted}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              setError('');
+              setMessage('');
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
           />

@@ -1,6 +1,7 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { RootStackParamList } from "../types";
+import { useAuth } from "../contexts";
 
 // Import navigators
 import { AuthNavigator } from "./AuthNavigator";
@@ -11,10 +12,8 @@ import { LoadingScreen } from "../components";
 const Stack = createStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
-  // TODO: Add authentication context
-  const isAuthenticated = false; // Placeholder
-  const userRole = 'parent'; // Placeholder: 'parent' | 'teacher'
-  const isLoading = false; // Placeholder
+  // Get auth state from context
+  const { isAuthenticated, user, isLoading } = useAuth();
 
   // Show loading screen while checking auth state
   if (isLoading) {
@@ -31,7 +30,7 @@ export const RootNavigator = () => {
       ) : (
         // App Stack Group - Only when authenticated
         <Stack.Group>
-          {userRole === "parent" ? (
+          {user?.role === "parent" ? (
             <Stack.Screen name="ParentApp" component={ParentNavigator} />
           ) : (
             <Stack.Screen name="TeacherApp" component={TeacherNavigator} />
