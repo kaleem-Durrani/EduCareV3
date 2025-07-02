@@ -1,13 +1,58 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
+import { useApi } from '../../../hooks';
+import { classService, monthlyPlanService, EnrolledClass, MonthlyPlan } from '../../../services';
+import LoadingScreen from '../../../components/LoadingScreen';
+import PlanSelector from './components/PlanSelector';
+import PlanContent from './components/PlanContent';
 
 const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
+  const [selectedClass, setSelectedClass] = useState<EnrolledClass | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [hasSearched, setHasSearched] = useState(false);
+
+  // API hook for fetching enrolled classes
+  const {
+    request: fetchClasses,
+    isLoading: isLoadingClasses,
+    error: classesError,
+    data: classes
+  } = useApi<EnrolledClass[]>(classService.getEnrolledTeacherClasses);
+
+  // API hook for fetching monthly plan
+  const {
+    request: fetchPlan,
+    isLoading: isLoadingPlan,
+    error: planError,
+    data: plan
+  } = useApi<MonthlyPlan>(monthlyPlanService.getMonthlyPlan);
+
+  useEffect(() => {
+    loadClasses();
+  }, []);
+
+  const loadClasses = async () => {
+    await fetchClasses();
+  };
+
+  const handleLoadPlan = async () => {
+    if (!selectedClass) return;
+
+    setHasSearched(true);
+    await fetchPlan(selectedClass._id, selectedMonth, selectedYear);
+  };
+
+  if (isLoadingClasses) {
+    return <LoadingScreen message="Loading your classes..." />;
+  }
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+      {/* Header */}
       <View className="items-center pb-4 pt-4">
         <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
           Centro Infantil EDUCARE
@@ -15,23 +60,69 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
         <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
       </View>
 
+      {/* Navigation Header */}
       <View className="px-4 py-2">
         <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
           <Text className="mr-2 text-2xl">←</Text>
           <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            MonthlyPlan
+            Monthly Plan
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-          MonthlyPlan Screen
-        </Text>
-        <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-          View monthly educational plan. View-only for teachers.
-        </Text>
-      </View>
+      {/* Content */}
+      <ScrollView className="flex-1 px-4">
+        {classesError ? (
+          <View className="flex-1 items-center justify-center py-8">
+            <Text className="text-center text-lg mb-2" style={{ color: colors.textPrimary }}>
+              Failed to load classes
+            </Text>
+            <Text className="text-center text-sm mb-4" style={{ color: colors.textSecondary }}>
+              {classesError}
+            </Text>
+            <TouchableOpacity
+              className="bg-blue-500 px-6 py-3 rounded-lg"
+              onPress={loadClasses}
+            >
+              <Text className="text-white font-medium">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !classes || classes.length === 0 ? (
+          <View className="flex-1 items-center justify-center py-8">
+            <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
+              No classes assigned
+            </Text>
+            <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
+              You are not currently assigned to any classes.
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Plan Selector */}
+            <PlanSelector
+              classes={classes}
+              selectedClass={selectedClass}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              onClassSelect={setSelectedClass}
+              onMonthSelect={setSelectedMonth}
+              onYearSelect={setSelectedYear}
+              onLoadPlan={handleLoadPlan}
+              isLoading={isLoadingPlan}
+            />
+
+            {/* Plan Content */}
+            {hasSearched && (
+              <PlanContent
+                plan={plan}
+                error={planError}
+                isLoading={isLoadingPlan}
+                onRetry={handleLoadPlan}
+              />
+            )}
+          </>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
