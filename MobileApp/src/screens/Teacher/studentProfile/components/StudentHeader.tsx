@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { StudentDetails } from '../../../../services';
+import { ENV } from '../../../../config';
 
 interface StudentHeaderProps {
   student: StudentDetails;
@@ -46,15 +47,23 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({ student }) => {
       }}
     >
       {/* Student Photo */}
-      <View
-        className="mb-4 h-24 w-24 items-center justify-center rounded-full"
-        style={{ backgroundColor: colors.primary }}
-      >
+      <View className="mb-4 h-24 w-24 rounded-full overflow-hidden">
         {student.photoUrl ? (
-          // TODO: Add Image component when implementing photo uploads
-          <Text className="text-white text-4xl">👶</Text>
+          <Image
+            source={{ uri: `${ENV.SERVER_URL}/${student.photoUrl}` }}
+            className="w-full h-full"
+            resizeMode="cover"
+            onError={() => {
+              console.log('Failed to load student image');
+            }}
+          />
         ) : (
-          <Text className="text-white text-4xl">👶</Text>
+          <View
+            className="w-full h-full items-center justify-center"
+            style={{ backgroundColor: colors.primary }}
+          >
+            <Text className="text-white text-4xl">👶</Text>
+          </View>
         )}
       </View>
 

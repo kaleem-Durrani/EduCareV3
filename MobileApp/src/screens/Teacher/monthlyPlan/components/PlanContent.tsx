@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { MonthlyPlan } from '../../../../services';
+import { ENV } from '~/config';
 
 interface PlanContentProps {
   plan: MonthlyPlan | null;
@@ -10,18 +11,23 @@ interface PlanContentProps {
   onRetry: () => void;
 }
 
-const PlanContent: React.FC<PlanContentProps> = ({
-  plan,
-  error,
-  isLoading,
-  onRetry,
-}) => {
+const PlanContent: React.FC<PlanContentProps> = ({ plan, error, isLoading, onRetry }) => {
   const { colors } = useTheme();
 
   const getMonthName = (month: number) => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1] || 'Unknown';
   };
@@ -33,7 +39,7 @@ const PlanContent: React.FC<PlanContentProps> = ({
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -51,24 +57,20 @@ const PlanContent: React.FC<PlanContentProps> = ({
     return (
       <View
         className="rounded-lg p-6"
-        style={{ 
-          backgroundColor: colors.card, 
-          borderColor: colors.border, 
-          borderWidth: 1 
-        }}
-      >
+        style={{
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderWidth: 1,
+        }}>
         <View className="items-center">
-          <Text className="text-lg font-medium mb-2" style={{ color: colors.textPrimary }}>
+          <Text className="mb-2 text-lg font-medium" style={{ color: colors.textPrimary }}>
             Plan Not Found
           </Text>
-          <Text className="text-sm text-center mb-4" style={{ color: colors.textSecondary }}>
+          <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
             {error}
           </Text>
-          <TouchableOpacity
-            className="bg-blue-500 px-6 py-3 rounded-lg"
-            onPress={onRetry}
-          >
-            <Text className="text-white font-medium">Try Again</Text>
+          <TouchableOpacity className="rounded-lg bg-blue-500 px-6 py-3" onPress={onRetry}>
+            <Text className="font-medium text-white">Try Again</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -79,17 +81,16 @@ const PlanContent: React.FC<PlanContentProps> = ({
     return (
       <View
         className="rounded-lg p-6"
-        style={{ 
-          backgroundColor: colors.card, 
-          borderColor: colors.border, 
-          borderWidth: 1 
-        }}
-      >
+        style={{
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderWidth: 1,
+        }}>
         <View className="items-center">
-          <Text className="text-lg font-medium mb-2" style={{ color: colors.textPrimary }}>
+          <Text className="mb-2 text-lg font-medium" style={{ color: colors.textPrimary }}>
             No Plan Found
           </Text>
-          <Text className="text-sm text-center" style={{ color: colors.textSecondary }}>
+          <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
             No monthly plan exists for the selected class, month, and year.
           </Text>
         </View>
@@ -99,29 +100,28 @@ const PlanContent: React.FC<PlanContentProps> = ({
 
   return (
     <View className="mb-6">
-      <Text className="text-lg font-bold mb-4" style={{ color: colors.textPrimary }}>
+      <Text className="mb-4 text-lg font-bold" style={{ color: colors.textPrimary }}>
         📚 Monthly Plan Details
       </Text>
 
       {/* Plan Header */}
       <View
         className="mb-4 rounded-lg p-6"
-        style={{ 
-          backgroundColor: colors.card, 
-          borderColor: colors.border, 
+        style={{
+          backgroundColor: colors.card,
+          borderColor: colors.border,
           borderWidth: 1,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.1,
           shadowRadius: 4,
           elevation: 3,
-        }}
-      >
-        <Text className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+        }}>
+        <Text className="mb-2 text-xl font-bold" style={{ color: colors.textPrimary }}>
           {getMonthName(plan.month)} {plan.year}
         </Text>
-        
-        <Text className="text-base mb-3" style={{ color: colors.textSecondary }}>
+
+        <Text className="mb-3 text-base" style={{ color: colors.textSecondary }}>
           📚 Class: {plan.class_id.name}
         </Text>
 
@@ -143,16 +143,15 @@ const PlanContent: React.FC<PlanContentProps> = ({
       {/* Plan Image */}
       {plan.imageUrl && (
         <View
-          className="mb-4 rounded-lg overflow-hidden"
-          style={{ 
-            backgroundColor: colors.card, 
-            borderColor: colors.border, 
-            borderWidth: 1 
-          }}
-        >
+          className="mb-4 overflow-hidden rounded-lg"
+          style={{
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            borderWidth: 1,
+          }}>
           <Image
-            source={{ uri: plan.imageUrl }}
-            className="w-full h-48"
+            source={{ uri: `${ENV.SERVER_URL}/${plan.imageUrl}` }}
+            className="h-48 w-full"
             resizeMode="cover"
             onError={() => {
               console.log('Failed to load plan image');
@@ -164,20 +163,16 @@ const PlanContent: React.FC<PlanContentProps> = ({
       {/* Plan Description */}
       <View
         className="rounded-lg p-4"
-        style={{ 
-          backgroundColor: colors.card, 
-          borderColor: colors.border, 
-          borderWidth: 1 
-        }}
-      >
-        <Text className="text-lg font-medium mb-3" style={{ color: colors.textPrimary }}>
+        style={{
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderWidth: 1,
+        }}>
+        <Text className="mb-3 text-lg font-medium" style={{ color: colors.textPrimary }}>
           📝 Plan Description
         </Text>
-        
-        <View 
-          className="p-4 rounded-lg"
-          style={{ backgroundColor: colors.background }}
-        >
+
+        <View className="rounded-lg p-4" style={{ backgroundColor: colors.background }}>
           <Text className="text-base leading-6" style={{ color: colors.textPrimary }}>
             {plan.description}
           </Text>

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Alert, Image } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { StudentDetails, StudentContact } from '../../../../services';
+import { ENV } from '../../../../config';
 
 interface StudentContactsProps {
   student: StudentDetails;
@@ -44,15 +45,23 @@ const StudentContacts: React.FC<StudentContactsProps> = ({ student }) => {
     >
       <View className="flex-row items-center">
         {/* Contact Photo */}
-        <View
-          className="w-12 h-12 rounded-full items-center justify-center mr-4"
-          style={{ backgroundColor: colors.primary }}
-        >
+        <View className="w-12 h-12 rounded-full mr-4 overflow-hidden">
           {contact.photoUrl ? (
-            // TODO: Add Image component when implementing photo uploads
-            <Text className="text-white text-lg">👤</Text>
+            <Image
+              source={{ uri: `${ENV.SERVER_URL}/${contact.photoUrl}` }}
+              className="w-full h-full"
+              resizeMode="cover"
+              onError={() => {
+                console.log('Failed to load contact image');
+              }}
+            />
           ) : (
-            <Text className="text-white text-lg">👤</Text>
+            <View
+              className="w-full h-full items-center justify-center"
+              style={{ backgroundColor: colors.primary }}
+            >
+              <Text className="text-white text-lg">👤</Text>
+            </View>
           )}
         </View>
 
