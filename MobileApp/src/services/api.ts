@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV, log, logError } from '../config/env';
-import { ApiResponse, ApiError } from '../types';
+import { ApiResponse } from '../types';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -98,136 +98,126 @@ const createApiInstance = (): AxiosInstance => {
 // Create the main API instance
 export const api = createApiInstance();
 
-// API helper functions
-export class ApiService {
-  // Generic GET request
-  static async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    try {
-      const response = await api.get<T>(endpoint, config);
+// Error handler function
+const handleError = (error: any): ApiResponse => {
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError;
+
+    if (axiosError.response) {
+      // Server responded with error status - use backend's response structure
+      const errorData = axiosError.response.data as any;
       return {
-        success: true,
-        data: response.data,
+        success: false,
+        message: errorData?.message || 'Server error occurred',
+        error: errorData?.error || `HTTP ${axiosError.response.status}`,
       };
-    } catch (error) {
-      return this.handleError(error);
+    } else if (axiosError.request) {
+      // Network error
+      return {
+        success: false,
+        message: 'Network error. Please check your connection.',
+        error: 'NETWORK_ERROR',
+      };
     }
   }
+
+  // Generic error
+  return {
+    success: false,
+    message: 'An unexpected error occurred',
+    error: 'UNKNOWN_ERROR',
+  };
+};
+
+// API helper functions
+export const ApiService = {
+  // Generic GET request
+  get: async <T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+    try {
+      const response = await api.get(endpoint, config);
+      // Use backend's response structure directly
+      return response.data;
+    } catch (error) {
+      return handleError(error);
+    }
+  },
 
   // Generic POST request
-  static async post<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  post: async <T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     try {
-      const response = await api.post<T>(endpoint, data, config);
-      return {
-        success: true,
-        data: response.data,
-      };
+      const response = await api.post(endpoint, data, config);
+      // Use backend's response structure directly
+      return response.data;
     } catch (error) {
-      return this.handleError(error);
+      return handleError(error);
     }
-  }
+  },
 
   // Generic PUT request
-  static async put<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  put: async <T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     try {
-      const response = await api.put<T>(endpoint, data, config);
-      return {
-        success: true,
-        data: response.data,
-      };
+      const response = await api.put(endpoint, data, config);
+      // Use backend's response structure directly
+      return response.data;
     } catch (error) {
-      return this.handleError(error);
+      return handleError(error);
     }
-  }
+  },
 
   // Generic DELETE request
-  static async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  delete: async <T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     try {
-      const response = await api.delete<T>(endpoint, config);
-      return {
-        success: true,
-        data: response.data,
-      };
+      const response = await api.delete(endpoint, config);
+      // Use backend's response structure directly
+      return response.data;
     } catch (error) {
-      return this.handleError(error);
+      return handleError(error);
     }
-  }
+  },
 
   // File upload helper
-  static async uploadFile<T>(
-    endpoint: string, 
-    file: any, 
+  uploadFile: async <T>(
+    endpoint: string,
+    file: any,
     onUploadProgress?: (progressEvent: any) => void
-  ): Promise<ApiResponse<T>> {
+  ): Promise<ApiResponse<T>> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await api.post<T>(endpoint, formData, {
+      const response = await api.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
         onUploadProgress,
       });
 
-      return {
-        success: true,
-        data: response.data,
-      };
+      // Use backend's response structure directly
+      return response.data;
     } catch (error) {
-      return this.handleError(error);
+      return handleError(error);
     }
-  }
-
-  // Error handler
-  private static handleError(error: any): ApiResponse {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError;
-      
-      if (axiosError.response) {
-        // Server responded with error status
-        const errorData = axiosError.response.data as any;
-        return {
-          success: false,
-          message: errorData?.message || 'Server error occurred',
-          error: errorData?.error || `HTTP ${axiosError.response.status}`,
-        };
-      } else if (axiosError.request) {
-        // Network error
-        return {
-          success: false,
-          message: 'Network error. Please check your connection.',
-          error: 'NETWORK_ERROR',
-        };
-      }
-    }
-
-    // Generic error
-    return {
-      success: false,
-      message: 'An unexpected error occurred',
-      error: 'UNKNOWN_ERROR',
-    };
-  }
+  },
 
   // Utility to check if user is authenticated
-  static async isAuthenticated(): Promise<boolean> {
+  isAuthenticated: async (): Promise<boolean> => {
     try {
       const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
       return !!token;
     } catch {
       return false;
     }
-  }
+  },
 
   // Utility to get stored token
-  static async getToken(): Promise<string | null> {
+  getToken: async (): Promise<string | null> => {
     try {
       return await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
     } catch {
       return null;
     }
-  }
-}
+  },
+};
 
 // Export default instance
 export default api;
