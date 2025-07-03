@@ -1,5 +1,6 @@
 import { createStackNavigator } from '@react-navigation/stack';
 import { TeacherStackParamList } from '../types';
+import { TeacherClassesProvider } from '../contexts';
 
 // Import Teacher screens
 import TeacherHomeScreen from '../screens/Teacher/teacherHome';
@@ -26,7 +27,8 @@ const Stack = createStackNavigator<TeacherStackParamList>();
 
 export const TeacherNavigator = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <TeacherClassesProvider userRole="teacher">
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
       {/* Home Screen */}
       <Stack.Screen name="TeacherHome" component={TeacherHomeScreen} />
 
@@ -60,5 +62,6 @@ export const TeacherNavigator = () => {
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
+    </TeacherClassesProvider>
   );
 };
