@@ -37,6 +37,11 @@ const ContactsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation
     await fetchStudent(student._id);
   };
 
+  const handleResetSelection = () => {
+    setSelectedStudent(null);
+    setHasSearched(false);
+  };
+
   if (isLoadingClasses) {
     return <LoadingScreen message="Loading your classes..." />;
   }
@@ -95,6 +100,7 @@ const ContactsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation
               allStudents={allStudents}
               studentsByClass={studentsByClass}
               onStudentSelect={handleStudentSelect}
+              onResetSelection={handleResetSelection}
             />
 
             {/* Student Contact Info */}

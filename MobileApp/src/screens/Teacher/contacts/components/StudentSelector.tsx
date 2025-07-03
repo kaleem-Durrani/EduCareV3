@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, FlatList, TextInput } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { EnrolledClass, ClassStudent } from '../../../../services';
 
@@ -8,6 +8,7 @@ interface StudentSelectorProps {
   allStudents: ClassStudent[];
   studentsByClass: Record<string, ClassStudent[]>;
   onStudentSelect: (student: ClassStudent) => void;
+  onResetSelection: () => void;
 }
 
 type SelectionMode = 'all' | 'byClass';
@@ -17,12 +18,15 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
   allStudents,
   studentsByClass,
   onStudentSelect,
+  onResetSelection,
 }) => {
   const { colors } = useTheme();
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('all');
   const [selectedClass, setSelectedClass] = useState<EnrolledClass | null>(null);
   const [isClassModalVisible, setIsClassModalVisible] = useState(false);
   const [isStudentModalVisible, setIsStudentModalVisible] = useState(false);
+  const [classSearchText, setClassSearchText] = useState('');
+  const [studentSearchText, setStudentSearchText] = useState('');
 
   const getStudentsForSelection = (): ClassStudent[] => {
     if (selectionMode === 'all') {
@@ -32,19 +36,40 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
     }
   };
 
+  const getFilteredClasses = (): EnrolledClass[] => {
+    if (!classSearchText.trim()) return classes;
+    return classes.filter(classItem =>
+      classItem.name.toLowerCase().includes(classSearchText.toLowerCase()) ||
+      (classItem.description && classItem.description.toLowerCase().includes(classSearchText.toLowerCase()))
+    );
+  };
+
+  const getFilteredStudents = (): ClassStudent[] => {
+    const students = getStudentsForSelection();
+    if (!studentSearchText.trim()) return students;
+    return students.filter(student =>
+      student.fullName.toLowerCase().includes(studentSearchText.toLowerCase()) ||
+      student.rollNum.toString().includes(studentSearchText)
+    );
+  };
+
   const handleModeChange = (mode: SelectionMode) => {
     setSelectionMode(mode);
     setSelectedClass(null);
+    onResetSelection(); // Reset student selection when mode changes
   };
 
   const handleClassSelect = (classItem: EnrolledClass) => {
     setSelectedClass(classItem);
     setIsClassModalVisible(false);
+    setClassSearchText(''); // Reset search
+    onResetSelection(); // Reset student selection when class changes
   };
 
   const handleStudentSelect = (student: ClassStudent) => {
     onStudentSelect(student);
     setIsStudentModalVisible(false);
+    setStudentSearchText(''); // Reset search
   };
 
   const renderClassItem = ({ item }: { item: EnrolledClass }) => (
@@ -87,7 +112,10 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
     onClose: () => void,
     title: string,
     data: any[],
-    renderItem: any
+    renderItem: any,
+    searchText: string,
+    onSearchChange: (text: string) => void,
+    searchPlaceholder: string
   ) => (
     <Modal
       visible={visible}
@@ -96,16 +124,17 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
       onRequestClose={onClose}
     >
       <View className="flex-1 justify-end">
-        <View 
+        <View
           className="bg-black/50 flex-1"
           onTouchEnd={onClose}
         />
-        <View 
+        <View
           className="rounded-t-lg max-h-96"
           style={{ backgroundColor: colors.background }}
         >
+          {/* Header */}
           <View className="p-4 border-b" style={{ borderBottomColor: colors.border }}>
-            <View className="flex-row justify-between items-center">
+            <View className="flex-row justify-between items-center mb-3">
               <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
                 {title}
               </Text>
@@ -115,12 +144,37 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Search Input */}
+            <TextInput
+              className="p-3 rounded-lg border"
+              style={{
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                color: colors.textPrimary
+              }}
+              placeholder={searchPlaceholder}
+              placeholderTextColor={colors.textSecondary}
+              value={searchText}
+              onChangeText={onSearchChange}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
           </View>
+
+          {/* List */}
           <FlatList
             data={data}
             keyExtractor={(item) => item._id}
             renderItem={renderItem}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View className="p-4 items-center">
+                <Text style={{ color: colors.textSecondary }}>
+                  No results found
+                </Text>
+              </View>
+            }
           />
         </View>
       </View>
@@ -129,6 +183,8 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
 
   const canSelectStudent = selectionMode === 'all' || (selectionMode === 'byClass' && selectedClass);
   const studentsToShow = getStudentsForSelection();
+  const filteredClasses = getFilteredClasses();
+  const filteredStudents = getFilteredStudents();
 
   return (
     <View className="mb-6">
@@ -226,16 +282,22 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
         isClassModalVisible,
         () => setIsClassModalVisible(false),
         'Select Class',
-        classes,
-        renderClassItem
+        filteredClasses,
+        renderClassItem,
+        classSearchText,
+        setClassSearchText,
+        'Search classes...'
       )}
 
       {renderModal(
         isStudentModalVisible,
         () => setIsStudentModalVisible(false),
         'Select Student',
-        studentsToShow,
-        renderStudentItem
+        filteredStudents,
+        renderStudentItem,
+        studentSearchText,
+        setStudentSearchText,
+        'Search students...'
       )}
     </View>
   );
