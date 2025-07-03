@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../../contexts';
-import { useApi } from '../../../hooks';
-import { classService, EnrolledClass } from '../../../services';
+import { useTheme, useTeacherClasses } from '../../../contexts';
+import { EnrolledClass } from '../../../services';
 import LoadingScreen from '../../../components/LoadingScreen';
 import ClassSelector from './components/ClassSelector';
 import StudentList from './components/StudentList';
@@ -12,21 +11,13 @@ const OurKidsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
   const { colors } = useTheme();
   const [selectedClass, setSelectedClass] = useState<EnrolledClass | null>(null);
 
-  // API hook for fetching enrolled classes
+  // Use teacher classes context
   const {
-    request: fetchClasses,
+    classes,
     isLoading: isLoadingClasses,
     error: classesError,
-    data: classes
-  } = useApi<EnrolledClass[]>(classService.getEnrolledTeacherClasses);
-
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  const loadClasses = async () => {
-    await fetchClasses();
-  };
+    refreshClasses
+  } = useTeacherClasses();
 
   const handleStudentPress = (studentId: string) => {
     navigation.navigate('StudentProfile', { studentId });
@@ -72,7 +63,7 @@ const OurKidsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
             </Text>
             <TouchableOpacity
               className="bg-blue-500 px-6 py-3 rounded-lg"
-              onPress={loadClasses}
+              onPress={refreshClasses}
             >
               <Text className="text-white font-medium">Retry</Text>
             </TouchableOpacity>

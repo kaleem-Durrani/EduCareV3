@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../../contexts';
+import { useTheme, useTeacherClasses } from '../../../contexts';
 import { useApi } from '../../../hooks';
-import { classService, monthlyPlanService, EnrolledClass, MonthlyPlan } from '../../../services';
+import { monthlyPlanService, EnrolledClass, MonthlyPlan } from '../../../services';
 import LoadingScreen from '../../../components/LoadingScreen';
 import PlanSelector from './components/PlanSelector';
 import PlanContent from './components/PlanContent';
@@ -15,13 +15,13 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [hasSearched, setHasSearched] = useState(false);
 
-  // API hook for fetching enrolled classes
+  // Use teacher classes context
   const {
-    request: fetchClasses,
+    classes,
     isLoading: isLoadingClasses,
     error: classesError,
-    data: classes
-  } = useApi<EnrolledClass[]>(classService.getEnrolledTeacherClasses);
+    refreshClasses
+  } = useTeacherClasses();
 
   // API hook for fetching monthly plan
   const {
@@ -30,14 +30,6 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
     error: planError,
     data: plan
   } = useApi<MonthlyPlan>(monthlyPlanService.getMonthlyPlan);
-
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  const loadClasses = async () => {
-    await fetchClasses();
-  };
 
   const handleLoadPlan = async () => {
     if (!selectedClass) return;
@@ -82,7 +74,7 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
             </Text>
             <TouchableOpacity
               className="bg-blue-500 px-6 py-3 rounded-lg"
-              onPress={loadClasses}
+              onPress={refreshClasses}
             >
               <Text className="text-white font-medium">Retry</Text>
             </TouchableOpacity>
