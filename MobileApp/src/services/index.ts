@@ -6,3 +6,4 @@ export * from './classService';
 export * from './studentService';
 export * from './menuService';
 export * from './monthlyPlanService';
+export * from './boxService';
