@@ -4,25 +4,43 @@ import { Schema } from "mongoose";
 // 14. Activity Schema (For "Activities" Calendar)
 const activitySchema = new Schema(
   {
-    month: { type: String, required: true }, // e.g., "January"
-    date: { type: String, required: true }, // e.g., "15"
-    day: { type: String, required: true }, // e.g., "Monday"
     title: { type: String, required: true },
     description: { type: String, required: true },
-    dayColor: { type: String }, // Color for the calendar entry
-    iconUrl: { type: String }, // For activity icon [cite: 6]
-    class_id: { type: Schema.Types.ObjectId, ref: "Class" }, // Link to a class if class-specific
-    // Based on feedback, audience might be needed here too [cite: 12]
+    date: { type: Date, required: true }, // Full date for proper sorting and querying
+    color: { type: String, default: "#3B82F6" }, // Color for the calendar icon (hex color)
+
+    // Audience configuration - supports all students, single class, or individual student
     audience: {
-      type: { type: String, enum: ["all", "class"], default: "all" }, // [cite: 10]
-      class_id: { type: Schema.Types.ObjectId, ref: "Class" }, // if audience.type is 'class'
+      type: {
+        type: String,
+        enum: ["all", "class", "student"],
+        required: true,
+        default: "all"
+      },
+      class_id: {
+        type: Schema.Types.ObjectId,
+        ref: "Class",
+        required: function() { return this.audience.type === "class"; }
+      },
+      student_id: {
+        type: Schema.Types.ObjectId,
+        ref: "Student",
+        required: function() { return this.audience.type === "student"; }
+      }
     },
-    createdBy: { type: Schema.Types.ObjectId, ref: "User" }, // Admin
+
+    createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true }, // Teacher or Admin
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
-activitySchema.index({ date: 1 }); // Assuming 'date' can be made into a sortable format
+
+// Indexes for efficient querying
+activitySchema.index({ date: 1 });
+activitySchema.index({ "audience.type": 1 });
+activitySchema.index({ "audience.class_id": 1 });
+activitySchema.index({ "audience.student_id": 1 });
+activitySchema.index({ createdBy: 1 });
 
 const Activity = mongoose.model("Activity", activitySchema);
 

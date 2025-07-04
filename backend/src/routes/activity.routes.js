@@ -8,23 +8,17 @@ import {
 } from "../controllers/activity.controller.js";
 import {
   authenticate,
-  requireAdmin,
   requireAdminOrTeacher,
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 /**
- * @route   GET /api/activities/class/:class_id
- * @desc    Get activities for a class (filter by month query param)
+ * @route   GET /api/activities
+ * @desc    Get activities (with filtering by date range, class, student)
  * @access  Private (Admin/Teacher)
  */
-router.get(
-  "/activities/class/:class_id",
-  authenticate,
-  requireAdminOrTeacher,
-  getActivities
-);
+router.get("/activities", authenticate, requireAdminOrTeacher, getActivities);
 
 /**
  * @route   GET /api/activities/:activity_id
@@ -41,31 +35,31 @@ router.get(
 /**
  * @route   POST /api/activities
  * @desc    Create activity
- * @access  Private (Admin only)
+ * @access  Private (Admin/Teacher)
  */
-router.post("/activities", authenticate, requireAdmin, createActivity);
+router.post("/activities", authenticate, requireAdminOrTeacher, createActivity);
 
 /**
  * @route   PUT /api/activities/:activity_id
  * @desc    Update activity
- * @access  Private (Admin only)
+ * @access  Private (Admin/Teacher)
  */
 router.put(
   "/activities/:activity_id",
   authenticate,
-  requireAdmin,
+  requireAdminOrTeacher,
   updateActivity
 );
 
 /**
  * @route   DELETE /api/activities/:activity_id
  * @desc    Delete activity
- * @access  Private (Admin only)
+ * @access  Private (Admin/Teacher)
  */
 router.delete(
   "/activities/:activity_id",
   authenticate,
-  requireAdmin,
+  requireAdminOrTeacher,
   deleteActivity
 );
 
