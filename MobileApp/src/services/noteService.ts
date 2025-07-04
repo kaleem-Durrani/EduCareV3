@@ -74,18 +74,17 @@ export interface NotesFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
-class NoteService {
-  private api: ApiService;
-
-  constructor() {
-    this.api = new ApiService();
-  }
-
-  // Get notes for a specific student
-  async getStudentNotes(
+/**
+ * Note service for handling all note-related API calls
+ */
+export const noteService = {
+  /**
+   * Get notes for a specific student with pagination and filters
+   */
+  getStudentNotes: async (
     studentId: string,
     filters: NotesFilters = {}
-  ): Promise<ApiResponse<StudentNotesResponse>> {
+  ): Promise<ApiResponse<StudentNotesResponse>> => {
     const params = new URLSearchParams();
 
     if (filters.page) params.append('page', filters.page.toString());
@@ -99,23 +98,27 @@ class NoteService {
     const queryString = params.toString();
     const url = `/notes/student/${studentId}${queryString ? `?${queryString}` : ''}`;
 
-    return this.api.get(url);
-  }
+    return ApiService.get(url);
+  },
 
-  // Create a new note
-  async createNote(data: CreateNoteData): Promise<ApiResponse<{ note: Note }>> {
-    return this.api.post('/notes', data);
-  }
+  /**
+   * Create a new note
+   */
+  createNote: async (data: CreateNoteData): Promise<ApiResponse<{ note: Note }>> => {
+    return ApiService.post('/notes', data);
+  },
 
-  // Update a note
-  async updateNote(noteId: string, data: UpdateNoteData): Promise<ApiResponse<{ note: Note }>> {
-    return this.api.put(`/notes/${noteId}`, data);
-  }
+  /**
+   * Update an existing note
+   */
+  updateNote: async (noteId: string, data: UpdateNoteData): Promise<ApiResponse<{ note: Note }>> => {
+    return ApiService.put(`/notes/${noteId}`, data);
+  },
 
-  // Delete a note
-  async deleteNote(noteId: string): Promise<ApiResponse<null>> {
-    return this.api.delete(`/notes/${noteId}`);
-  }
-}
-
-export const noteService = new NoteService();
+  /**
+   * Delete a note
+   */
+  deleteNote: async (noteId: string): Promise<ApiResponse<null>> => {
+    return ApiService.delete(`/notes/${noteId}`);
+  },
+};
