@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal, TextInput, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useTeacherClasses } from '../../../../contexts';
 import { activityService, UpdateActivityData, Activity } from '../../../../services';
 import { SelectModal, SelectableItem } from '../../../../components';
@@ -24,12 +34,16 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState(new Date());
   const [color, setColor] = useState('#3B82F6');
   const [audienceType, setAudienceType] = useState<'all' | 'class' | 'student'>('all');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
+
+  // Date/Time picker state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   // API hook for updating activity
   const {
@@ -38,6 +52,19 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
     error: updateError,
   } = useApi<any>(activityService.updateActivity);
 
+  // Date/Time picker handlers
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || new Date();
+    setShowDatePicker(Platform.OS === 'ios');
+    setSelectedDate(currentDate);
+  };
+
+  const onTimeChange = (event: any, selectedTime?: Date) => {
+    const currentTime = selectedTime || new Date();
+    setShowTimePicker(Platform.OS === 'ios');
+    setSelectedTime(currentTime);
+  };
+
   // Initialize form with activity data
   useEffect(() => {
     if (activity) {
@@ -45,8 +72,8 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
       setDescription(activity.description);
 
       const activityDate = new Date(activity.date);
-      setDate(activityDate.toISOString().split('T')[0]);
-      setTime(activityDate.toTimeString().slice(0, 5));
+      setSelectedDate(activityDate);
+      setSelectedTime(activityDate);
 
       setColor(activity.color);
       setAudienceType(activity.audience.type);
@@ -116,8 +143,6 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
   const validateForm = (): string | null => {
     if (!title.trim()) return 'Title is required';
     if (!description.trim()) return 'Description is required';
-    if (!date.trim()) return 'Date is required';
-    if (!time.trim()) return 'Time is required';
 
     if (audienceType === 'class' && !selectedClassId) {
       return 'Please select a class';
@@ -138,7 +163,9 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
 
     try {
       // Combine date and time
-      const dateTime = new Date(`${date}T${time}`);
+      const dateTime = new Date(selectedDate);
+      dateTime.setHours(selectedTime.getHours());
+      dateTime.setMinutes(selectedTime.getMinutes());
 
       const activityData: UpdateActivityData = {
         title: title.trim(),
@@ -237,35 +264,41 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
                 <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   📅 Date *
                 </Text>
-                <TextInput
+                <TouchableOpacity
                   className="rounded-lg border p-4"
                   style={{
                     backgroundColor: colors.card,
                     borderColor: colors.border,
-                    color: colors.textPrimary,
                   }}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.textSecondary}
-                  value={date}
-                  onChangeText={setDate}
-                />
+                  onPress={() => setShowDatePicker(true)}>
+                  <Text style={{ color: colors.textPrimary }}>
+                    {selectedDate.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </Text>
+                </TouchableOpacity>
               </View>
               <View className="ml-2 flex-1">
                 <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   🕐 Time *
                 </Text>
-                <TextInput
+                <TouchableOpacity
                   className="rounded-lg border p-4"
                   style={{
                     backgroundColor: colors.card,
                     borderColor: colors.border,
-                    color: colors.textPrimary,
                   }}
-                  placeholder="HH:MM"
-                  placeholderTextColor={colors.textSecondary}
-                  value={time}
-                  onChangeText={setTime}
-                />
+                  onPress={() => setShowTimePicker(true)}>
+                  <Text style={{ color: colors.textPrimary }}>
+                    {selectedTime.toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -365,6 +398,30 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Date Picker */}
+          {showDatePicker && (
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={selectedDate}
+              mode="date"
+              is24Hour={true}
+              display="default"
+              onChange={onDateChange}
+            />
+          )}
+
+          {/* Time Picker */}
+          {showTimePicker && (
+            <DateTimePicker
+              testID="timePicker"
+              value={selectedTime}
+              mode="time"
+              is24Hour={false}
+              display="default"
+              onChange={onTimeChange}
+            />
+          )}
         </View>
       </View>
     </Modal>

@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, TextInput, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme, useTeacherClasses } from '../../../../contexts';
 import { activityService, CreateActivityData } from '../../../../services';
 import { SelectModal, SelectableItem } from '../../../../components';
@@ -22,8 +32,14 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today;
+  });
+  const [selectedTime, setSelectedTime] = useState(() => {
+    const now = new Date();
+    return now;
+  });
   const [color, setColor] = useState('#3B82F6');
   const [audienceType, setAudienceType] = useState<'all' | 'class' | 'student'>('all');
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -79,6 +95,19 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
       secondaryLabel: `Enrollment #${student.rollNum}`,
       originalData: student,
     }));
+  };
+
+  // Date/Time picker handlers
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || new Date();
+    setShowDatePicker(Platform.OS === 'ios');
+    setSelectedDate(currentDate);
+  };
+
+  const onTimeChange = (event: any, selectedTime?: Date) => {
+    const currentTime = selectedTime || new Date();
+    setShowTimePicker(Platform.OS === 'ios');
+    setSelectedTime(currentTime);
   };
 
   const resetForm = () => {
@@ -163,16 +192,6 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
         { text: 'OK' },
       ]);
     }
-  };
-
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
-
-  const getCurrentTime = () => {
-    const now = new Date();
-    return now.toTimeString().slice(0, 5);
   };
 
   return (
@@ -386,104 +405,29 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Date Picker Modal */}
-          <Modal
-            visible={showDatePicker}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setShowDatePicker(false)}>
-            <View className="flex-1 items-center justify-center bg-black/50">
-              <View
-                className="mx-4 w-80 rounded-lg bg-white p-6"
-                style={{ backgroundColor: colors.background }}>
-                <Text
-                  className="mb-4 text-center text-lg font-bold"
-                  style={{ color: colors.textPrimary }}>
-                  📅 Select Date
-                </Text>
+          {/* Date Picker */}
+          {showDatePicker && (
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={selectedDate}
+              mode="date"
+              is24Hour={true}
+              display="default"
+              onChange={onDateChange}
+            />
+          )}
 
-                {/* Simple Date Selector */}
-                <View className="mb-4">
-                  <Text className="mb-2 text-sm" style={{ color: colors.textSecondary }}>
-                    Selected:{' '}
-                    {selectedDate.toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </Text>
-                </View>
-
-                <View className="flex-row justify-between">
-                  <TouchableOpacity
-                    className="mr-2 flex-1 rounded-lg p-3"
-                    style={{ backgroundColor: colors.border }}
-                    onPress={() => setShowDatePicker(false)}>
-                    <Text className="text-center font-medium" style={{ color: colors.textPrimary }}>
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="ml-2 flex-1 rounded-lg p-3"
-                    style={{ backgroundColor: colors.primary }}
-                    onPress={() => setShowDatePicker(false)}>
-                    <Text className="text-center font-medium text-white">Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
-
-          {/* Time Picker Modal */}
-          <Modal
-            visible={showTimePicker}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setShowTimePicker(false)}>
-            <View className="flex-1 items-center justify-center bg-black/50">
-              <View
-                className="mx-4 w-80 rounded-lg bg-white p-6"
-                style={{ backgroundColor: colors.background }}>
-                <Text
-                  className="mb-4 text-center text-lg font-bold"
-                  style={{ color: colors.textPrimary }}>
-                  🕐 Select Time
-                </Text>
-
-                {/* Simple Time Selector */}
-                <View className="mb-4">
-                  <Text className="mb-2 text-sm" style={{ color: colors.textSecondary }}>
-                    Selected:{' '}
-                    {selectedTime.toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}
-                  </Text>
-                </View>
-
-                <View className="flex-row justify-between">
-                  <TouchableOpacity
-                    className="mr-2 flex-1 rounded-lg p-3"
-                    style={{ backgroundColor: colors.border }}
-                    onPress={() => setShowTimePicker(false)}>
-                    <Text className="text-center font-medium" style={{ color: colors.textPrimary }}>
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="ml-2 flex-1 rounded-lg p-3"
-                    style={{ backgroundColor: colors.primary }}
-                    onPress={() => setShowTimePicker(false)}>
-                    <Text className="text-center font-medium text-white">Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
+          {/* Time Picker */}
+          {showTimePicker && (
+            <DateTimePicker
+              testID="timePicker"
+              value={selectedTime}
+              mode="time"
+              is24Hour={false}
+              display="default"
+              onChange={onTimeChange}
+            />
+          )}
         </View>
       </View>
     </Modal>
