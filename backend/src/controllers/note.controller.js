@@ -38,16 +38,6 @@ export const getStudentNotes = asyncHandler(async (req, res) => {
     throwNotFound("Student not found");
   }
 
-  // For teachers, check if they have access to this student
-  if (userRole === 'teacher') {
-    const teacherClasses = await Class.find({ teacher_id: userId });
-    const teacherClassIds = teacherClasses.map(cls => cls._id.toString());
-
-    if (student.current_class && !teacherClassIds.includes(student.current_class._id.toString())) {
-      throwForbidden("You don't have access to this student's notes");
-    }
-  }
-
   // Build filter query
   const filterQuery = { student_id };
 
@@ -124,16 +114,6 @@ export const createNote = asyncHandler(async (req, res) => {
     throwNotFound("Student not found");
   }
 
-  // For teachers, check if they have access to this student
-  if (userRole === 'teacher') {
-    const teacherClasses = await Class.find({ teacher_id: userId });
-    const teacherClassIds = teacherClasses.map(cls => cls._id.toString());
-
-    if (student.current_class && !teacherClassIds.includes(student.current_class._id.toString())) {
-      throwForbidden("You don't have access to create notes for this student");
-    }
-  }
-
   const note = await withTransaction(async (session) => {
     const newNote = new Note({
       student_id,
@@ -170,17 +150,6 @@ export const updateNote = asyncHandler(async (req, res) => {
     throwNotFound("Note not found");
   }
 
-  // For teachers, check if they have access to this student
-  if (userRole === 'teacher') {
-    const student = await Student.findById(note.student_id._id).populate('current_class');
-    const teacherClasses = await Class.find({ teacher_id: userId });
-    const teacherClassIds = teacherClasses.map(cls => cls._id.toString());
-
-    if (student.current_class && !teacherClassIds.includes(student.current_class._id.toString())) {
-      throwForbidden("You don't have access to update this note");
-    }
-  }
-
   const updatedNote = await withTransaction(async (session) => {
     const updated = await Note.findByIdAndUpdate(
       note_id,
@@ -207,23 +176,10 @@ export const updateNote = asyncHandler(async (req, res) => {
  */
 export const deleteNote = asyncHandler(async (req, res) => {
   const { note_id } = req.params;
-  const userId = req.user.id;
-  const userRole = req.user.role;
 
   const note = await Note.findById(note_id).populate('student_id');
   if (!note) {
     throwNotFound("Note not found");
-  }
-
-  // For teachers, check if they have access to this student
-  if (userRole === 'teacher') {
-    const student = await Student.findById(note.student_id._id).populate('current_class');
-    const teacherClasses = await Class.find({ teacher_id: userId });
-    const teacherClassIds = teacherClasses.map(cls => cls._id.toString());
-
-    if (student.current_class && !teacherClassIds.includes(student.current_class._id.toString())) {
-      throwForbidden("You don't have access to delete this note");
-    }
   }
 
   await withTransaction(async (session) => {
