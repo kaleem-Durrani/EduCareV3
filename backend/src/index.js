@@ -22,6 +22,7 @@ import activityRoutes from "./routes/activity.routes.js";
 import lostItemRoutes from "./routes/lostItem.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 import feeRoutes from "./routes/fee.routes.js";
+import noteRoutes from "./routes/note.routes.js";
 
 config();
 
@@ -66,6 +67,7 @@ app.use("/api", activityRoutes);
 app.use("/api", lostItemRoutes);
 app.use("/api", healthRoutes);
 app.use("/api", feeRoutes);
+app.use("/api", noteRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
