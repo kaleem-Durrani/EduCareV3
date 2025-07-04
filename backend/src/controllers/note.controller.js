@@ -1,12 +1,10 @@
 import Note from "../models/note.model.js";
 import Student from "../models/student.model.js";
-import Class from "../models/class.model.js";
 import { sendSuccess } from "../utils/response.utils.js";
 import {
   withTransaction,
   asyncHandler,
   throwNotFound,
-  throwForbidden,
 } from "../utils/transaction.utils.js";
 
 /**
@@ -25,15 +23,14 @@ export const getStudentNotes = asyncHandler(async (req, res) => {
     sortBy = 'createdAt',
     sortOrder = 'desc'
   } = req.query;
-  const userId = req.user.id;
-  const userRole = req.user.role;
+
 
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
 
   // Check if student exists
-  const student = await Student.findById(student_id).populate('current_class');
+  const student = await Student.findById(student_id);
   if (!student) {
     throwNotFound("Student not found");
   }
@@ -63,6 +60,7 @@ export const getStudentNotes = asyncHandler(async (req, res) => {
 
   // Get notes with pagination and filters
   const notes = await Note.find(filterQuery)
+    .populate('student_id', 'fullName photoUrl')
     .populate('createdBy', 'fullName role')
     .populate('updatedBy', 'fullName role')
     .sort(sortObj)
@@ -77,8 +75,7 @@ export const getStudentNotes = asyncHandler(async (req, res) => {
     student: {
       _id: student._id,
       fullName: student.fullName,
-      profilePicture: student.photoUrl,
-      class: student.current_class
+      profilePicture: student.photoUrl
     },
     pagination: {
       currentPage: pageNum,
@@ -106,10 +103,9 @@ export const getStudentNotes = asyncHandler(async (req, res) => {
 export const createNote = asyncHandler(async (req, res) => {
   const { student_id, content } = req.body;
   const userId = req.user.id;
-  const userRole = req.user.role;
 
   // Check if student exists
-  const student = await Student.findById(student_id).populate('current_class');
+  const student = await Student.findById(student_id);
   if (!student) {
     throwNotFound("Student not found");
   }
@@ -125,7 +121,7 @@ export const createNote = asyncHandler(async (req, res) => {
     await newNote.save({ session });
     
     // Populate the note before returning
-    await newNote.populate('student_id', 'fullName photoUrl current_class');
+    await newNote.populate('student_id', 'fullName photoUrl');
     await newNote.populate('createdBy', 'fullName role');
     await newNote.populate('updatedBy', 'fullName role');
     
@@ -143,7 +139,6 @@ export const updateNote = asyncHandler(async (req, res) => {
   const { note_id } = req.params;
   const { content } = req.body;
   const userId = req.user.id;
-  const userRole = req.user.role;
 
   const note = await Note.findById(note_id).populate('student_id');
   if (!note) {
@@ -160,7 +155,7 @@ export const updateNote = asyncHandler(async (req, res) => {
       { new: true, session }
     );
 
-    await updated.populate('student_id', 'fullName photoUrl current_class');
+    await updated.populate('student_id', 'fullName photoUrl');
     await updated.populate('createdBy', 'fullName role');
     await updated.populate('updatedBy', 'fullName role');
     

@@ -8,10 +8,6 @@ export interface Note {
     _id: string;
     fullName: string;
     profilePicture?: string;
-    class_id: {
-      _id: string;
-      name: string;
-    };
   };
   content: string;
   createdBy: {
@@ -43,10 +39,6 @@ export interface StudentNotesResponse {
     _id: string;
     fullName: string;
     profilePicture?: string;
-    class: {
-      _id: string;
-      name: string;
-    };
   };
   pagination: {
     currentPage: number;
