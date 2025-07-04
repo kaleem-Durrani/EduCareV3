@@ -9,7 +9,7 @@ import {
   authenticate,
   requireAdminOrTeacher,
 } from "../middleware/auth.middleware.js";
-import { validate } from "../middleware/validation.middleware.js";
+import { handleValidationErrors } from "../middleware/validation.middleware.js";
 import {
   createNoteValidation,
   updateNoteValidation,
@@ -28,7 +28,8 @@ router.get(
   "/notes/student/:student_id",
   authenticate,
   requireAdminOrTeacher,
-  validate(getStudentNotesValidation),
+  getStudentNotesValidation,
+  handleValidationErrors,
   getStudentNotes
 );
 
@@ -41,7 +42,8 @@ router.post(
   "/notes",
   authenticate,
   requireAdminOrTeacher,
-  validate(createNoteValidation),
+  createNoteValidation,
+  handleValidationErrors,
   createNote
 );
 
@@ -54,7 +56,8 @@ router.put(
   "/notes/:note_id",
   authenticate,
   requireAdminOrTeacher,
-  validate(updateNoteValidation),
+  updateNoteValidation,
+  handleValidationErrors,
   updateNote
 );
 
@@ -67,7 +70,8 @@ router.delete(
   "/notes/:note_id",
   authenticate,
   requireAdminOrTeacher,
-  validate(getNoteValidation),
+  getNoteValidation,
+  handleValidationErrors,
   deleteNote
 );
 
