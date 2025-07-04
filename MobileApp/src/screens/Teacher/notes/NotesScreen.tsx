@@ -12,12 +12,17 @@ import {
   UpdateNoteData,
   ClassStudent,
 } from '../../../services';
-import { NotesList, CreateNoteModal, EditNoteModal, NoteDetailModal } from './components';
-import { SelectModal, SelectableItem } from '../../../components';
+import {
+  NotesList,
+  CreateNoteModal,
+  EditNoteModal,
+  NoteDetailModal,
+  StudentSelector,
+} from './components';
 
 const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
-  const { allStudents } = useTeacherClasses();
+  const { allStudents, classes, studentsByClass } = useTeacherClasses();
 
   // State management
   const [selectedStudent, setSelectedStudent] = useState<ClassStudent | null>(null);
@@ -71,27 +76,28 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
     }
   }, [notesData]);
 
-  const handleStudentSelect = (item: SelectableItem) => {
-    const student = allStudents.find((s) => s._id === item.value);
-    if (student) {
-      setSelectedStudent(student);
-      setNotes([]);
-      setPagination({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
-      });
-    }
+  const handleStudentSelect = (student: ClassStudent) => {
+    setSelectedStudent(student);
+    setNotes([]);
+    setPagination({
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
   };
 
-  const getStudentItems = (): SelectableItem[] => {
-    return allStudents.map((student) => ({
-      value: student._id,
-      label: student.fullName,
-      secondaryLabel: `Roll #${student.rollNum}`,
-    }));
+  const handleResetSelection = () => {
+    setSelectedStudent(null);
+    setNotes([]);
+    setPagination({
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
   };
 
   const handleCreateNote = async (content: string) => {
@@ -204,14 +210,12 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
 
       {/* Student Selection */}
       <View className="px-4 py-2">
-        <SelectModal
-          items={getStudentItems()}
-          selectedValue={selectedStudent?._id}
-          placeholder="Select a student to view notes"
-          title="👶 Select Student"
-          searchEnabled={true}
-          searchPlaceholder="Search students..."
-          onSelect={handleStudentSelect}
+        <StudentSelector
+          classes={classes}
+          allStudents={allStudents}
+          studentsByClass={studentsByClass}
+          onStudentSelect={handleStudentSelect}
+          onResetSelection={handleResetSelection}
         />
       </View>
 
