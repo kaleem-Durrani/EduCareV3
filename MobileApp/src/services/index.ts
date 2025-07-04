@@ -8,3 +8,4 @@ export * from './menuService';
 export * from './monthlyPlanService';
 export * from './boxService';
 export * from './documentService';
+export * from './activityService';
