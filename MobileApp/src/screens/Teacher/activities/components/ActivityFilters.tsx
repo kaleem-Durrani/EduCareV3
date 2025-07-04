@@ -9,35 +9,30 @@ interface ActivityFiltersProps {
   onFiltersChange: (filters: ActivityFiltersType) => void;
 }
 
-const ActivityFilters: React.FC<ActivityFiltersProps> = ({
-  filters,
-  onFiltersChange,
-}) => {
+const ActivityFilters: React.FC<ActivityFiltersProps> = ({ filters, onFiltersChange }) => {
   const { colors } = useTheme();
   const { classes, allStudents, studentsByClass } = useTeacherClasses();
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Convert classes to SelectableItem format
   const getClassItems = (): SelectableItem[] => {
-    return classes.map(classItem => ({
+    return classes.map((classItem) => ({
       value: classItem._id,
       label: classItem.name,
       secondaryLabel: `${classItem.students.length} students`,
-      originalData: classItem
+      originalData: classItem,
     }));
   };
 
   // Convert students to SelectableItem format
   const getStudentItems = (): SelectableItem[] => {
-    const students = filters.classId 
-      ? studentsByClass[filters.classId] || []
-      : allStudents;
-    
-    return students.map(student => ({
+    const students = filters.classId ? studentsByClass[filters.classId] || [] : allStudents;
+
+    return students.map((student) => ({
       value: student._id,
       label: student.fullName,
       secondaryLabel: `Enrollment #${student.rollNum}`,
-      originalData: student
+      originalData: student,
     }));
   };
 
@@ -45,22 +40,26 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
   const audienceTypeItems: SelectableItem[] = [
     { value: 'all', label: 'All Students', secondaryLabel: 'Visible to everyone' },
     { value: 'class', label: 'Specific Class', secondaryLabel: 'Class-specific activities' },
-    { value: 'student', label: 'Individual Student', secondaryLabel: 'Student-specific activities' },
+    {
+      value: 'student',
+      label: 'Individual Student',
+      secondaryLabel: 'Student-specific activities',
+    },
   ];
 
   // Time filter options
   const timeFilterItems: SelectableItem[] = [
     { value: 'all', label: 'All Activities', secondaryLabel: 'Past, present, and future' },
     { value: 'past', label: 'Past Activities', secondaryLabel: 'Activities before today' },
-    { value: 'today', label: 'Today\'s Activities', secondaryLabel: 'Activities happening today' },
+    { value: 'today', label: "Today's Activities", secondaryLabel: 'Activities happening today' },
     { value: 'upcoming', label: 'Upcoming Activities', secondaryLabel: 'Activities after today' },
   ];
 
   const handleClassSelect = (item: SelectableItem) => {
-    const newFilters = { 
-      ...filters, 
+    const newFilters = {
+      ...filters,
       classId: item.value,
-      studentId: undefined // Reset student when class changes
+      studentId: undefined, // Reset student when class changes
     };
     onFiltersChange(newFilters);
   };
@@ -90,6 +89,8 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
     };
     onFiltersChange(newFilters);
   };
+
+  const [selectedDateRange, setSelectedDateRange] = useState<string>('');
 
   const handleDateRangeSelect = (range: 'today' | 'week' | 'month' | 'clear') => {
     const today = new Date();
@@ -121,42 +122,110 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
         break;
     }
 
+    setSelectedDateRange(range === 'clear' ? '' : range);
     onFiltersChange({
       ...filters,
       startDate,
       endDate,
       // Reset time filter when using custom date range
-      timeFilter: range === 'clear' ? undefined : filters.timeFilter
+      timeFilter: range === 'clear' ? filters.timeFilter : undefined,
     });
   };
 
   const clearAllFilters = () => {
+    setSelectedDateRange('');
     onFiltersChange({});
   };
 
-  const hasActiveFilters = Object.keys(filters).some(key => filters[key as keyof ActivityFiltersType]);
+  const clearIndividualFilter = (filterType: string) => {
+    const newFilters = { ...filters };
+
+    switch (filterType) {
+      case 'timeFilter':
+        delete newFilters.timeFilter;
+        break;
+      case 'dateRange':
+        delete newFilters.startDate;
+        delete newFilters.endDate;
+        setSelectedDateRange('');
+        break;
+      case 'audienceType':
+        delete newFilters.audienceType;
+        break;
+      case 'class':
+        delete newFilters.classId;
+        break;
+      case 'student':
+        delete newFilters.studentId;
+        break;
+    }
+
+    onFiltersChange(newFilters);
+  };
+
+  const getActiveFilterTags = () => {
+    const tags = [];
+
+    if (filters.timeFilter && filters.timeFilter !== 'all') {
+      const timeFilterLabel =
+        timeFilterItems.find((item) => item.value === filters.timeFilter)?.label ||
+        filters.timeFilter;
+      tags.push({ key: 'timeFilter', label: timeFilterLabel });
+    }
+
+    if (filters.startDate || filters.endDate) {
+      tags.push({ key: 'dateRange', label: 'Custom Date Range' });
+    }
+
+    if (filters.audienceType && filters.audienceType !== 'all') {
+      const audienceLabel =
+        audienceTypeItems.find((item) => item.value === filters.audienceType)?.label ||
+        filters.audienceType;
+      tags.push({ key: 'audienceType', label: audienceLabel });
+    }
+
+    if (filters.classId) {
+      const classItem = classes.find((c) => c._id === filters.classId);
+      tags.push({ key: 'class', label: `Class: ${classItem?.name || 'Unknown'}` });
+    }
+
+    if (filters.studentId) {
+      const student = allStudents.find((s) => s._id === filters.studentId);
+      tags.push({ key: 'student', label: `Student: ${student?.fullName || 'Unknown'}` });
+    }
+
+    return tags;
+  };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.timeFilter && filters.timeFilter !== 'all') count++;
+    if (filters.startDate || filters.endDate) count++;
+    if (filters.audienceType && filters.audienceType !== 'all') count++;
+    if (filters.classId) count++;
+    if (filters.studentId) count++;
+    return count;
+  };
+
+  const hasActiveFilters = getActiveFiltersCount() > 0;
 
   return (
     <View className="mb-4">
       {/* Filter Toggle */}
       <TouchableOpacity
-        className="flex-row justify-between items-center p-4 rounded-lg border"
-        style={{ 
+        className="flex-row items-center justify-between rounded-lg border p-4"
+        style={{
           backgroundColor: colors.card,
-          borderColor: colors.border 
+          borderColor: colors.border,
         }}
-        onPress={() => setIsExpanded(!isExpanded)}
-      >
+        onPress={() => setIsExpanded(!isExpanded)}>
         <View className="flex-row items-center">
-          <Text className="text-lg font-medium mr-2" style={{ color: colors.textPrimary }}>
+          <Text className="mr-2 text-lg font-medium" style={{ color: colors.textPrimary }}>
             🔍 Filters
           </Text>
           {hasActiveFilters && (
-            <View 
-              className="px-2 py-1 rounded-full"
-              style={{ backgroundColor: colors.primary }}
-            >
-              <Text className="text-white text-xs">Active</Text>
+            <View className="rounded-full px-2 py-1" style={{ backgroundColor: colors.primary }}>
+              <Text className="text-xs text-white">{getActiveFiltersCount()}</Text>
             </View>
           )}
         </View>
@@ -165,18 +234,41 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
         </Text>
       </TouchableOpacity>
 
+      {/* Active Filter Tags */}
+      {hasActiveFilters && (
+        <View className="mt-2 flex-row flex-wrap">
+          {getActiveFilterTags().map((tag) => (
+            <View
+              key={tag.key}
+              className="mb-2 mr-2 flex-row items-center rounded-full border px-3 py-1"
+              style={{
+                backgroundColor: colors.card,
+                borderColor: colors.primary,
+              }}>
+              <Text className="mr-1 text-xs" style={{ color: colors.primary }}>
+                {tag.label}
+              </Text>
+              <TouchableOpacity onPress={() => clearIndividualFilter(tag.key)}>
+                <Text className="text-xs" style={{ color: colors.primary }}>
+                  ✕
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Filter Options */}
       {isExpanded && (
-        <View 
-          className="mt-2 p-4 rounded-lg border"
-          style={{ 
+        <View
+          className="mt-2 rounded-lg border p-4"
+          style={{
             backgroundColor: colors.card,
-            borderColor: colors.border 
-          }}
-        >
+            borderColor: colors.border,
+          }}>
           {/* Time Filter */}
           <View className="mb-4">
-            <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+            <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
               ⏰ Time Period
             </Text>
             <SelectModal
@@ -190,7 +282,7 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
 
           {/* Date Range Quick Filters */}
           <View className="mb-4">
-            <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+            <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
               📅 Custom Date Range
             </Text>
             <View className="flex-row flex-wrap">
@@ -202,23 +294,25 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
               ].map((option) => (
                 <TouchableOpacity
                   key={option.key}
-                  className="mr-2 mb-2 px-3 py-2 rounded-lg border"
+                  className="mb-2 mr-2 rounded-lg border px-3 py-2"
                   style={{
-                    backgroundColor: (option.key === 'clear' && !filters.startDate) ||
-                                   (option.key !== 'clear' && filters.startDate)
-                                   ? colors.primary : colors.background,
-                    borderColor: colors.border
+                    backgroundColor:
+                      selectedDateRange === option.key ||
+                      (option.key === 'clear' && selectedDateRange === '')
+                        ? colors.primary
+                        : colors.background,
+                    borderColor: colors.border,
                   }}
-                  onPress={() => handleDateRangeSelect(option.key as any)}
-                >
+                  onPress={() => handleDateRangeSelect(option.key as any)}>
                   <Text
                     className="text-sm"
                     style={{
-                      color: (option.key === 'clear' && !filters.startDate) ||
-                             (option.key !== 'clear' && filters.startDate)
-                             ? 'white' : colors.textPrimary
-                    }}
-                  >
+                      color:
+                        selectedDateRange === option.key ||
+                        (option.key === 'clear' && selectedDateRange === '')
+                          ? 'white'
+                          : colors.textPrimary,
+                    }}>
                     {option.label}
                   </Text>
                 </TouchableOpacity>
@@ -228,7 +322,7 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
 
           {/* Audience Type Filter */}
           <View className="mb-4">
-            <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+            <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
               👥 Audience Type
             </Text>
             <SelectModal
@@ -242,9 +336,18 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
 
           {/* Class Filter */}
           <View className="mb-4">
-            <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
-              🏫 Class
-            </Text>
+            <View className="mb-2 flex-row items-center justify-between">
+              <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                🏫 Class
+              </Text>
+              {filters.classId && (
+                <TouchableOpacity onPress={() => clearIndividualFilter('class')}>
+                  <Text className="text-sm" style={{ color: colors.primary }}>
+                    Clear
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <SelectModal
               items={getClassItems()}
               selectedValue={filters.classId}
@@ -258,9 +361,18 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
 
           {/* Student Filter */}
           <View className="mb-4">
-            <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
-              👶 Student
-            </Text>
+            <View className="mb-2 flex-row items-center justify-between">
+              <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                👶 Student
+              </Text>
+              {filters.studentId && (
+                <TouchableOpacity onPress={() => clearIndividualFilter('student')}>
+                  <Text className="text-sm" style={{ color: colors.primary }}>
+                    Clear
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <SelectModal
               items={getStudentItems()}
               selectedValue={filters.studentId}
@@ -275,13 +387,12 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({
           {/* Clear All Filters */}
           {hasActiveFilters && (
             <TouchableOpacity
-              className="p-3 rounded-lg border"
-              style={{ 
+              className="rounded-lg border p-3"
+              style={{
                 backgroundColor: colors.background,
-                borderColor: '#EF4444' 
+                borderColor: '#EF4444',
               }}
-              onPress={clearAllFilters}
-            >
+              onPress={clearAllFilters}>
               <Text className="text-center font-medium" style={{ color: '#EF4444' }}>
                 🗑️ Clear All Filters
               </Text>

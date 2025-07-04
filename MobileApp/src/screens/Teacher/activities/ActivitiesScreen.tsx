@@ -3,7 +3,12 @@ import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
 import { useApi } from '../../../hooks';
-import { activityService, Activity, ActivityFilters as ActivityFiltersType, PaginatedActivitiesResponse } from '../../../services';
+import {
+  activityService,
+  Activity,
+  ActivityFilters as ActivityFiltersType,
+  PaginatedActivitiesResponse,
+} from '../../../services';
 import LoadingScreen from '../../../components/LoadingScreen';
 import ActivityFilters from './components/ActivityFilters';
 import ActivityList from './components/ActivityList';
@@ -23,7 +28,7 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
     request: fetchActivities,
     isLoading: isLoadingActivities,
     error: activitiesError,
-    data: activitiesResponse
+    data: activitiesResponse,
   } = useApi<PaginatedActivitiesResponse>(activityService.getActivities);
 
   // Load activities on mount and when filters change
@@ -39,7 +44,7 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
         setActivities(activitiesResponse.activities);
       } else {
         // Load more - append activities
-        setActivities(prev => [...prev, ...activitiesResponse.activities]);
+        setActivities((prev) => [...prev, ...activitiesResponse.activities]);
       }
       setPagination(activitiesResponse.pagination);
     }
@@ -108,7 +113,7 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
       </View>
 
       {/* Navigation Header */}
-      <View className="px-4 py-2 flex-row justify-between items-center">
+      <View className="flex-row items-center justify-between px-4 py-2">
         <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
           <Text className="mr-2 text-2xl">←</Text>
           <Text className="text-lg font-medium" style={{ color: colors.primary }}>
@@ -118,11 +123,10 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
 
         {/* Create Activity Button */}
         <TouchableOpacity
-          className="px-4 py-2 rounded-lg"
+          className="rounded-lg px-4 py-2"
           style={{ backgroundColor: colors.primary }}
-          onPress={handleCreateActivity}
-        >
-          <Text className="text-white font-medium">+ Create</Text>
+          onPress={handleCreateActivity}>
+          <Text className="font-medium text-white">+ Create</Text>
         </TouchableOpacity>
       </View>
 
@@ -135,28 +139,23 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
             onRefresh={handleRefresh}
             colors={[colors.primary]}
           />
-        }
-      >
+        }>
         {/* Filters */}
-        <ActivityFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-        />
+        <ActivityFilters filters={filters} onFiltersChange={handleFiltersChange} />
 
         {/* Activities List */}
         {activitiesError ? (
           <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-center text-lg mb-2" style={{ color: colors.textPrimary }}>
+            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
               Failed to load activities
             </Text>
-            <Text className="text-center text-sm mb-4" style={{ color: colors.textSecondary }}>
+            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
               {activitiesError}
             </Text>
             <TouchableOpacity
-              className="bg-blue-500 px-6 py-3 rounded-lg"
-              onPress={() => loadActivities(true)}
-            >
-              <Text className="text-white font-medium">Retry</Text>
+              className="rounded-lg bg-blue-500 px-6 py-3"
+              onPress={() => loadActivities(true)}>
+              <Text className="font-medium text-white">Retry</Text>
             </TouchableOpacity>
           </View>
         ) : (

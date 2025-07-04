@@ -43,11 +43,11 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
     if (activity) {
       setTitle(activity.title);
       setDescription(activity.description);
-      
+
       const activityDate = new Date(activity.date);
       setDate(activityDate.toISOString().split('T')[0]);
       setTime(activityDate.toTimeString().slice(0, 5));
-      
+
       setColor(activity.color);
       setAudienceType(activity.audience.type);
       setSelectedClassId(activity.audience.class_id?._id || '');
@@ -76,25 +76,23 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
 
   // Convert classes to SelectableItem format
   const getClassItems = (): SelectableItem[] => {
-    return classes.map(classItem => ({
+    return classes.map((classItem) => ({
       value: classItem._id,
       label: classItem.name,
       secondaryLabel: `${classItem.students.length} students`,
-      originalData: classItem
+      originalData: classItem,
     }));
   };
 
   // Convert students to SelectableItem format
   const getStudentItems = (): SelectableItem[] => {
-    const students = selectedClassId 
-      ? studentsByClass[selectedClassId] || []
-      : allStudents;
-    
-    return students.map(student => ({
+    const students = selectedClassId ? studentsByClass[selectedClassId] || [] : allStudents;
+
+    return students.map((student) => ({
       value: student._id,
       label: student.fullName,
       secondaryLabel: `Enrollment #${student.rollNum}`,
-      originalData: student
+      originalData: student,
     }));
   };
 
@@ -120,7 +118,7 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
     if (!description.trim()) return 'Description is required';
     if (!date.trim()) return 'Date is required';
     if (!time.trim()) return 'Time is required';
-    
+
     if (audienceType === 'class' && !selectedClassId) {
       return 'Please select a class';
     }
@@ -141,7 +139,7 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
     try {
       // Combine date and time
       const dateTime = new Date(`${date}T${time}`);
-      
+
       const activityData: UpdateActivityData = {
         title: title.trim(),
         description: description.trim(),
@@ -157,33 +155,26 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
       await updateActivity(activity._id, activityData);
       onActivityUpdated();
     } catch (error) {
-      Alert.alert(
-        'Error',
-        updateError || 'Failed to update activity. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', updateError || 'Failed to update activity. Please try again.', [
+        { text: 'OK' },
+      ]);
     }
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View className="flex-1 justify-end">
-        <View 
-          className="bg-black/50 flex-1"
-          onTouchEnd={onClose}
-        />
-        <View 
-          className="rounded-t-lg max-h-5/6"
-          style={{ backgroundColor: colors.background }}
-        >
+        <View className="flex-1 bg-black/50" onTouchEnd={onClose} />
+        <View
+          className="rounded-t-lg"
+          style={{
+            backgroundColor: colors.background,
+            height: '80%',
+            minHeight: 600,
+          }}>
           {/* Header */}
-          <View className="p-4 border-b" style={{ borderBottomColor: colors.border }}>
-            <View className="flex-row justify-between items-center">
+          <View className="border-b p-4" style={{ borderBottomColor: colors.border }}>
+            <View className="flex-row items-center justify-between">
               <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
                 ✏️ Edit Activity
               </Text>
@@ -199,15 +190,15 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
           <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
             {/* Title */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 📝 Title *
               </Text>
               <TextInput
-                className="p-4 rounded-lg border"
-                style={{ 
+                className="rounded-lg border p-4"
+                style={{
                   backgroundColor: colors.card,
                   borderColor: colors.border,
-                  color: colors.textPrimary
+                  color: colors.textPrimary,
                 }}
                 placeholder="Enter activity title..."
                 placeholderTextColor={colors.textSecondary}
@@ -219,16 +210,16 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
 
             {/* Description */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 📄 Description *
               </Text>
               <TextInput
-                className="p-4 rounded-lg border"
-                style={{ 
+                className="rounded-lg border p-4"
+                style={{
                   backgroundColor: colors.card,
                   borderColor: colors.border,
                   color: colors.textPrimary,
-                  minHeight: 80
+                  minHeight: 80,
                 }}
                 placeholder="Enter activity description..."
                 placeholderTextColor={colors.textSecondary}
@@ -241,17 +232,17 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
             </View>
 
             {/* Date and Time */}
-            <View className="flex-row mb-4">
-              <View className="flex-1 mr-2">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+            <View className="mb-4 flex-row">
+              <View className="mr-2 flex-1">
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   📅 Date *
                 </Text>
                 <TextInput
-                  className="p-4 rounded-lg border"
-                  style={{ 
+                  className="rounded-lg border p-4"
+                  style={{
                     backgroundColor: colors.card,
                     borderColor: colors.border,
-                    color: colors.textPrimary
+                    color: colors.textPrimary,
                   }}
                   placeholder="YYYY-MM-DD"
                   placeholderTextColor={colors.textSecondary}
@@ -259,16 +250,16 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
                   onChangeText={setDate}
                 />
               </View>
-              <View className="flex-1 ml-2">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <View className="ml-2 flex-1">
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   🕐 Time *
                 </Text>
                 <TextInput
-                  className="p-4 rounded-lg border"
-                  style={{ 
+                  className="rounded-lg border p-4"
+                  style={{
                     backgroundColor: colors.card,
                     borderColor: colors.border,
-                    color: colors.textPrimary
+                    color: colors.textPrimary,
                   }}
                   placeholder="HH:MM"
                   placeholderTextColor={colors.textSecondary}
@@ -280,17 +271,17 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
 
             {/* Color Selection */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 🎨 Color
               </Text>
               <View className="flex-row flex-wrap">
                 {colorOptions.map((colorOption) => (
                   <TouchableOpacity
                     key={colorOption.value}
-                    className="w-12 h-12 rounded-full mr-3 mb-3 border-2"
-                    style={{ 
+                    className="mb-3 mr-3 h-12 w-12 rounded-full border-2"
+                    style={{
                       backgroundColor: colorOption.color,
-                      borderColor: color === colorOption.value ? colors.textPrimary : 'transparent'
+                      borderColor: color === colorOption.value ? colors.textPrimary : 'transparent',
                     }}
                     onPress={() => setColor(colorOption.value)}
                   />
@@ -300,7 +291,7 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
 
             {/* Audience Type */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 👥 Audience *
               </Text>
               <SelectModal
@@ -315,7 +306,7 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
             {/* Class Selection (if audience is class) */}
             {audienceType === 'class' && (
               <View className="mb-4">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   🏫 Class *
                 </Text>
                 <SelectModal
@@ -333,7 +324,7 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
             {/* Student Selection (if audience is student) */}
             {audienceType === 'student' && (
               <View className="mb-4">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   👶 Student *
                 </Text>
                 <SelectModal
@@ -350,28 +341,26 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
           </ScrollView>
 
           {/* Footer Buttons */}
-          <View className="p-4 border-t flex-row" style={{ borderTopColor: colors.border }}>
+          <View className="flex-row border-t p-4" style={{ borderTopColor: colors.border }}>
             <TouchableOpacity
-              className="flex-1 p-4 rounded-lg mr-2"
+              className="mr-2 flex-1 rounded-lg p-4"
               style={{ backgroundColor: colors.border }}
               onPress={onClose}
-              disabled={isUpdating}
-            >
+              disabled={isUpdating}>
               <Text className="text-center font-medium" style={{ color: colors.textPrimary }}>
                 Cancel
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              className="flex-1 p-4 rounded-lg ml-2"
-              style={{ 
+              className="ml-2 flex-1 rounded-lg p-4"
+              style={{
                 backgroundColor: isUpdating ? colors.border : colors.primary,
-                opacity: isUpdating ? 0.6 : 1
+                opacity: isUpdating ? 0.6 : 1,
               }}
               onPress={handleSubmit}
-              disabled={isUpdating}
-            >
-              <Text className="text-center text-white font-medium">
+              disabled={isUpdating}>
+              <Text className="text-center font-medium text-white">
                 {isUpdating ? 'Updating...' : 'Update Activity'}
               </Text>
             </TouchableOpacity>

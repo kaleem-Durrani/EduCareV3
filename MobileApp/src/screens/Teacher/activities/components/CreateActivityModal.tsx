@@ -22,12 +22,16 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState(new Date());
   const [color, setColor] = useState('#3B82F6');
   const [audienceType, setAudienceType] = useState<'all' | 'class' | 'student'>('all');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
+
+  // Date/Time picker state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   // API hook for creating activity
   const {
@@ -57,37 +61,37 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
 
   // Convert classes to SelectableItem format
   const getClassItems = (): SelectableItem[] => {
-    return classes.map(classItem => ({
+    return classes.map((classItem) => ({
       value: classItem._id,
       label: classItem.name,
       secondaryLabel: `${classItem.students.length} students`,
-      originalData: classItem
+      originalData: classItem,
     }));
   };
 
   // Convert students to SelectableItem format
   const getStudentItems = (): SelectableItem[] => {
-    const students = selectedClassId 
-      ? studentsByClass[selectedClassId] || []
-      : allStudents;
-    
-    return students.map(student => ({
+    const students = selectedClassId ? studentsByClass[selectedClassId] || [] : allStudents;
+
+    return students.map((student) => ({
       value: student._id,
       label: student.fullName,
       secondaryLabel: `Enrollment #${student.rollNum}`,
-      originalData: student
+      originalData: student,
     }));
   };
 
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setDate('');
-    setTime('');
+    setSelectedDate(new Date());
+    setSelectedTime(new Date());
     setColor('#3B82F6');
     setAudienceType('all');
     setSelectedClassId('');
     setSelectedStudentId('');
+    setShowDatePicker(false);
+    setShowTimePicker(false);
   };
 
   const handleClose = () => {
@@ -115,9 +119,7 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   const validateForm = (): string | null => {
     if (!title.trim()) return 'Title is required';
     if (!description.trim()) return 'Description is required';
-    if (!date.trim()) return 'Date is required';
-    if (!time.trim()) return 'Time is required';
-    
+
     if (audienceType === 'class' && !selectedClassId) {
       return 'Please select a class';
     }
@@ -137,8 +139,10 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
 
     try {
       // Combine date and time
-      const dateTime = new Date(`${date}T${time}`);
-      
+      const dateTime = new Date(selectedDate);
+      dateTime.setHours(selectedTime.getHours());
+      dateTime.setMinutes(selectedTime.getMinutes());
+
       const activityData: CreateActivityData = {
         title: title.trim(),
         description: description.trim(),
@@ -155,11 +159,9 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
       onActivityCreated();
       resetForm();
     } catch (error) {
-      Alert.alert(
-        'Error',
-        createError || 'Failed to create activity. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', createError || 'Failed to create activity. Please try again.', [
+        { text: 'OK' },
+      ]);
     }
   };
 
@@ -174,24 +176,19 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
       <View className="flex-1 justify-end">
-        <View 
-          className="bg-black/50 flex-1"
-          onTouchEnd={handleClose}
-        />
-        <View 
-          className="rounded-t-lg max-h-5/6"
-          style={{ backgroundColor: colors.background }}
-        >
+        <View className="flex-1 bg-black/50" onTouchEnd={handleClose} />
+        <View
+          className="rounded-t-lg"
+          style={{
+            backgroundColor: colors.background,
+            height: '80%',
+            minHeight: 600,
+          }}>
           {/* Header */}
-          <View className="p-4 border-b" style={{ borderBottomColor: colors.border }}>
-            <View className="flex-row justify-between items-center">
+          <View className="border-b p-4" style={{ borderBottomColor: colors.border }}>
+            <View className="flex-row items-center justify-between">
               <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
                 🎯 Create Activity
               </Text>
@@ -207,15 +204,15 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
           <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
             {/* Title */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 📝 Title *
               </Text>
               <TextInput
-                className="p-4 rounded-lg border"
-                style={{ 
+                className="rounded-lg border p-4"
+                style={{
                   backgroundColor: colors.card,
                   borderColor: colors.border,
-                  color: colors.textPrimary
+                  color: colors.textPrimary,
                 }}
                 placeholder="Enter activity title..."
                 placeholderTextColor={colors.textSecondary}
@@ -227,16 +224,16 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
 
             {/* Description */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 📄 Description *
               </Text>
               <TextInput
-                className="p-4 rounded-lg border"
-                style={{ 
+                className="rounded-lg border p-4"
+                style={{
                   backgroundColor: colors.card,
                   borderColor: colors.border,
                   color: colors.textPrimary,
-                  minHeight: 80
+                  minHeight: 80,
                 }}
                 placeholder="Enter activity description..."
                 placeholderTextColor={colors.textSecondary}
@@ -249,56 +246,62 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
             </View>
 
             {/* Date and Time */}
-            <View className="flex-row mb-4">
-              <View className="flex-1 mr-2">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+            <View className="mb-4 flex-row">
+              <View className="mr-2 flex-1">
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   📅 Date *
                 </Text>
-                <TextInput
-                  className="p-4 rounded-lg border"
-                  style={{ 
+                <TouchableOpacity
+                  className="rounded-lg border p-4"
+                  style={{
                     backgroundColor: colors.card,
                     borderColor: colors.border,
-                    color: colors.textPrimary
                   }}
-                  placeholder={getTodayDate()}
-                  placeholderTextColor={colors.textSecondary}
-                  value={date}
-                  onChangeText={setDate}
-                />
+                  onPress={() => setShowDatePicker(true)}>
+                  <Text style={{ color: colors.textPrimary }}>
+                    {selectedDate.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <View className="flex-1 ml-2">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <View className="ml-2 flex-1">
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   🕐 Time *
                 </Text>
-                <TextInput
-                  className="p-4 rounded-lg border"
-                  style={{ 
+                <TouchableOpacity
+                  className="rounded-lg border p-4"
+                  style={{
                     backgroundColor: colors.card,
                     borderColor: colors.border,
-                    color: colors.textPrimary
                   }}
-                  placeholder={getCurrentTime()}
-                  placeholderTextColor={colors.textSecondary}
-                  value={time}
-                  onChangeText={setTime}
-                />
+                  onPress={() => setShowTimePicker(true)}>
+                  <Text style={{ color: colors.textPrimary }}>
+                    {selectedTime.toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
             {/* Color Selection */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 🎨 Color
               </Text>
               <View className="flex-row flex-wrap">
                 {colorOptions.map((colorOption) => (
                   <TouchableOpacity
                     key={colorOption.value}
-                    className="w-12 h-12 rounded-full mr-3 mb-3 border-2"
-                    style={{ 
+                    className="mb-3 mr-3 h-12 w-12 rounded-full border-2"
+                    style={{
                       backgroundColor: colorOption.color,
-                      borderColor: color === colorOption.value ? colors.textPrimary : 'transparent'
+                      borderColor: color === colorOption.value ? colors.textPrimary : 'transparent',
                     }}
                     onPress={() => setColor(colorOption.value)}
                   />
@@ -308,7 +311,7 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
 
             {/* Audience Type */}
             <View className="mb-4">
-              <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                 👥 Audience *
               </Text>
               <SelectModal
@@ -323,7 +326,7 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
             {/* Class Selection (if audience is class) */}
             {audienceType === 'class' && (
               <View className="mb-4">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   🏫 Class *
                 </Text>
                 <SelectModal
@@ -341,7 +344,7 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
             {/* Student Selection (if audience is student) */}
             {audienceType === 'student' && (
               <View className="mb-4">
-                <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+                <Text className="mb-2 text-sm font-medium" style={{ color: colors.textSecondary }}>
                   👶 Student *
                 </Text>
                 <SelectModal
@@ -358,32 +361,129 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
           </ScrollView>
 
           {/* Footer Buttons */}
-          <View className="p-4 border-t flex-row" style={{ borderTopColor: colors.border }}>
+          <View className="flex-row border-t p-4" style={{ borderTopColor: colors.border }}>
             <TouchableOpacity
-              className="flex-1 p-4 rounded-lg mr-2"
+              className="mr-2 flex-1 rounded-lg p-4"
               style={{ backgroundColor: colors.border }}
               onPress={handleClose}
-              disabled={isCreating}
-            >
+              disabled={isCreating}>
               <Text className="text-center font-medium" style={{ color: colors.textPrimary }}>
                 Cancel
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              className="flex-1 p-4 rounded-lg ml-2"
-              style={{ 
+              className="ml-2 flex-1 rounded-lg p-4"
+              style={{
                 backgroundColor: isCreating ? colors.border : colors.primary,
-                opacity: isCreating ? 0.6 : 1
+                opacity: isCreating ? 0.6 : 1,
               }}
               onPress={handleSubmit}
-              disabled={isCreating}
-            >
-              <Text className="text-center text-white font-medium">
+              disabled={isCreating}>
+              <Text className="text-center font-medium text-white">
                 {isCreating ? 'Creating...' : 'Create Activity'}
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Date Picker Modal */}
+          <Modal
+            visible={showDatePicker}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowDatePicker(false)}>
+            <View className="flex-1 items-center justify-center bg-black/50">
+              <View
+                className="mx-4 w-80 rounded-lg bg-white p-6"
+                style={{ backgroundColor: colors.background }}>
+                <Text
+                  className="mb-4 text-center text-lg font-bold"
+                  style={{ color: colors.textPrimary }}>
+                  📅 Select Date
+                </Text>
+
+                {/* Simple Date Selector */}
+                <View className="mb-4">
+                  <Text className="mb-2 text-sm" style={{ color: colors.textSecondary }}>
+                    Selected:{' '}
+                    {selectedDate.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </Text>
+                </View>
+
+                <View className="flex-row justify-between">
+                  <TouchableOpacity
+                    className="mr-2 flex-1 rounded-lg p-3"
+                    style={{ backgroundColor: colors.border }}
+                    onPress={() => setShowDatePicker(false)}>
+                    <Text className="text-center font-medium" style={{ color: colors.textPrimary }}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    className="ml-2 flex-1 rounded-lg p-3"
+                    style={{ backgroundColor: colors.primary }}
+                    onPress={() => setShowDatePicker(false)}>
+                    <Text className="text-center font-medium text-white">Confirm</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Time Picker Modal */}
+          <Modal
+            visible={showTimePicker}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowTimePicker(false)}>
+            <View className="flex-1 items-center justify-center bg-black/50">
+              <View
+                className="mx-4 w-80 rounded-lg bg-white p-6"
+                style={{ backgroundColor: colors.background }}>
+                <Text
+                  className="mb-4 text-center text-lg font-bold"
+                  style={{ color: colors.textPrimary }}>
+                  🕐 Select Time
+                </Text>
+
+                {/* Simple Time Selector */}
+                <View className="mb-4">
+                  <Text className="mb-2 text-sm" style={{ color: colors.textSecondary }}>
+                    Selected:{' '}
+                    {selectedTime.toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </Text>
+                </View>
+
+                <View className="flex-row justify-between">
+                  <TouchableOpacity
+                    className="mr-2 flex-1 rounded-lg p-3"
+                    style={{ backgroundColor: colors.border }}
+                    onPress={() => setShowTimePicker(false)}>
+                    <Text className="text-center font-medium" style={{ color: colors.textPrimary }}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    className="ml-2 flex-1 rounded-lg p-3"
+                    style={{ backgroundColor: colors.primary }}
+                    onPress={() => setShowTimePicker(false)}>
+                    <Text className="text-center font-medium text-white">Confirm</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </View>
       </View>
     </Modal>
