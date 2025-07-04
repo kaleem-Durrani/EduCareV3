@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { EnrolledClass, ClassStudent } from '../../../../services';
+import { SelectModal, SelectableItem } from '../../../../components';
 
 interface StudentSelectorProps {
   classes: EnrolledClass[];
@@ -23,168 +24,58 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
   const { colors } = useTheme();
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('all');
   const [selectedClass, setSelectedClass] = useState<EnrolledClass | null>(null);
-  const [isClassModalVisible, setIsClassModalVisible] = useState(false);
-  const [isStudentModalVisible, setIsStudentModalVisible] = useState(false);
-  const [classSearchText, setClassSearchText] = useState('');
-  const [studentSearchText, setStudentSearchText] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
 
-  const getStudentsForSelection = (): ClassStudent[] => {
-    if (selectionMode === 'all') {
-      return allStudents;
-    } else {
-      return selectedClass ? studentsByClass[selectedClass._id] || [] : [];
-    }
+  // Convert classes to SelectableItem format
+  const getClassItems = (): SelectableItem[] => {
+    return classes.map(classItem => ({
+      value: classItem._id,
+      label: classItem.name,
+      secondaryLabel: `${classItem.students.length} student${classItem.students.length !== 1 ? 's' : ''}`,
+      originalData: classItem
+    }));
   };
 
-  const getFilteredClasses = (): EnrolledClass[] => {
-    if (!classSearchText.trim()) return classes;
-    return classes.filter(classItem =>
-      classItem.name.toLowerCase().includes(classSearchText.toLowerCase()) ||
-      (classItem.description && classItem.description.toLowerCase().includes(classSearchText.toLowerCase()))
-    );
-  };
+  // Convert students to SelectableItem format
+  const getStudentItems = (): SelectableItem[] => {
+    const students = selectionMode === 'all'
+      ? allStudents
+      : selectedClass ? studentsByClass[selectedClass._id] || [] : [];
 
-  const getFilteredStudents = (): ClassStudent[] => {
-    const students = getStudentsForSelection();
-    if (!studentSearchText.trim()) return students;
-    return students.filter(student =>
-      student.fullName.toLowerCase().includes(studentSearchText.toLowerCase()) ||
-      student.rollNum.toString().includes(studentSearchText)
-    );
+    return students.map(student => ({
+      value: student._id,
+      label: student.fullName,
+      secondaryLabel: `Enrollment #${student.rollNum}`,
+      originalData: student
+    }));
   };
 
   const handleModeChange = (mode: SelectionMode) => {
     setSelectionMode(mode);
     setSelectedClass(null);
+    setSelectedClassId('');
+    setSelectedStudentId('');
     onResetSelection(); // Reset student selection when mode changes
   };
 
-  const handleClassSelect = (classItem: EnrolledClass) => {
+  const handleClassSelect = (item: SelectableItem) => {
+    const classItem = item.originalData as EnrolledClass;
     setSelectedClass(classItem);
-    setIsClassModalVisible(false);
-    setClassSearchText(''); // Reset search
+    setSelectedClassId(item.value);
+    setSelectedStudentId(''); // Reset student selection
     onResetSelection(); // Reset student selection when class changes
   };
 
-  const handleStudentSelect = (student: ClassStudent) => {
+  const handleStudentSelect = (item: SelectableItem) => {
+    const student = item.originalData as ClassStudent;
+    setSelectedStudentId(item.value);
     onStudentSelect(student);
-    setIsStudentModalVisible(false);
-    setStudentSearchText(''); // Reset search
   };
 
-  const renderClassItem = ({ item }: { item: EnrolledClass }) => (
-    <TouchableOpacity
-      className="p-4 border-b"
-      style={{ borderBottomColor: colors.border }}
-      onPress={() => handleClassSelect(item)}
-    >
-      <Text className="text-lg font-medium" style={{ color: colors.textPrimary }}>
-        {item.name}
-      </Text>
-      {item.description && (
-        <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-          {item.description}
-        </Text>
-      )}
-      <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-        {item.students.length} student{item.students.length !== 1 ? 's' : ''}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const renderStudentItem = ({ item }: { item: ClassStudent }) => (
-    <TouchableOpacity
-      className="p-4 border-b"
-      style={{ borderBottomColor: colors.border }}
-      onPress={() => handleStudentSelect(item)}
-    >
-      <Text className="text-lg font-medium" style={{ color: colors.textPrimary }}>
-        {item.fullName}
-      </Text>
-      <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-        Enrollment #{item.rollNum}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const renderModal = (
-    visible: boolean,
-    onClose: () => void,
-    title: string,
-    data: any[],
-    renderItem: any,
-    searchText: string,
-    onSearchChange: (text: string) => void,
-    searchPlaceholder: string
-  ) => (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View className="flex-1 justify-end">
-        <View
-          className="bg-black/50 flex-1"
-          onTouchEnd={onClose}
-        />
-        <View
-          className="rounded-t-lg max-h-96"
-          style={{ backgroundColor: colors.background }}
-        >
-          {/* Header */}
-          <View className="p-4 border-b" style={{ borderBottomColor: colors.border }}>
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                {title}
-              </Text>
-              <TouchableOpacity onPress={onClose}>
-                <Text className="text-lg" style={{ color: colors.primary }}>
-                  ✕
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Search Input */}
-            <TextInput
-              className="p-3 rounded-lg border"
-              style={{
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                color: colors.textPrimary
-              }}
-              placeholder={searchPlaceholder}
-              placeholderTextColor={colors.textSecondary}
-              value={searchText}
-              onChangeText={onSearchChange}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          {/* List */}
-          <FlatList
-            data={data}
-            keyExtractor={(item) => item._id}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View className="p-4 items-center">
-                <Text style={{ color: colors.textSecondary }}>
-                  No results found
-                </Text>
-              </View>
-            }
-          />
-        </View>
-      </View>
-    </Modal>
-  );
-
   const canSelectStudent = selectionMode === 'all' || (selectionMode === 'byClass' && selectedClass);
-  const studentsToShow = getStudentsForSelection();
-  const filteredClasses = getFilteredClasses();
-  const filteredStudents = getFilteredStudents();
+  const classItems = getClassItems();
+  const studentItems = getStudentItems();
 
   return (
     <View className="mb-6">
@@ -234,20 +125,15 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
           <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
             Select Class
           </Text>
-          <TouchableOpacity
-            className="p-4 rounded-lg border"
-            style={{ 
-              backgroundColor: colors.card,
-              borderColor: colors.border 
-            }}
-            onPress={() => setIsClassModalVisible(true)}
-          >
-            <Text className="text-base" style={{ 
-              color: selectedClass ? colors.textPrimary : colors.textSecondary 
-            }}>
-              {selectedClass ? selectedClass.name : 'Choose a class...'}
-            </Text>
-          </TouchableOpacity>
+          <SelectModal
+            items={classItems}
+            selectedValue={selectedClassId}
+            placeholder="Choose a class..."
+            title="Select Class"
+            searchEnabled={true}
+            searchPlaceholder="Search classes..."
+            onSelect={handleClassSelect}
+          />
         </View>
       )}
 
@@ -256,49 +142,20 @@ const StudentSelector: React.FC<StudentSelectorProps> = ({
         <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
           Select Student
         </Text>
-        <TouchableOpacity
-          className="p-4 rounded-lg border"
-          style={{ 
-            backgroundColor: canSelectStudent ? colors.card : colors.border,
-            borderColor: colors.border,
-            opacity: canSelectStudent ? 1 : 0.6
-          }}
-          onPress={() => canSelectStudent && setIsStudentModalVisible(true)}
+        <SelectModal
+          items={studentItems}
+          selectedValue={selectedStudentId}
+          placeholder={canSelectStudent
+            ? `Choose from ${studentItems.length} student${studentItems.length !== 1 ? 's' : ''}...`
+            : 'Select a class first...'
+          }
+          title="Select Student"
+          searchEnabled={true}
+          searchPlaceholder="Search students..."
+          onSelect={handleStudentSelect}
           disabled={!canSelectStudent}
-        >
-          <Text className="text-base" style={{ 
-            color: canSelectStudent ? colors.textPrimary : colors.textSecondary 
-          }}>
-            {canSelectStudent 
-              ? `Choose from ${studentsToShow.length} student${studentsToShow.length !== 1 ? 's' : ''}...`
-              : 'Select a class first...'
-            }
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
-
-      {/* Modals */}
-      {renderModal(
-        isClassModalVisible,
-        () => setIsClassModalVisible(false),
-        'Select Class',
-        filteredClasses,
-        renderClassItem,
-        classSearchText,
-        setClassSearchText,
-        'Search classes...'
-      )}
-
-      {renderModal(
-        isStudentModalVisible,
-        () => setIsStudentModalVisible(false),
-        'Select Student',
-        filteredStudents,
-        renderStudentItem,
-        studentSearchText,
-        setStudentSearchText,
-        'Search students...'
-      )}
     </View>
   );
 };

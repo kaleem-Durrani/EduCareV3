@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { EnrolledClass } from '../../../../services';
+import { SelectModal, SelectableItem } from '../../../../components';
 
 interface PlanSelectorProps {
   classes: EnrolledClass[];
@@ -27,7 +28,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
   isLoading,
 }) => {
   const { colors } = useTheme();
-  const [isClassModalVisible, setIsClassModalVisible] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [isMonthModalVisible, setIsMonthModalVisible] = useState(false);
   const [isYearModalVisible, setIsYearModalVisible] = useState(false);
 
@@ -53,27 +54,25 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
     return months.find(m => m.value === month)?.label || 'Unknown';
   };
 
+  // Convert classes to SelectableItem format
+  const getClassItems = (): SelectableItem[] => {
+    return classes.map(classItem => ({
+      value: classItem._id,
+      label: classItem.name,
+      secondaryLabel: classItem.description || `${classItem.students.length} students`,
+      originalData: classItem
+    }));
+  };
+
+  const handleClassSelect = (item: SelectableItem) => {
+    const classItem = item.originalData as EnrolledClass;
+    onClassSelect(classItem);
+    setSelectedClassId(item.value);
+  };
+
   const canLoadPlan = selectedClass && selectedMonth && selectedYear;
 
-  const renderClassItem = ({ item }: { item: EnrolledClass }) => (
-    <TouchableOpacity
-      className="p-4 border-b"
-      style={{ borderBottomColor: colors.border }}
-      onPress={() => {
-        onClassSelect(item);
-        setIsClassModalVisible(false);
-      }}
-    >
-      <Text className="text-lg font-medium" style={{ color: colors.textPrimary }}>
-        {item.name}
-      </Text>
-      {item.description && (
-        <Text className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-          {item.description}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
+
 
   const renderMonthItem = ({ item }: { item: { value: number; label: string } }) => (
     <TouchableOpacity
@@ -163,20 +162,15 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         <Text className="text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
           Class
         </Text>
-        <TouchableOpacity
-          className="p-4 rounded-lg border"
-          style={{ 
-            backgroundColor: colors.card,
-            borderColor: colors.border 
-          }}
-          onPress={() => setIsClassModalVisible(true)}
-        >
-          <Text className="text-base" style={{ 
-            color: selectedClass ? colors.textPrimary : colors.textSecondary 
-          }}>
-            {selectedClass ? selectedClass.name : 'Select a class...'}
-          </Text>
-        </TouchableOpacity>
+        <SelectModal
+          items={getClassItems()}
+          selectedValue={selectedClassId}
+          placeholder="Select a class..."
+          title="Select Class"
+          searchEnabled={true}
+          searchPlaceholder="Search classes..."
+          onSelect={handleClassSelect}
+        />
       </View>
 
       {/* Month and Year Row */}
@@ -236,14 +230,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
       </TouchableOpacity>
 
       {/* Modals */}
-      {renderModal(
-        isClassModalVisible,
-        () => setIsClassModalVisible(false),
-        'Select Class',
-        classes,
-        renderClassItem
-      )}
-
       {renderModal(
         isMonthModalVisible,
         () => setIsMonthModalVisible(false),
