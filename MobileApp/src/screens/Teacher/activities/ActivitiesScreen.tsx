@@ -1,13 +1,105 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
+import { useApi } from '../../../hooks';
+import { activityService, Activity, ActivityFilters as ActivityFiltersType, PaginatedActivitiesResponse } from '../../../services';
+import LoadingScreen from '../../../components/LoadingScreen';
+import ActivityFilters from './components/ActivityFilters';
+import ActivityList from './components/ActivityList';
+import CreateActivityModal from './components/CreateActivityModal';
 
 const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
+  const [filters, setFilters] = useState<ActivityFiltersType>({ page: 1, limit: 10 });
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [pagination, setPagination] = useState<any>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // API hook for fetching activities
+  const {
+    request: fetchActivities,
+    isLoading: isLoadingActivities,
+    error: activitiesError,
+    data: activitiesResponse
+  } = useApi<PaginatedActivitiesResponse>(activityService.getActivities);
+
+  // Load activities on mount and when filters change
+  useEffect(() => {
+    loadActivities(true);
+  }, [filters]);
+
+  // Update activities when API response changes
+  useEffect(() => {
+    if (activitiesResponse) {
+      if (filters.page === 1) {
+        // First page or new search - replace activities
+        setActivities(activitiesResponse.activities);
+      } else {
+        // Load more - append activities
+        setActivities(prev => [...prev, ...activitiesResponse.activities]);
+      }
+      setPagination(activitiesResponse.pagination);
+    }
+  }, [activitiesResponse]);
+
+  const loadActivities = async (resetPage = false) => {
+    if (resetPage && filters.page !== 1) {
+      setFilters((prev: ActivityFiltersType) => ({ ...prev, page: 1 }));
+      return;
+    }
+    await fetchActivities(filters);
+  };
+
+  const loadMoreActivities = async () => {
+    if (pagination && pagination.hasNextPage && !isLoadingActivities && !isLoadingMore) {
+      setIsLoadingMore(true);
+      const nextPage = pagination.currentPage + 1;
+      setFilters((prev: ActivityFiltersType) => ({ ...prev, page: nextPage }));
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setActivities([]);
+    await loadActivities(true);
+    setRefreshing(false);
+  };
+
+  const handleFiltersChange = (newFilters: ActivityFiltersType) => {
+    setFilters({ ...newFilters, page: 1, limit: 10 });
+  };
+
+  const handleCreateActivity = () => {
+    setIsCreateModalVisible(true);
+  };
+
+  const handleActivityCreated = () => {
+    setIsCreateModalVisible(false);
+    setActivities([]);
+    loadActivities(true); // Refresh the list from first page
+  };
+
+  const handleActivityUpdated = () => {
+    setActivities([]);
+    loadActivities(true); // Refresh the list from first page
+  };
+
+  const handleActivityDeleted = () => {
+    setActivities([]);
+    loadActivities(true); // Refresh the list from first page
+  };
+
+  if (isLoadingActivities && !activities) {
+    return <LoadingScreen message="Loading activities..." />;
+  }
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+      {/* Header */}
       <View className="items-center pb-4 pt-4">
         <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
           Centro Infantil EDUCARE
@@ -15,23 +107,77 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
         <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
       </View>
 
-      <View className="px-4 py-2">
+      {/* Navigation Header */}
+      <View className="px-4 py-2 flex-row justify-between items-center">
         <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
           <Text className="mr-2 text-2xl">←</Text>
           <Text className="text-lg font-medium" style={{ color: colors.primary }}>
             Activities
           </Text>
         </TouchableOpacity>
+
+        {/* Create Activity Button */}
+        <TouchableOpacity
+          className="px-4 py-2 rounded-lg"
+          style={{ backgroundColor: colors.primary }}
+          onPress={handleCreateActivity}
+        >
+          <Text className="text-white font-medium">+ Create</Text>
+        </TouchableOpacity>
       </View>
 
-      <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-          Activities Screen
-        </Text>
-        <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-          Create and manage activities. Teachers have edit rights.
-        </Text>
-      </View>
+      {/* Content */}
+      <ScrollView
+        className="flex-1 px-4"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        {/* Filters */}
+        <ActivityFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+        />
+
+        {/* Activities List */}
+        {activitiesError ? (
+          <View className="flex-1 items-center justify-center py-8">
+            <Text className="text-center text-lg mb-2" style={{ color: colors.textPrimary }}>
+              Failed to load activities
+            </Text>
+            <Text className="text-center text-sm mb-4" style={{ color: colors.textSecondary }}>
+              {activitiesError}
+            </Text>
+            <TouchableOpacity
+              className="bg-blue-500 px-6 py-3 rounded-lg"
+              onPress={() => loadActivities(true)}
+            >
+              <Text className="text-white font-medium">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <ActivityList
+            activities={activities}
+            pagination={pagination}
+            isLoading={isLoadingActivities}
+            isLoadingMore={isLoadingMore}
+            onActivityUpdated={handleActivityUpdated}
+            onActivityDeleted={handleActivityDeleted}
+            onLoadMore={loadMoreActivities}
+          />
+        )}
+      </ScrollView>
+
+      {/* Create Activity Modal */}
+      <CreateActivityModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onActivityCreated={handleActivityCreated}
+      />
     </SafeAreaView>
   );
 };
