@@ -34,15 +34,13 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
     hasNextPage: false,
     hasPrevPage: false,
   });
+  const [pageSize, setPageSize] = useState(10);
 
   // Modal states
   const [showCreateNoteModal, setShowCreateNoteModal] = useState(false);
   const [showEditNoteModal, setShowEditNoteModal] = useState(false);
   const [showNoteDetailModal, setShowNoteDetailModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-
-  // Loading states
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // API hooks - only for GET requests
   const {
@@ -62,10 +60,10 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
     }
   }, [selectedStudent]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadStudentNotes = async (page: number = 1) => {
+  const loadStudentNotes = async (page: number = 1, limit: number = pageSize) => {
     if (!selectedStudent) return;
 
-    await fetchStudentNotes(selectedStudent._id, { page, limit: 10 });
+    await fetchStudentNotes(selectedStudent._id, { page, limit });
   };
 
   // Update notes when data changes from useApi hook
@@ -167,24 +165,22 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
     setShowNoteDetailModal(true);
   };
 
-  const loadMoreNotes = async () => {
-    if (pagination.hasNextPage && !isLoadingMore && selectedStudent) {
-      setIsLoadingMore(true);
-      const result = await noteService.getStudentNotes(selectedStudent._id, {
-        page: pagination.currentPage + 1,
-        limit: 10,
-      });
-      if (result.success && result.data) {
-        setNotes((prev) => [...prev, ...result.data!.notes]);
-        setPagination(result.data!.pagination);
-      }
-      setIsLoadingMore(false);
+  const handlePageChange = async (page: number) => {
+    if (selectedStudent) {
+      await loadStudentNotes(page, pageSize);
+    }
+  };
+
+  const handlePageSizeChange = async (size: number) => {
+    setPageSize(size);
+    if (selectedStudent) {
+      await loadStudentNotes(1, size);
     }
   };
 
   const refreshNotes = async () => {
     if (selectedStudent) {
-      await loadStudentNotes(1);
+      await loadStudentNotes(pagination.currentPage, pageSize);
     }
   };
 
@@ -238,10 +234,13 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
             notes={notes}
             selectedStudent={selectedStudent}
             isLoading={isLoadingNotes}
-            isLoadingMore={isLoadingMore}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
             totalItems={pagination.totalItems}
+            pageSize={pageSize}
             onRefresh={refreshNotes}
-            onLoadMore={loadMoreNotes}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
             onViewNote={openDetailModal}
             onEditNote={openEditModal}
             onDeleteNote={handleDeleteNote}

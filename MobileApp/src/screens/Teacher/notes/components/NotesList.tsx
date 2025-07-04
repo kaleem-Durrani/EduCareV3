@@ -1,22 +1,21 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { Note, ClassStudent } from '../../../../services';
 import { NoteItem } from './NoteItem';
+import { PaginationControls } from '../../../../components';
 
 interface NotesListProps {
   notes: Note[];
   selectedStudent: ClassStudent;
   isLoading: boolean;
-  isLoadingMore: boolean;
+  currentPage: number;
+  totalPages: number;
   totalItems: number;
+  pageSize: number;
   onRefresh: () => void;
-  onLoadMore: () => void;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
   onViewNote: (note: Note) => void;
   onEditNote: (note: Note) => void;
   onDeleteNote: (note: Note) => void;
@@ -26,10 +25,13 @@ export const NotesList: React.FC<NotesListProps> = ({
   notes,
   selectedStudent,
   isLoading,
-  isLoadingMore,
+  currentPage,
+  totalPages,
   totalItems,
+  pageSize,
   onRefresh,
-  onLoadMore,
+  onPageChange,
+  onPageSizeChange,
   onViewNote,
   onEditNote,
   onDeleteNote,
@@ -37,12 +39,7 @@ export const NotesList: React.FC<NotesListProps> = ({
   const { colors } = useTheme();
 
   const renderNoteItem = ({ item }: { item: Note }) => (
-    <NoteItem
-      note={item}
-      onView={onViewNote}
-      onEdit={onEditNote}
-      onDelete={onDeleteNote}
-    />
+    <NoteItem note={item} onView={onViewNote} onEdit={onEditNote} onDelete={onDeleteNote} />
   );
 
   if (isLoading) {
@@ -67,29 +64,28 @@ export const NotesList: React.FC<NotesListProps> = ({
   }
 
   return (
-    <FlatList
-      data={notes}
-      renderItem={renderNoteItem}
-      keyExtractor={(item) => item._id}
-      refreshControl={
-        <RefreshControl
-          refreshing={isLoading}
-          onRefresh={onRefresh}
-          colors={[colors.primary]}
-        />
-      }
-      onEndReached={onLoadMore}
-      onEndReachedThreshold={0.1}
-      ListFooterComponent={
-        isLoadingMore ? (
-          <View className="py-4">
-            <Text className="text-center" style={{ color: colors.textSecondary }}>
-              Loading more notes...
-            </Text>
-          </View>
-        ) : null
-      }
-      showsVerticalScrollIndicator={false}
-    />
+    <View className="flex-1">
+      <FlatList
+        data={notes}
+        renderItem={renderNoteItem}
+        keyExtractor={(item) => item._id}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 16 }}
+      />
+
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        isLoading={isLoading}
+        itemName="notes"
+      />
+    </View>
   );
 };

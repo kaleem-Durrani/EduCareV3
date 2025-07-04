@@ -1,12 +1,7 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { useTheme } from '../../../../contexts';
+import { useTeacherClasses } from '../../../../contexts/TeacherClassesContext';
 import { Note } from '../../../../services';
 
 interface NoteDetailModalProps {
@@ -15,12 +10,9 @@ interface NoteDetailModalProps {
   onClose: () => void;
 }
 
-export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
-  visible,
-  note,
-  onClose,
-}) => {
+export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ visible, note, onClose }) => {
   const { colors } = useTheme();
+  const { allStudents } = useTeacherClasses();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -33,12 +25,13 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
     });
   };
 
+  const getStudentClass = (studentId: string) => {
+    const student = allStudents.find((s) => s._id === studentId);
+    return student ? `Enrollment #${student.rollNum}` : 'Unknown Class';
+  };
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View className="flex-1 justify-end">
         <View className="flex-1 bg-black/50" onTouchEnd={onClose} />
         <View
@@ -76,7 +69,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                     {note.student_id.fullName}
                   </Text>
                   <Text className="text-sm" style={{ color: colors.textSecondary }}>
-                    {note.student_id.class_id.name}
+                    {getStudentClass(note.student_id._id)}
                   </Text>
                 </View>
 
@@ -104,30 +97,25 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                     style={{ color: colors.textSecondary }}>
                     Created
                   </Text>
-                  <Text style={{ color: colors.textPrimary }}>
-                    {formatDate(note.createdAt)}
-                  </Text>
+                  <Text style={{ color: colors.textPrimary }}>{formatDate(note.createdAt)}</Text>
                   <Text className="text-sm" style={{ color: colors.textSecondary }}>
                     By: {note.createdBy.fullName} ({note.createdBy.role})
                   </Text>
                 </View>
 
-                {note.updatedBy &&
-                  note.updatedBy._id !== note.createdBy._id && (
-                    <View className="mb-4">
-                      <Text
-                        className="mb-2 text-sm font-medium"
-                        style={{ color: colors.textSecondary }}>
-                        Last Updated
-                      </Text>
-                      <Text style={{ color: colors.textPrimary }}>
-                        {formatDate(note.updatedAt)}
-                      </Text>
-                      <Text className="text-sm" style={{ color: colors.textSecondary }}>
-                        By: {note.updatedBy.fullName} ({note.updatedBy.role})
-                      </Text>
-                    </View>
-                  )}
+                {note.updatedBy && note.updatedBy._id !== note.createdBy._id && (
+                  <View className="mb-4">
+                    <Text
+                      className="mb-2 text-sm font-medium"
+                      style={{ color: colors.textSecondary }}>
+                      Last Updated
+                    </Text>
+                    <Text style={{ color: colors.textPrimary }}>{formatDate(note.updatedAt)}</Text>
+                    <Text className="text-sm" style={{ color: colors.textSecondary }}>
+                      By: {note.updatedBy.fullName} ({note.updatedBy.role})
+                    </Text>
+                  </View>
+                )}
               </>
             )}
           </ScrollView>
