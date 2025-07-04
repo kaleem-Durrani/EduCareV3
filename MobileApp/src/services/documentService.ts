@@ -2,20 +2,6 @@ import { ApiService } from './api';
 import { ApiResponse } from '../types';
 
 // Document types for mobile app
-export interface DocumentType {
-  _id: string;
-  name: string;
-  description: string;
-  required: boolean;
-  createdBy: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface StudentDocumentItem {
   document_type_id: {
     _id: string;
@@ -56,13 +42,5 @@ export const documentService = {
    */
   getStudentDocuments: async (studentId: string): Promise<ApiResponse<StudentDocuments>> => {
     return ApiService.get<StudentDocuments>(`/documents/student/${studentId}`);
-  },
-
-  /**
-   * Get all document types (mobile app)
-   * Uses existing endpoint: GET /api/documents/types
-   */
-  getDocumentTypes: async (): Promise<ApiResponse<DocumentType[]>> => {
-    return ApiService.get<DocumentType[]>('/documents/types');
   },
 };
