@@ -27,8 +27,9 @@ export default function PostsScreen() {
   const [statistics, setStatistics] = useState(null);
   const [filters, setFilters] = useState({
     search: "",
-    audience: "",
-    teacher: "",
+    teacherId: "",
+    classId: "",
+    studentId: "",
   });
   const [form] = Form.useForm();
   const pageSize = 10;
@@ -108,7 +109,13 @@ export default function PostsScreen() {
 
   const fetchPostsData = async () => {
     try {
-      await fetchPosts(currentPage, pageSize);
+      // Create filter object for API call
+      const apiFilters = {};
+      if (filters.teacherId) apiFilters.teacherId = filters.teacherId;
+      if (filters.classId) apiFilters.classId = filters.classId;
+      if (filters.studentId) apiFilters.studentId = filters.studentId;
+
+      await fetchPosts(currentPage, pageSize, apiFilters);
     } catch (error) {
       console.log("Posts fetch error handled by useApi");
     }
