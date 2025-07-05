@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
 import { useApi } from '../../../hooks';
@@ -241,7 +241,10 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
 
       {/* Notes List */}
       {selectedStudent && (
-        <View className="flex-1 px-4">
+        <KeyboardAvoidingView
+          className="flex-1 px-4"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
           <NotesList
             notes={notes}
             selectedStudent={selectedStudent}
@@ -257,7 +260,7 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
             onEditNote={openEditModal}
             onDeleteNote={handleDeleteNote}
           />
-        </View>
+        </KeyboardAvoidingView>
       )}
 
       {/* Create Note Modal */}

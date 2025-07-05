@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
 import { useApi } from '../../../hooks';
@@ -152,7 +152,10 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
           </TouchableOpacity>
         </View>
       ) : (
-        <View className="flex-1 px-4">
+        <KeyboardAvoidingView
+          className="flex-1 px-4"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
           <ActivityList
             activities={activities}
             pagination={pagination}
@@ -165,7 +168,7 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
             onRefresh={handleRefresh}
             refreshing={refreshing}
           />
-        </View>
+        </KeyboardAvoidingView>
       )}
 
       {/* Create Activity Modal */}
