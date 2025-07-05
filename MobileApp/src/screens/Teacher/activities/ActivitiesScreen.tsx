@@ -9,19 +9,19 @@ import {
   ActivityFilters as ActivityFiltersType,
   PaginatedActivitiesResponse,
 } from '../../../services';
-import LoadingScreen from '../../../components/LoadingScreen';
+import { LoadingScreen } from '../../../components';
 import ActivityFilters from './components/ActivityFilters';
 import ActivityList from './components/ActivityList';
 import CreateActivityModal from './components/CreateActivityModal';
 
 const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
+  const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState<ActivityFiltersType>({ page: 1, limit: 10 });
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [pagination, setPagination] = useState<any>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // API hook for fetching activities
   const {
@@ -39,13 +39,8 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
   // Update activities when API response changes
   useEffect(() => {
     if (activitiesResponse) {
-      if (filters.page === 1) {
-        // First page or new search - replace activities
-        setActivities(activitiesResponse.activities);
-      } else {
-        // Load more - append activities
-        setActivities((prev) => [...prev, ...activitiesResponse.activities]);
-      }
+      // Always replace activities for page-based pagination
+      setActivities(activitiesResponse.activities);
       setPagination(activitiesResponse.pagination);
     }
   }, [activitiesResponse]);
@@ -58,13 +53,13 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
     await fetchActivities(filters);
   };
 
-  const loadMoreActivities = async () => {
-    if (pagination && pagination.hasNextPage && !isLoadingActivities && !isLoadingMore) {
-      setIsLoadingMore(true);
-      const nextPage = pagination.currentPage + 1;
-      setFilters((prev: ActivityFiltersType) => ({ ...prev, page: nextPage }));
-      setIsLoadingMore(false);
-    }
+  const handlePageChange = (page: number) => {
+    setFilters((prev: ActivityFiltersType) => ({ ...prev, page }));
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setFilters((prev: ActivityFiltersType) => ({ ...prev, page: 1, limit: size }));
   };
 
   const handleRefresh = async () => {
@@ -163,10 +158,11 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
             activities={activities}
             pagination={pagination}
             isLoading={isLoadingActivities}
-            isLoadingMore={isLoadingMore}
+            pageSize={pageSize}
             onActivityUpdated={handleActivityUpdated}
             onActivityDeleted={handleActivityDeleted}
-            onLoadMore={loadMoreActivities}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
           />
         )}
       </ScrollView>
