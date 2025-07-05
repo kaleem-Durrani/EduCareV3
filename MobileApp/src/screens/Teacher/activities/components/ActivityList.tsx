@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl } from 'react-native';
+import { View, Text, FlatList } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { Activity, ActivityPagination } from '../../../../services';
 import { PaginationControls } from '../../../../components';
@@ -15,8 +15,6 @@ interface ActivityListProps {
   onActivityDeleted: () => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  onRefresh: () => void;
-  refreshing: boolean;
 }
 
 const ActivityList: React.FC<ActivityListProps> = ({
@@ -28,8 +26,6 @@ const ActivityList: React.FC<ActivityListProps> = ({
   onActivityDeleted,
   onPageChange,
   onPageSizeChange,
-  onRefresh,
-  refreshing,
 }) => {
   const { colors } = useTheme();
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -170,10 +166,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
         data={groupedActivities}
         keyExtractor={(item) => item.date}
         renderItem={renderDateGroup}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
-        }
         showsVerticalScrollIndicator={false}
+        scrollEnabled={false}
         contentContainerStyle={{ paddingBottom: 16 }}
       />
 

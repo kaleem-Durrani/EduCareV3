@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useTheme } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import {
@@ -28,6 +29,7 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
     hasPrevPage: false,
   });
   const [pageSize, setPageSize] = useState(10);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Modal states
   const [showCreateNoteModal, setShowCreateNoteModal] = useState(false);
@@ -189,7 +191,9 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
 
   const refreshNotes = async () => {
     if (selectedStudent) {
+      setRefreshing(true);
       await loadStudentNotes(pagination.currentPage, pageSize);
+      setRefreshing(false);
     }
   };
 
@@ -227,41 +231,54 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
         )}
       </View>
 
-      {/* Student Selection */}
-      <View className="px-4 py-1">
-        <StudentSelector
-          selectedStudent={selectedStudent}
-          onStudentSelect={handleStudentSelect}
-          onResetSelection={handleResetSelection}
-          placeholder="Select a student to view notes"
-          showAsTag={true}
-          compact={true}
-        />
-      </View>
-
-      {/* Notes List */}
-      {selectedStudent && (
-        <KeyboardAvoidingView
-          className="flex-1 px-4"
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
-          <NotesList
-            notes={notes}
-            selectedStudent={selectedStudent}
-            isLoading={isLoadingNotes}
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            totalItems={pagination.totalItems}
-            pageSize={pageSize}
+      {/* Content with Keyboard Awareness */}
+      <KeyboardAwareScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1 }}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={20}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={refreshNotes}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            onViewNote={openDetailModal}
-            onEditNote={openEditModal}
-            onDeleteNote={handleDeleteNote}
+            colors={[colors.primary]}
           />
-        </KeyboardAvoidingView>
-      )}
+        }>
+        {/* Student Selection */}
+        <View className="px-4 py-1">
+          <StudentSelector
+            selectedStudent={selectedStudent}
+            onStudentSelect={handleStudentSelect}
+            onResetSelection={handleResetSelection}
+            placeholder="Select a student to view notes"
+            showAsTag={true}
+            compact={true}
+          />
+        </View>
+
+        {/* Notes List */}
+        {selectedStudent && (
+          <View className="flex-1 px-4">
+            <NotesList
+              notes={notes}
+              selectedStudent={selectedStudent}
+              isLoading={isLoadingNotes}
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              pageSize={pageSize}
+              onRefresh={refreshNotes}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onViewNote={openDetailModal}
+              onEditNote={openEditModal}
+              onDeleteNote={handleDeleteNote}
+            />
+          </View>
+        )}
+      </KeyboardAwareScrollView>
 
       {/* Create Note Modal */}
       <CreateNoteModal
