@@ -36,11 +36,13 @@ export default function PostsFilters({ filters, onFilterChange }) {
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
           >
-            {teachers?.map((teacher) => (
+            {teachers && teachers.length > 0 ? teachers.map((teacher) => (
               <Option key={teacher._id} value={teacher._id}>
                 {teacher.name}
               </Option>
-            ))}
+            )) : (
+              <Option disabled value="">No teachers available</Option>
+            )}
           </Select>
         </Col>
         <Col span={6}>
@@ -55,11 +57,13 @@ export default function PostsFilters({ filters, onFilterChange }) {
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
           >
-            {classes?.map((cls) => (
+            {classes && classes.length > 0 ? classes.map((cls) => (
               <Option key={cls._id} value={cls._id}>
                 {cls.name}
               </Option>
-            ))}
+            )) : (
+              <Option disabled value="">No classes available</Option>
+            )}
           </Select>
         </Col>
         <Col span={6}>
@@ -74,11 +78,13 @@ export default function PostsFilters({ filters, onFilterChange }) {
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
           >
-            {students?.map((student) => (
+            {students && students.length > 0 ? students.map((student) => (
               <Option key={student._id} value={student._id}>
                 {student.fullName}
               </Option>
-            ))}
+            )) : (
+              <Option disabled value="">No students available</Option>
+            )}
           </Select>
         </Col>
       </Row>

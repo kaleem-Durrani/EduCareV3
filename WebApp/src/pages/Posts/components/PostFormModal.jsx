@@ -8,8 +8,8 @@ import {
   Progress,
   message,
 } from "antd";
-import { PlusOutlined, InboxOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { InboxOutlined } from "@ant-design/icons";
+import { useState, useEffect } from "react";
 import { useStudentsContext } from "../../../context/StudentsContext";
 import { useClassesContext } from "../../../context/ClassesContext";
 
@@ -28,15 +28,74 @@ export default function PostFormModal({
 }) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [imageFileList, setImageFileList] = useState([]);
+  const [videoFileList, setVideoFileList] = useState([]);
   const { students } = useStudentsContext();
   const { classes } = useClassesContext();
 
   const isEditing = !!editingPost;
+
+  // Handle editing mode - populate file lists with existing media
+  useEffect(() => {
+    if (isEditing && editingPost?.media) {
+      const images = editingPost.media
+        .filter(m => m.type === 'image')
+        .map((media, index) => ({
+          uid: `existing-image-${index}`,
+          name: media.filename || `Image ${index + 1}`,
+          status: 'done',
+          url: media.url,
+        }));
+
+      const videos = editingPost.media
+        .filter(m => m.type === 'video')
+        .map((media, index) => ({
+          uid: `existing-video-${index}`,
+          name: media.filename || `Video ${index + 1}`,
+          status: 'done',
+          url: media.url,
+        }));
+
+      setImageFileList(images);
+      setVideoFileList(videos);
+    } else {
+      setImageFileList([]);
+      setVideoFileList([]);
+    }
+  }, [isEditing, editingPost]);
   const loading = creating || updating;
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async () => {
     try {
-      await onSubmit(values);
+      const values = await form.validateFields();
+
+      // Create FormData for multiple file uploads
+      const formData = new FormData();
+
+      // Add form fields
+      formData.append('title', values.title);
+      formData.append('content', values.content);
+      formData.append('teacherId', values.teacherId || '');
+      formData.append('audience', JSON.stringify(values.audience || { type: 'class' }));
+
+      // Add multiple images
+      imageFileList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append('images', file.originFileObj);
+        }
+      });
+
+      // Add multiple videos
+      videoFileList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append('videos', file.originFileObj);
+        }
+      });
+
+      await onSubmit(formData);
+      form.resetFields();
+      setImageFileList([]);
+      setVideoFileList([]);
     } catch (error) {
       console.log("Form submit error handled by parent");
     }
@@ -46,14 +105,18 @@ export default function PostFormModal({
     form.resetFields();
     setUploadProgress(0);
     setUploading(false);
+    setImageFileList([]);
+    setVideoFileList([]);
     onCancel();
   };
 
   // Custom upload props for images
   const imageUploadProps = {
-    name: "image",
-    multiple: false,
+    name: "images",
+    multiple: true,
     accept: "image/*",
+    fileList: imageFileList,
+    onChange: ({ fileList }) => setImageFileList(fileList),
     beforeUpload: (file) => {
       const isImage = file.type.startsWith("image/");
       if (!isImage) {
@@ -67,27 +130,21 @@ export default function PostFormModal({
       }
       return false; // Prevent auto upload
     },
-    onChange: (info) => {
-      if (info.file.status === "uploading") {
-        setUploading(true);
-        setUploadProgress(info.file.percent || 0);
-      } else if (info.file.status === "done") {
-        setUploading(false);
-        setUploadProgress(100);
-        message.success("Image uploaded successfully!");
-      } else if (info.file.status === "error") {
-        setUploading(false);
-        setUploadProgress(0);
-        message.error("Image upload failed!");
-      }
+    maxCount: 10, // Support up to 10 images
+    listType: "picture-card",
+    showUploadList: {
+      showPreviewIcon: true,
+      showRemoveIcon: true,
     },
   };
 
   // Custom upload props for videos
   const videoUploadProps = {
-    name: "video",
-    multiple: false,
+    name: "videos",
+    multiple: true,
     accept: "video/*",
+    fileList: videoFileList,
+    onChange: ({ fileList }) => setVideoFileList(fileList),
     beforeUpload: (file) => {
       const isVideo = file.type.startsWith("video/");
       if (!isVideo) {
@@ -101,19 +158,35 @@ export default function PostFormModal({
       }
       return false; // Prevent auto upload
     },
-    onChange: (info) => {
-      if (info.file.status === "uploading") {
-        setUploading(true);
-        setUploadProgress(info.file.percent || 0);
-      } else if (info.file.status === "done") {
-        setUploading(false);
-        setUploadProgress(100);
-        message.success("Video uploaded successfully!");
-      } else if (info.file.status === "error") {
-        setUploading(false);
-        setUploadProgress(0);
-        message.error("Video upload failed!");
-      }
+    maxCount: 5, // Support up to 5 videos
+    listType: "picture-card",
+    showUploadList: {
+      showPreviewIcon: false,
+      showRemoveIcon: true,
+    },
+    itemRender: (originNode, file) => {
+      return (
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            width: '100%',
+            height: '100px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#f5f5f5',
+            border: '1px dashed #d9d9d9',
+            borderRadius: '6px'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', marginBottom: '4px' }}>🎥</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {file.name?.length > 15 ? `${file.name.substring(0, 15)}...` : file.name}
+              </div>
+            </div>
+          </div>
+          {originNode.props.children[1]} {/* Remove button */}
+        </div>
+      );
     },
   };
 
@@ -131,7 +204,7 @@ export default function PostFormModal({
         layout="vertical"
         onFinish={handleSubmit}
         initialValues={{
-          audience: { type: "all" },
+          audience: { type: "class" },
         }}
       >
         <Form.Item
@@ -152,9 +225,8 @@ export default function PostFormModal({
 
         <Form.Item name={["audience", "type"]} label="Audience">
           <Select placeholder="Select audience type">
-            <Option value="all">Everyone</Option>
-            <Option value="class">Specific Classes</Option>
-            <Option value="individual">Individual Students</Option>
+            <Option value="class">Multiple Classes</Option>
+            <Option value="individual">Multiple Students</Option>
           </Select>
         </Form.Item>
 
@@ -171,13 +243,20 @@ export default function PostFormModal({
               return (
                 <Form.Item
                   name={["audience", "class_ids"]}
-                  label="Select Classes (Optional)"
-                  extra="You can also manage audience later using 'Manage Audience' option"
+                  label="Select Classes"
+                  rules={[{ required: true, message: "Please select at least one class" }]}
                 >
                   <Select
                     mode="multiple"
-                    placeholder="Select classes (optional - can be managed later)"
-                    options={classes}
+                    placeholder="Select classes..."
+                    showSearch
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
+                    options={classes?.map(cls => ({
+                      value: cls._id,
+                      label: cls.name,
+                    })) || []}
                   />
                 </Form.Item>
               );
@@ -187,17 +266,20 @@ export default function PostFormModal({
               return (
                 <Form.Item
                   name={["audience", "student_ids"]}
-                  label="Select Students (Optional)"
-                  extra="You can also manage audience later using 'Manage Audience' option"
+                  label="Select Students"
+                  rules={[{ required: true, message: "Please select at least one student" }]}
                 >
                   <Select
                     mode="multiple"
-                    placeholder="Select students (optional - can be managed later)"
-                    options={students}
+                    placeholder="Select students..."
                     showSearch
                     filterOption={(input, option) =>
                       option?.label?.toLowerCase().includes(input.toLowerCase())
                     }
+                    options={students?.map(student => ({
+                      value: student._id,
+                      label: student.fullName,
+                    })) || []}
                   />
                 </Form.Item>
               );

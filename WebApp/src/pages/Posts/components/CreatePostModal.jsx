@@ -140,7 +140,7 @@ export default function CreatePostModal({
         form={form}
         layout="vertical"
         initialValues={{
-          audience: { type: "all" },
+          audience: { type: "class" },
         }}
       >
         <Form.Item
@@ -175,9 +175,8 @@ export default function CreatePostModal({
             <Form.Item label="Audience Type">
               <Form.Item name={["audience", "type"]} noStyle>
                 <Select placeholder="Select audience">
-                  <Option value="all">All Students</Option>
-                  <Option value="class">Specific Classes</Option>
-                  <Option value="individual">Individual Students</Option>
+                  <Option value="class">Multiple Classes</Option>
+                  <Option value="individual">Multiple Students</Option>
                 </Select>
               </Form.Item>
             </Form.Item>

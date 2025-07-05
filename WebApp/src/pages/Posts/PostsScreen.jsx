@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Space, Typography, Button, Card, message, Form } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import useApi from "../../hooks/useApi";
@@ -130,10 +130,18 @@ export default function PostsScreen() {
 
   const handleEdit = (post) => {
     setEditingPost(post);
+
+    // Transform audience data for form
+    const audienceForForm = {
+      type: post.audience.type,
+      class_ids: post.audience.class_ids?.map(cls => cls._id || cls) || [],
+      student_ids: post.audience.student_ids?.map(student => student._id || student) || [],
+    };
+
     form.setFieldsValue({
       title: post.title,
       content: post.content,
-      audience: post.audience,
+      audience: audienceForForm,
     });
     setIsFormModalVisible(true);
   };
