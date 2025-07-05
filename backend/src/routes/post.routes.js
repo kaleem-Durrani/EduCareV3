@@ -1,14 +1,12 @@
 import express from "express";
 import {
-  getPosts,
   getPaginatedPosts,
   getPostStatistics,
   getPostById,
   createPost,
   updatePost,
   deletePost,
-  getPostStudents,
-  getPostClasses,
+  getPostsForParent,
   addStudentsToPost,
   removeStudentsFromPost,
   addClassesToPost,
@@ -24,28 +22,27 @@ import { uploadPostMedia } from "../middleware/upload.middleware.js";
 const router = express.Router();
 
 /**
- * @route   GET /api/posts
- * @desc    Get all posts (for dropdowns)
- * @access  Private (All authenticated users)
- */
-router.get("/posts", authenticate, getPosts);
-
-/**
  * @route   GET /api/posts/paginated
- * @desc    Get paginated posts
+ * @desc    Get paginated posts with filtering
  * @access  Private (All authenticated users)
  */
 router.get("/posts/paginated", authenticate, getPaginatedPosts);
 
 /**
+ * @route   GET /api/posts/parent/:studentId
+ * @desc    Get posts for parent by student ID
+ * @access  Private (Parent only)
+ */
+router.get("/posts/parent/:studentId", authenticate, getPostsForParent);
+
+/**
  * @route   GET /api/posts/statistics
- * @desc    Get posts statistics
- * @access  Private (Admin/Teacher)
+ * @desc    Get posts statistics (Admin only - for web app)
+ * @access  Private (Admin only)
  */
 router.get(
   "/posts/statistics",
   authenticate,
-  requireAdminOrTeacher,
   getPostStatistics
 );
 
@@ -58,7 +55,7 @@ router.get("/posts/:post_id", authenticate, getPostById);
 
 /**
  * @route   POST /api/posts
- * @desc    Create post with media upload
+ * @desc    Create post with multiple media uploads
  * @access  Private (Admin/Teacher)
  */
 router.post(
@@ -66,15 +63,15 @@ router.post(
   authenticate,
   requireAdminOrTeacher,
   uploadPostMedia.fields([
-    { name: "image", maxCount: 1 },
-    { name: "video", maxCount: 1 },
+    { name: "images", maxCount: 10 }, // Support up to 10 images
+    { name: "videos", maxCount: 5 },  // Support up to 5 videos
   ]),
   createPost
 );
 
 /**
  * @route   PUT /api/posts/:post_id
- * @desc    Update post with media upload
+ * @desc    Update post with multiple media uploads
  * @access  Private (Admin/Teacher - own posts only)
  */
 router.put(
@@ -82,8 +79,8 @@ router.put(
   authenticate,
   requireAdminOrTeacher,
   uploadPostMedia.fields([
-    { name: "image", maxCount: 1 },
-    { name: "video", maxCount: 1 },
+    { name: "images", maxCount: 10 }, // Support up to 10 images
+    { name: "videos", maxCount: 5 },  // Support up to 5 videos
   ]),
   updatePost
 );
@@ -100,19 +97,7 @@ router.delete(
   deletePost
 );
 
-/**
- * @route   GET /api/posts/:post_id/students
- * @desc    Get post students (for individual audience type)
- * @access  Private (All authenticated users)
- */
-router.get("/posts/:post_id/students", authenticate, getPostStudents);
-
-/**
- * @route   GET /api/posts/:post_id/classes
- * @desc    Get post classes (for class audience type)
- * @access  Private (All authenticated users)
- */
-router.get("/posts/:post_id/classes", authenticate, getPostClasses);
+// Removed getPostStudents and getPostClasses routes - use getPostById instead
 
 /**
  * @route   POST /api/posts/:post_id/students

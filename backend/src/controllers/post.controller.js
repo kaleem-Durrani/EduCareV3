@@ -13,33 +13,66 @@ import { normalizePath } from "../middleware/upload.middleware.js";
 import fs from "fs";
 import path from "path";
 
-/**
- * Get all posts (for dropdowns - simplified)
- * GET /api/posts
- * All authenticated users
- */
-export const getPosts = asyncHandler(async (req, res) => {
-  const posts = await Post.find()
-    .populate("teacherId", "name email")
-    .select("title createdAt teacherId")
-    .sort({ createdAt: -1 })
-    .limit(100); // Reasonable limit for dropdowns
-
-  return sendSuccess(res, posts, "Posts retrieved successfully");
-});
+// Removed getPosts - use getPaginatedPosts instead
 
 /**
- * Get paginated posts (EFFICIENT)
+ * Get paginated posts with filtering
  * GET /api/posts/paginated
  * All authenticated users
+ * Query params: teacherId, classId, studentId, page, limit
  */
 export const getPaginatedPosts = asyncHandler(async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
+  const { teacherId, classId, studentId, page = 1, limit = 10 } = req.query;
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Build query based on filters
+  let query = {};
+
+  // Filter by teacher
+  if (teacherId) {
+    query.teacherId = teacherId;
+  }
+
+  // Filter by class - posts where class is in class_ids or audience type is 'all' for that teacher
+  if (classId) {
+    if (teacherId) {
+      // If teacher is specified, include 'all' posts from that teacher
+      query.$or = [
+        { "audience.class_ids": classId },
+        { teacherId: teacherId, "audience.type": "all" }
+      ];
+    } else {
+      query["audience.class_ids"] = classId;
+    }
+  }
+
+  // Filter by student - posts where student is in student_ids or student's class is in class_ids or audience type is 'all'
+  if (studentId) {
+    const student = await Student.findById(studentId).populate('current_class');
+    if (student) {
+      const studentClassId = student.current_class?._id;
+
+      query.$or = [
+        { "audience.student_ids": studentId },
+        ...(studentClassId ? [{ "audience.class_ids": studentClassId }] : []),
+        { "audience.type": "all" }
+      ];
+    }
+  }
+
+  // For teachers, only show their own posts
+  if (req.user.role === "teacher") {
+    query.teacherId = req.user.id;
+  }
+
+  // Get total count for pagination
+  const totalPosts = await Post.countDocuments(query);
+  const totalPages = Math.ceil(totalPosts / limitNum);
 
   // Get paginated posts with full details
-  const posts = await Post.find()
+  const posts = await Post.find(query)
     .populate("teacherId", "name email photoUrl")
     .populate("createdBy", "name email")
     .populate("updatedBy", "name email")
@@ -47,30 +80,93 @@ export const getPaginatedPosts = asyncHandler(async (req, res) => {
     .populate("audience.student_ids", "fullName rollNum")
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit);
-
-  const totalPosts = await Post.countDocuments();
+    .limit(limitNum);
 
   const result = {
     posts,
     pagination: {
-      currentPage: page,
-      totalPages: Math.ceil(totalPosts / limit),
+      currentPage: pageNum,
+      totalPages,
       totalPosts,
-      hasNextPage: page < Math.ceil(totalPosts / limit),
-      hasPrevPage: page > 1,
+      hasNextPage: pageNum < totalPages,
+      hasPrevPage: pageNum > 1,
+      limit: limitNum,
     },
   };
 
-  return sendSuccess(res, result, "Paginated posts retrieved successfully");
+  return sendSuccess(res, result, "Posts retrieved successfully");
 });
 
 /**
- * Get posts statistics (REAL-TIME)
+ * Get posts for parent (by student ID)
+ * GET /api/posts/parent/:studentId
+ * Parent only - gets posts where student is in audience
+ */
+export const getPostsForParent = asyncHandler(async (req, res) => {
+  const { studentId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Get student and their class
+  const student = await Student.findById(studentId).populate('current_class');
+  if (!student) {
+    return sendError(res, "Student not found", 404);
+  }
+
+  const studentClassId = student.current_class?._id;
+
+  // Build query for posts visible to this student
+  const query = {
+    $or: [
+      { "audience.student_ids": studentId }, // Direct student targeting
+      ...(studentClassId ? [{ "audience.class_ids": studentClassId }] : []), // Class targeting
+      { "audience.type": "all" } // All posts
+    ]
+  };
+
+  // Get total count for pagination
+  const totalPosts = await Post.countDocuments(query);
+  const totalPages = Math.ceil(totalPosts / limitNum);
+
+  // Get paginated posts with full details
+  const posts = await Post.find(query)
+    .populate("teacherId", "name email photoUrl")
+    .populate("createdBy", "name email")
+    .populate("audience.class_ids", "name")
+    .populate("audience.student_ids", "fullName rollNum")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNum);
+
+  const result = {
+    posts,
+    pagination: {
+      currentPage: pageNum,
+      totalPages,
+      totalPosts,
+      hasNextPage: pageNum < totalPages,
+      hasPrevPage: pageNum > 1,
+      limit: limitNum,
+    },
+  };
+
+  return sendSuccess(res, result, "Posts for parent retrieved successfully");
+});
+
+// Removed getTeachersForClasses - no longer needed
+
+/**
+ * Get posts statistics (Admin only - for web app)
  * GET /api/posts/statistics
- * Admin/Teacher only
+ * Admin only
  */
 export const getPostStatistics = asyncHandler(async (req, res) => {
+  // Only admins can access statistics
+  if (req.user.role !== "admin") {
+    throwForbidden("Only admins can access post statistics");
+  }
   // Get total posts count
   const totalPosts = await Post.countDocuments();
 
@@ -180,26 +276,52 @@ export const createPost = asyncHandler(async (req, res) => {
   const { title, content, teacherId, audience } = req.body;
 
   const result = await withTransaction(async (session) => {
-    // Handle file uploads
-    let imageUrl = null;
-    let videoUrl = null;
+    // Handle multiple media file uploads
+    const media = [];
 
     if (req.files) {
-      if (req.files.image) {
-        imageUrl = normalizePath(req.files.image[0].path);
+      // Handle multiple images
+      if (req.files.images) {
+        for (const file of req.files.images) {
+          media.push({
+            type: 'image',
+            url: normalizePath(file.path),
+            filename: file.originalname
+          });
+        }
       }
-      if (req.files.video) {
-        videoUrl = normalizePath(req.files.video[0].path);
+
+      // Handle multiple videos
+      if (req.files.videos) {
+        for (const file of req.files.videos) {
+          media.push({
+            type: 'video',
+            url: normalizePath(file.path),
+            filename: file.originalname
+          });
+        }
       }
+    }
+
+    // Parse and process audience
+    let processedAudience = audience ? JSON.parse(audience) : { type: "all" };
+
+    // If audience type is "all", get all classes for this teacher
+    if (processedAudience.type === "all") {
+      const teacherClasses = await Class.find({
+        teachers: teacherId || req.user.id
+      }).select("_id").session(session);
+
+      processedAudience.class_ids = teacherClasses.map(cls => cls._id);
+      processedAudience.student_ids = []; // Clear any student_ids for "all" type
     }
 
     const newPost = new Post({
       title,
       content,
-      imageUrl,
-      videoUrl,
-      teacherId: teacherId || req.user.id, // Use provided teacherId or current user
-      audience: audience ? JSON.parse(audience) : { type: "all" }, // Parse audience from form data
+      media,
+      teacherId: teacherId || req.user.id,
+      audience: processedAudience,
       createdBy: req.user.id,
     });
 
@@ -246,28 +368,62 @@ export const updatePost = asyncHandler(async (req, res) => {
     if (title !== undefined) updateData.title = title;
     if (content !== undefined) updateData.content = content;
     if (teacherId !== undefined) updateData.teacherId = teacherId;
-    if (audience !== undefined) updateData.audience = JSON.parse(audience);
 
-    // Handle file uploads and cleanup
+    // Process audience with "all" logic
+    if (audience !== undefined) {
+      let processedAudience = JSON.parse(audience);
+
+      // If audience type is "all", get all classes for this teacher
+      if (processedAudience.type === "all") {
+        const teacherClasses = await Class.find({
+          teachers: teacherId || post.teacherId
+        }).select("_id").session(session);
+
+        processedAudience.class_ids = teacherClasses.map(cls => cls._id);
+        processedAudience.student_ids = []; // Clear any student_ids for "all" type
+      }
+
+      updateData.audience = processedAudience;
+    }
+
+    // Handle multiple media file uploads and cleanup
     if (req.files) {
-      if (req.files.image) {
-        // Delete old image if exists
-        if (post.imageUrl && fs.existsSync(post.imageUrl)) {
-          fs.unlink(post.imageUrl, (err) => {
-            if (err) console.error("Error deleting old image:", err);
+      const newMedia = [];
+
+      // Clean up old media files
+      if (post.media && post.media.length > 0) {
+        for (const mediaItem of post.media) {
+          if (mediaItem.url && fs.existsSync(mediaItem.url)) {
+            fs.unlink(mediaItem.url, (err) => {
+              if (err) console.error("Error deleting old media:", err);
+            });
+          }
+        }
+      }
+
+      // Handle new multiple images
+      if (req.files.images) {
+        for (const file of req.files.images) {
+          newMedia.push({
+            type: 'image',
+            url: normalizePath(file.path),
+            filename: file.originalname
           });
         }
-        updateData.imageUrl = normalizePath(req.files.image[0].path);
       }
-      if (req.files.video) {
-        // Delete old video if exists
-        if (post.videoUrl && fs.existsSync(post.videoUrl)) {
-          fs.unlink(post.videoUrl, (err) => {
-            if (err) console.error("Error deleting old video:", err);
+
+      // Handle new multiple videos
+      if (req.files.videos) {
+        for (const file of req.files.videos) {
+          newMedia.push({
+            type: 'video',
+            url: normalizePath(file.path),
+            filename: file.originalname
           });
         }
-        updateData.videoUrl = normalizePath(req.files.video[0].path);
       }
+
+      updateData.media = newMedia;
     }
 
     const updatedPost = await Post.findByIdAndUpdate(post_id, updateData, {
@@ -328,91 +484,7 @@ export const deletePost = asyncHandler(async (req, res) => {
   return sendSuccess(res, result, "Post deleted successfully");
 });
 
-/**
- * Get post students (for individual audience type)
- * GET /api/posts/:post_id/students
- * All authenticated users
- */
-export const getPostStudents = asyncHandler(async (req, res) => {
-  const { post_id } = req.params;
-  const { page = 1, limit = 10 } = req.query;
-  const skip = (page - 1) * limit;
-
-  const post = await Post.findById(post_id);
-  if (!post) {
-    throwNotFound("Post");
-  }
-
-  if (post.audience.type !== "individual") {
-    throwBadRequest("This post is not targeted to individual students");
-  }
-
-  const total = post.audience.student_ids.length;
-  const studentIds = post.audience.student_ids.slice(
-    skip,
-    skip + parseInt(limit)
-  );
-
-  const students = await Student.find({ _id: { $in: studentIds } })
-    .select("fullName rollNum class enrollmentNumber")
-    .populate("current_class", "name")
-    .sort({ fullName: 1 });
-
-  const response = {
-    students,
-    pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / limit),
-      totalItems: total,
-      itemsPerPage: parseInt(limit),
-      hasNextPage: page < Math.ceil(total / limit),
-      hasPrevPage: page > 1,
-    },
-  };
-
-  return sendSuccess(res, response, "Post students retrieved successfully");
-});
-
-/**
- * Get post classes (for class audience type)
- * GET /api/posts/:post_id/classes
- * All authenticated users
- */
-export const getPostClasses = asyncHandler(async (req, res) => {
-  const { post_id } = req.params;
-  const { page = 1, limit = 10 } = req.query;
-  const skip = (page - 1) * limit;
-
-  const post = await Post.findById(post_id);
-  if (!post) {
-    throwNotFound("Post");
-  }
-
-  if (post.audience.type !== "class") {
-    throwBadRequest("This post is not targeted to classes");
-  }
-
-  const total = post.audience.class_ids.length;
-  const classIds = post.audience.class_ids.slice(skip, skip + parseInt(limit));
-
-  const classes = await Class.find({ _id: { $in: classIds } })
-    .select("name grade section isActive")
-    .sort({ name: 1 });
-
-  const response = {
-    classes,
-    pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / limit),
-      totalItems: total,
-      itemsPerPage: parseInt(limit),
-      hasNextPage: page < Math.ceil(total / limit),
-      hasPrevPage: page > 1,
-    },
-  };
-
-  return sendSuccess(res, response, "Post classes retrieved successfully");
-});
+// Removed getPostStudents and getPostClasses - use getPostById instead
 
 /**
  * Add students to post (for individual audience type)

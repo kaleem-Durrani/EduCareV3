@@ -6,11 +6,16 @@ const postSchema = new Schema(
   {
     title: { type: String, required: true },
     content: { type: String, required: true }, // Text content of the post
-    imageUrl: { type: String }, // For photo
-    videoUrl: { type: String }, // For video content [cite: 6]
-    // Consider allowing multiple images/videos per post [cite: 12]
-    // media: [{ type: { type: String, enum: ['image', 'video'] }, url: String }],
-    teacherId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // User who is a teacher or admin [cite: 6]
+
+    // Support for multiple media files (images and videos)
+    media: [{
+      type: { type: String, enum: ['image', 'video'], required: true },
+      url: { type: String, required: true },
+      filename: { type: String }, // Original filename for reference
+      _id: false // Disable automatic _id for subdocuments
+    }],
+
+    teacherId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // User who is a teacher or admin
     audience: {
       type: {
         type: String,
