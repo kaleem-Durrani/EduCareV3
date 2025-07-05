@@ -111,7 +111,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
             style={{
               color: currentPage > 1 ? 'white' : colors.textSecondary,
             }}>
-            ← Prev
+            Prev
           </Text>
         </TouchableOpacity>
 
@@ -185,7 +185,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
               style={{
                 color: currentPage < totalPages ? 'white' : colors.textSecondary,
               }}>
-              Next →
+              Next
             </Text>
           </TouchableOpacity>
         </View>
