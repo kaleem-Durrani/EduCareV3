@@ -4,6 +4,7 @@ import Video from 'react-native-video';
 import ImageViewing from 'react-native-image-viewing';
 import { useTheme } from '../../../../contexts';
 import { Post } from '../../../../services';
+import { buildMediaUrl } from '~/config';
 
 interface PostItemProps {
   post: Post;
@@ -84,7 +85,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
                   onPress={() => openImageViewer(index)}
                   style={{ width: images.length === 1 ? screenWidth : (screenWidth - 8) / 2 }}>
                   <Image
-                    source={{ uri: image.url }}
+                    source={{ uri: buildMediaUrl(image.url) }}
                     style={{
                       height: images.length === 1 ? 200 : 120,
                       borderRadius: 8,
@@ -106,7 +107,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
             {videos.map((video, index) => (
               <View key={`video_${index}`} className="mb-2">
                 <Video
-                  source={{ uri: video.url }}
+                  source={{ uri: buildMediaUrl(video.url) }}
                   style={{
                     width: screenWidth,
                     height: 200,
@@ -126,7 +127,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
 
         {/* Image Viewing Modal */}
         <ImageViewing
-          images={images.map((img) => ({ uri: img.url }))}
+          images={images.map((img) => ({ uri: buildMediaUrl(img.url) }))}
           imageIndex={imageViewingIndex}
           visible={isImageViewingVisible}
           onRequestClose={() => setIsImageViewingVisible(false)}
