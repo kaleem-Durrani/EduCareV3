@@ -33,7 +33,7 @@ const TeacherHomeScreen: React.FC<Props> = ({ navigation }) => {
 
   const modules: ModuleItem[] = [
     { id: '1', title: 'Our Kids', icon: '👥', route: 'OurKids' },
-    { id: '2', title: 'Basic Information', icon: '👤', route: 'BasicInformation' },
+    // { id: '2', title: 'Basic Information', icon: '👤', route: 'BasicInformation' },
     { id: '3', title: 'Contacts', icon: '📞', route: 'Contacts' },
     { id: '4', title: 'Weekly Menu', icon: '🍽️', route: 'WeeklyMenu' },
     { id: '5', title: 'Weekly Report', icon: '📊', route: 'WeeklyReport', hasEditRights: true },
@@ -43,13 +43,13 @@ const TeacherHomeScreen: React.FC<Props> = ({ navigation }) => {
     { id: '9', title: 'Activities', icon: '🎯', route: 'Activities', hasEditRights: true },
     { id: '10', title: 'Wall', icon: '📝', route: 'Wall', hasEditRights: true },
     { id: '11', title: 'Notes', icon: '📋', route: 'Notes', hasEditRights: true },
-    { id: '12', title: 'Lost Items', icon: '🔍', route: 'OurKids' }, // Navigate to class first
-    { id: '13', title: 'Health', icon: '🏥', route: 'OurKids' }, // Navigate to class first
-    { id: '14', title: 'Payment', icon: '💳', route: 'OurKids' }, // Navigate to class first
-    { id: '15', title: 'Driver', icon: '🚌', route: 'OurKids' }, // Navigate to class first
-    { id: '16', title: 'Notifications', icon: '🔔', route: 'Notifications' },
+    // { id: '12', title: 'Lost Items', icon: '🔍', route: 'OurKids' }, // Navigate to class first
+    // { id: '13', title: 'Health', icon: '🏥', route: 'OurKids' }, // Navigate to class first
+    // { id: '14', title: 'Payment', icon: '💳', route: 'OurKids' }, // Navigate to class first
+    // { id: '15', title: 'Driver', icon: '🚌', route: 'OurKids' }, // Navigate to class first
+    // { id: '16', title: 'Notifications', icon: '🔔', route: 'Notifications' },
     { id: '17', title: 'Settings', icon: '⚙️', route: 'Settings' },
-    { id: '18', title: 'Contact', icon: '💬', route: 'Settings' }, // WhatsApp integration
+    // { id: '18', title: 'Contact', icon: '💬', route: 'Settings' }, // WhatsApp integration
   ];
 
   const handleModulePress = (module: ModuleItem) => {
