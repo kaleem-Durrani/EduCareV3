@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { Activity, ActivityPagination } from '../../../../services';
 import { PaginationControls } from '../../../../components';
@@ -15,6 +15,8 @@ interface ActivityListProps {
   onActivityDeleted: () => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  onRefresh: () => void;
+  refreshing: boolean;
 }
 
 const ActivityList: React.FC<ActivityListProps> = ({
@@ -26,6 +28,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
   onActivityDeleted,
   onPageChange,
   onPageSizeChange,
+  onRefresh,
+  refreshing,
 }) => {
   const { colors } = useTheme();
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -124,21 +128,55 @@ const ActivityList: React.FC<ActivityListProps> = ({
 
   const groupedActivities = groupActivitiesByDate(activities);
 
-  return (
-    <View className="mb-6">
-      <Text className="mb-4 text-lg font-bold" style={{ color: colors.textPrimary }}>
-        🎯 Activities ({pagination?.totalActivities || activities.length})
-      </Text>
+  if (isLoading && activities.length === 0) {
+    return (
+      <View className="flex-1">
+        <View className="flex-1 items-center justify-center">
+          <Text style={{ color: colors.textSecondary }}>Loading activities...</Text>
+        </View>
 
+        {pagination && (
+          <PaginationControls
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalActivities}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+            isLoading={isLoading}
+            itemName="activities"
+          />
+        )}
+      </View>
+    );
+  }
+
+  if (activities.length === 0) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text className="text-lg" style={{ color: colors.textSecondary }}>
+          🎯 No activities yet
+        </Text>
+        <Text className="mt-2 text-center" style={{ color: colors.textSecondary }}>
+          Create your first activity to get started
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1">
       <FlatList
         data={groupedActivities}
         keyExtractor={(item) => item.date}
         renderItem={renderDateGroup}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
         showsVerticalScrollIndicator={false}
-        scrollEnabled={false} // Disable scroll since we're inside a ScrollView
+        contentContainerStyle={{ paddingBottom: 16 }}
       />
 
-      {/* Pagination Controls */}
       {pagination && (
         <PaginationControls
           currentPage={pagination.currentPage}

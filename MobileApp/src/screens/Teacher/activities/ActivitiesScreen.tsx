@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
 import { useApi } from '../../../hooks';
@@ -33,7 +33,7 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
 
   // Load activities on mount and when filters change
   useEffect(() => {
-    loadActivities(true);
+    loadActivities();
   }, [filters]);
 
   // Update activities when API response changes
@@ -45,11 +45,7 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
     }
   }, [activitiesResponse]);
 
-  const loadActivities = async (resetPage = false) => {
-    if (resetPage && filters.page !== 1) {
-      setFilters((prev: ActivityFiltersType) => ({ ...prev, page: 1 }));
-      return;
-    }
+  const loadActivities = async () => {
     await fetchActivities(filters);
   };
 
@@ -65,7 +61,12 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
   const handleRefresh = async () => {
     setRefreshing(true);
     setActivities([]);
-    await loadActivities(true);
+    // Reset to page 1 for refresh
+    if (filters.page !== 1) {
+      setFilters((prev: ActivityFiltersType) => ({ ...prev, page: 1 }));
+    } else {
+      await loadActivities();
+    }
     setRefreshing(false);
   };
 
@@ -80,17 +81,22 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
   const handleActivityCreated = () => {
     setIsCreateModalVisible(false);
     setActivities([]);
-    loadActivities(true); // Refresh the list from first page
+    // Reset to page 1 after creating
+    if (filters.page !== 1) {
+      setFilters((prev: ActivityFiltersType) => ({ ...prev, page: 1 }));
+    } else {
+      loadActivities();
+    }
   };
 
   const handleActivityUpdated = () => {
     setActivities([]);
-    loadActivities(true); // Refresh the list from first page
+    loadActivities(); // Stay on current page after updating
   };
 
   const handleActivityDeleted = () => {
     setActivities([]);
-    loadActivities(true); // Refresh the list from first page
+    loadActivities(); // Stay on current page after deleting
   };
 
   if (isLoadingActivities && !activities) {
@@ -125,35 +131,28 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
-      <ScrollView
-        className="flex-1 px-4"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-          />
-        }>
-        {/* Filters */}
+      {/* Filters */}
+      <View className="px-4 py-2">
         <ActivityFilters filters={filters} onFiltersChange={handleFiltersChange} />
+      </View>
 
-        {/* Activities List */}
-        {activitiesError ? (
-          <View className="flex-1 items-center justify-center py-8">
-            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
-              Failed to load activities
-            </Text>
-            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
-              {activitiesError}
-            </Text>
-            <TouchableOpacity
-              className="rounded-lg bg-blue-500 px-6 py-3"
-              onPress={() => loadActivities(true)}>
-              <Text className="font-medium text-white">Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+      {/* Activities List */}
+      {activitiesError ? (
+        <View className="flex-1 items-center justify-center py-8">
+          <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
+            Failed to load activities
+          </Text>
+          <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
+            {activitiesError}
+          </Text>
+          <TouchableOpacity
+            className="rounded-lg bg-blue-500 px-6 py-3"
+            onPress={() => loadActivities()}>
+            <Text className="font-medium text-white">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View className="flex-1 px-4">
           <ActivityList
             activities={activities}
             pagination={pagination}
@@ -163,9 +162,11 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
             onActivityDeleted={handleActivityDeleted}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
           />
-        )}
-      </ScrollView>
+        </View>
+      )}
 
       {/* Create Activity Modal */}
       <CreateActivityModal
