@@ -32,13 +32,29 @@ export default function CreatePostModal({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
-      // Handle file uploads (simplified - in real app, upload to cloud storage)
-      const formData = {
-        ...values,
-        imageUrl: imageFileList.length > 0 ? imageFileList[0].url || imageFileList[0].thumbUrl : null,
-        videoUrl: videoFileList.length > 0 ? videoFileList[0].url || videoFileList[0].thumbUrl : null,
-      };
+
+      // Create FormData for multiple file uploads
+      const formData = new FormData();
+
+      // Add form fields
+      formData.append('title', values.title);
+      formData.append('content', values.content);
+      formData.append('teacherId', values.teacherId || '');
+      formData.append('audience', JSON.stringify(values.audience || { type: 'all' }));
+
+      // Add multiple images
+      imageFileList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append('images', file.originFileObj);
+        }
+      });
+
+      // Add multiple videos
+      videoFileList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append('videos', file.originFileObj);
+        }
+      });
 
       await onSubmit(formData);
       form.resetFields();
@@ -56,7 +72,7 @@ export default function CreatePostModal({
     onCancel();
   };
 
-  // Image upload props
+  // Image upload props - support multiple images
   const imageUploadProps = {
     listType: "picture-card",
     fileList: imageFileList,
@@ -74,10 +90,11 @@ export default function CreatePostModal({
       }
       return false; // Prevent auto upload
     },
-    maxCount: 1,
+    maxCount: 10, // Support up to 10 images
+    multiple: true,
   };
 
-  // Video upload props
+  // Video upload props - support multiple videos
   const videoUploadProps = {
     fileList: videoFileList,
     onChange: ({ fileList }) => setVideoFileList(fileList),
@@ -94,7 +111,8 @@ export default function CreatePostModal({
       }
       return false; // Prevent auto upload
     },
-    maxCount: 1,
+    maxCount: 5, // Support up to 5 videos
+    multiple: true,
   };
 
   return (
@@ -168,22 +186,22 @@ export default function CreatePostModal({
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label="Image">
+            <Form.Item label={`Images (${imageFileList.length}/10)`}>
               <Upload {...imageUploadProps}>
-                {imageFileList.length < 1 && (
+                {imageFileList.length < 10 && (
                   <div>
                     <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Upload Image</div>
+                    <div style={{ marginTop: 8 }}>Upload Images</div>
                   </div>
                 )}
               </Upload>
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="Video">
+            <Form.Item label={`Videos (${videoFileList.length}/5)`}>
               <Upload {...videoUploadProps}>
                 <Button icon={<VideoCameraOutlined />}>
-                  Upload Video
+                  Upload Videos
                 </Button>
               </Upload>
             </Form.Item>

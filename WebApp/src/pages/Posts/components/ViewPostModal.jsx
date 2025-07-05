@@ -156,45 +156,51 @@ export default function ViewPostModal({ visible, onCancel, post }) {
         </div>
 
         {/* Media */}
-        {(post.imageUrl || post.videoUrl) && (
+        {post.media && post.media.length > 0 && (
           <>
             <Divider />
             <div>
-              <Title level={4}>Media</Title>
+              <Title level={4}>Media ({post.media.length} files)</Title>
               <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-                {post.imageUrl && (
-                  <div>
-                    <Space>
-                      <PictureOutlined />
-                      <span style={{ fontWeight: "500" }}>Image:</span>
-                    </Space>
-                    <div style={{ marginTop: "8px" }}>
-                      <Image
-                        src={post.imageUrl}
-                        alt="Post image"
-                        style={{ maxWidth: "100%", maxHeight: "300px" }}
-                      />
-                    </div>
+                {post.media.map((mediaItem, index) => (
+                  <div key={index}>
+                    {mediaItem.type === 'image' ? (
+                      <div>
+                        <Space>
+                          <PictureOutlined />
+                          <span style={{ fontWeight: "500" }}>
+                            Image {index + 1}: {mediaItem.filename || 'Image file'}
+                          </span>
+                        </Space>
+                        <div style={{ marginTop: "8px" }}>
+                          <Image
+                            src={mediaItem.url}
+                            alt={`Post image ${index + 1}`}
+                            style={{ maxWidth: "100%", maxHeight: "300px" }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <Space>
+                          <VideoCameraOutlined />
+                          <span style={{ fontWeight: "500" }}>
+                            Video {index + 1}: {mediaItem.filename || 'Video file'}
+                          </span>
+                        </Space>
+                        <div style={{ marginTop: "8px" }}>
+                          <video
+                            src={mediaItem.url}
+                            controls
+                            style={{ maxWidth: "100%", maxHeight: "300px" }}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {post.videoUrl && (
-                  <div>
-                    <Space>
-                      <VideoCameraOutlined />
-                      <span style={{ fontWeight: "500" }}>Video:</span>
-                    </Space>
-                    <div style={{ marginTop: "8px" }}>
-                      <video
-                        src={post.videoUrl}
-                        controls
-                        style={{ maxWidth: "100%", maxHeight: "300px" }}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-                  </div>
-                )}
+                ))}
               </Space>
             </div>
           </>

@@ -62,22 +62,29 @@ export default function PostsTable({
   };
 
   const getMediaDisplay = (post) => {
-    const hasImage = post.imageUrl;
-    const hasVideo = post.videoUrl;
-
-    if (hasImage && hasVideo) {
-      return (
-        <div style={{ display: "flex", gap: 4 }}>
-          <FileImageOutlined style={{ color: "#1890ff" }} />
-          <PlayCircleOutlined style={{ color: "#52c41a" }} />
-        </div>
-      );
-    } else if (hasImage) {
-      return <FileImageOutlined style={{ color: "#1890ff" }} />;
-    } else if (hasVideo) {
-      return <PlayCircleOutlined style={{ color: "#52c41a" }} />;
+    if (!post.media || post.media.length === 0) {
+      return <span style={{ color: "#ccc" }}>No media</span>;
     }
-    return <span style={{ color: "#ccc" }}>No media</span>;
+
+    const images = post.media.filter(m => m.type === 'image');
+    const videos = post.media.filter(m => m.type === 'video');
+
+    return (
+      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+        {images.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <FileImageOutlined style={{ color: "#1890ff" }} />
+            <span style={{ fontSize: "12px", color: "#666" }}>{images.length}</span>
+          </div>
+        )}
+        {videos.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <PlayCircleOutlined style={{ color: "#52c41a" }} />
+            <span style={{ fontSize: "12px", color: "#666" }}>{videos.length}</span>
+          </div>
+        )}
+      </div>
+    );
   };
   const columns = [
     {

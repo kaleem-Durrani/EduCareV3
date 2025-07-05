@@ -1,13 +1,21 @@
+import React, { useContext } from "react";
 import { Card, Row, Col, Input, Select } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
+import { TeachersContext } from "../../../context/TeachersContext";
+import { ClassesContext } from "../../../context/ClassesContext";
+import { StudentsContext } from "../../../context/StudentsContext";
 
 const { Option } = Select;
 
 export default function PostsFilters({ filters, onFilterChange }) {
+  const { teachers } = useContext(TeachersContext);
+  const { classes } = useContext(ClassesContext);
+  const { students } = useContext(StudentsContext);
+
   return (
     <Card title="Filters">
       <Row gutter={16}>
-        <Col span={8}>
+        <Col span={6}>
           <Input
             placeholder="Search posts..."
             prefix={<SearchOutlined />}
@@ -16,30 +24,61 @@ export default function PostsFilters({ filters, onFilterChange }) {
             allowClear
           />
         </Col>
-        <Col span={8}>
-          <Select
-            style={{ width: "100%" }}
-            placeholder="Filter by audience"
-            value={filters.audience}
-            onChange={(value) => onFilterChange("audience", value)}
-            allowClear
-          >
-            <Option value="all">Everyone</Option>
-            <Option value="class">Classes</Option>
-            <Option value="individual">Individual Students</Option>
-          </Select>
-        </Col>
-        <Col span={8}>
+        <Col span={6}>
           <Select
             style={{ width: "100%" }}
             placeholder="Filter by teacher"
-            value={filters.teacher}
-            onChange={(value) => onFilterChange("teacher", value)}
+            value={filters.teacherId}
+            onChange={(value) => onFilterChange("teacherId", value)}
             allowClear
+            showSearch
+            filterOption={(input, option) =>
+              option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
           >
-            {/* This would be populated with teachers from context */}
-            <Option value="teacher1">Teacher 1</Option>
-            <Option value="teacher2">Teacher 2</Option>
+            {teachers?.map((teacher) => (
+              <Option key={teacher._id} value={teacher._id}>
+                {teacher.name}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+        <Col span={6}>
+          <Select
+            style={{ width: "100%" }}
+            placeholder="Filter by class"
+            value={filters.classId}
+            onChange={(value) => onFilterChange("classId", value)}
+            allowClear
+            showSearch
+            filterOption={(input, option) =>
+              option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          >
+            {classes?.map((cls) => (
+              <Option key={cls._id} value={cls._id}>
+                {cls.name}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+        <Col span={6}>
+          <Select
+            style={{ width: "100%" }}
+            placeholder="Filter by student"
+            value={filters.studentId}
+            onChange={(value) => onFilterChange("studentId", value)}
+            allowClear
+            showSearch
+            filterOption={(input, option) =>
+              option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          >
+            {students?.map((student) => (
+              <Option key={student._id} value={student._id}>
+                {student.fullName}
+              </Option>
+            ))}
           </Select>
         </Col>
       </Row>
