@@ -203,7 +203,6 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
           style={{
             backgroundColor: colors.background,
             height: '80%',
-            minHeight: 600,
           }}>
           {/* Header */}
           <View className="border-b p-4" style={{ borderBottomColor: colors.border }}>

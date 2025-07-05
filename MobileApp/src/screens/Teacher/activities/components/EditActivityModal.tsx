@@ -197,7 +197,6 @@ const EditActivityModal: React.FC<EditActivityModalProps> = ({
           style={{
             backgroundColor: colors.background,
             height: '80%',
-            minHeight: 600,
           }}>
           {/* Header */}
           <View className="border-b p-4" style={{ borderBottomColor: colors.border }}>
