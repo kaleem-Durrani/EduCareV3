@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
-import { useTeacherClasses } from '../../../contexts/TeacherClassesContext';
 import { useApi } from '../../../hooks';
 import {
   noteService,
@@ -12,17 +11,11 @@ import {
   UpdateNoteData,
   ClassStudent,
 } from '../../../services';
-import {
-  NotesList,
-  CreateNoteModal,
-  EditNoteModal,
-  NoteDetailModal,
-  StudentSelector,
-} from './components';
+import { NotesList, CreateNoteModal, EditNoteModal, NoteDetailModal } from './components';
+import { StudentSelector } from '../../../components';
 
 const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
-  const { allStudents, classes, studentsByClass } = useTeacherClasses();
 
   // State management
   const [selectedStudent, setSelectedStudent] = useState<ClassStudent | null>(null);
@@ -110,6 +103,14 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
     const result = await noteService.createNote(noteData);
     if (result.success && result.data?.note) {
       setNotes((prev) => [result.data!.note, ...prev]);
+
+      // Update pagination to reflect the new total count
+      setPagination((prev) => ({
+        ...prev,
+        totalItems: prev.totalItems + 1,
+        totalPages: Math.ceil((prev.totalItems + 1) / pageSize),
+      }));
+
       setShowCreateNoteModal(false);
       Alert.alert('Success', 'Note created successfully');
     } else {
@@ -146,6 +147,14 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
           const result = await noteService.deleteNote(note._id);
           if (result.success) {
             setNotes((prev) => prev.filter((n) => n._id !== note._id));
+
+            // Update pagination to reflect the new total count
+            setPagination((prev) => ({
+              ...prev,
+              totalItems: Math.max(0, prev.totalItems - 1),
+              totalPages: Math.ceil(Math.max(0, prev.totalItems - 1) / pageSize),
+            }));
+
             Alert.alert('Success', 'Note deleted successfully');
           } else {
             Alert.alert('Error', result.message || 'Failed to delete note');
@@ -194,42 +203,45 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
         <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
       </View>
 
-      {/* Navigation */}
-      <View className="px-4 py-2">
+      {/* Compact Header with Navigation */}
+      <View className="flex-row items-center justify-between px-4 py-2">
         <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
           <Text className="mr-2 text-2xl">←</Text>
           <Text className="text-lg font-medium" style={{ color: colors.primary }}>
             Notes
           </Text>
         </TouchableOpacity>
+
+        {selectedStudent && (
+          <View className="flex-row items-center">
+            <Text className="mr-3 text-sm" style={{ color: colors.textSecondary }}>
+              {pagination.totalItems} note{pagination.totalItems !== 1 ? 's' : ''}
+            </Text>
+            <TouchableOpacity
+              className="rounded px-3 py-1.5"
+              style={{ backgroundColor: colors.primary }}
+              onPress={() => setShowCreateNoteModal(true)}>
+              <Text className="text-sm font-medium text-white">+ Add</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Student Selection */}
-      <View className="px-4 py-2">
+      <View className="px-4 py-1">
         <StudentSelector
-          classes={classes}
-          allStudents={allStudents}
-          studentsByClass={studentsByClass}
+          selectedStudent={selectedStudent}
           onStudentSelect={handleStudentSelect}
           onResetSelection={handleResetSelection}
+          placeholder="Select a student to view notes"
+          showAsTag={true}
+          compact={true}
         />
       </View>
 
       {/* Notes List */}
       {selectedStudent && (
         <View className="flex-1 px-4">
-          <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-lg font-medium" style={{ color: colors.textPrimary }}>
-              Notes ({pagination.totalItems})
-            </Text>
-            <TouchableOpacity
-              className="rounded-lg px-4 py-2"
-              style={{ backgroundColor: colors.primary }}
-              onPress={() => setShowCreateNoteModal(true)}>
-              <Text className="font-medium text-white">+ Add Note</Text>
-            </TouchableOpacity>
-          </View>
-
           <NotesList
             notes={notes}
             selectedStudent={selectedStudent}

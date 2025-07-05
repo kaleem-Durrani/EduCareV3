@@ -42,10 +42,23 @@ export const NotesList: React.FC<NotesListProps> = ({
     <NoteItem note={item} onView={onViewNote} onEdit={onEditNote} onDelete={onDeleteNote} />
   );
 
-  if (isLoading) {
+  if (isLoading && notes.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text style={{ color: colors.textSecondary }}>Loading notes...</Text>
+      <View className="flex-1">
+        <View className="flex-1 items-center justify-center">
+          <Text style={{ color: colors.textSecondary }}>Loading notes...</Text>
+        </View>
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          isLoading={isLoading}
+          itemName="notes"
+        />
       </View>
     );
   }
