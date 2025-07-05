@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useTeacherClasses } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import { boxService, StudentBoxStatus, ClassStudent } from '../../../services';
-import LoadingScreen from '../../../components/LoadingScreen';
-import StudentSelector from '../contacts/components/StudentSelector'; // Reuse the same selector
+import { LoadingScreen, StudentSelector } from '../../../components';
 import BoxStatusContent from './components/BoxStatusContent';
 
 const MyBoxScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
@@ -14,28 +13,21 @@ const MyBoxScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
   const [hasSearched, setHasSearched] = useState(false);
 
   // Use teacher classes context
-  const {
-    classes,
-    allStudents,
-    studentsByClass,
-    isLoading: isLoadingClasses,
-    error: classesError,
-    refreshClasses
-  } = useTeacherClasses();
+  const { isLoading: isLoadingClasses, error: classesError, refreshClasses } = useTeacherClasses();
 
   // API hook for fetching student box status
   const {
     request: fetchBoxStatus,
     isLoading: isLoadingBox,
     error: boxError,
-    data: boxStatus
+    data: boxStatus,
   } = useApi<StudentBoxStatus>(boxService.getStudentBoxStatus);
 
   // API hook for updating student box status
   const {
     request: updateBoxStatus,
     isLoading: isUpdating,
-    error: updateError
+    error: updateError,
   } = useApi<StudentBoxStatus>(boxService.updateStudentBoxStatus);
 
   const handleStudentSelect = async (student: ClassStudent) => {
@@ -85,37 +77,26 @@ const MyBoxScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
       <ScrollView className="flex-1 px-4">
         {classesError ? (
           <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-center text-lg mb-2" style={{ color: colors.textPrimary }}>
+            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
               Failed to load classes
             </Text>
-            <Text className="text-center text-sm mb-4" style={{ color: colors.textSecondary }}>
+            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
               {classesError}
             </Text>
-            <TouchableOpacity
-              className="bg-blue-500 px-6 py-3 rounded-lg"
-              onPress={refreshClasses}
-            >
-              <Text className="text-white font-medium">Retry</Text>
+            <TouchableOpacity className="rounded-lg bg-blue-500 px-6 py-3" onPress={refreshClasses}>
+              <Text className="font-medium text-white">Retry</Text>
             </TouchableOpacity>
-          </View>
-        ) : !classes || classes.length === 0 ? (
-          <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-              No classes assigned
-            </Text>
-            <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-              You are not currently assigned to any classes.
-            </Text>
           </View>
         ) : (
           <>
             {/* Student Selector */}
             <StudentSelector
-              classes={classes}
-              allStudents={allStudents}
-              studentsByClass={studentsByClass}
+              selectedStudent={selectedStudent}
               onStudentSelect={handleStudentSelect}
               onResetSelection={handleResetSelection}
+              placeholder="Select a student to view box status"
+              showAsTag={true}
+              compact={false}
             />
 
             {/* Box Status Content */}
