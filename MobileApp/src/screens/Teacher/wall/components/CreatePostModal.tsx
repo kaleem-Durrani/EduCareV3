@@ -100,7 +100,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       includeBase64: false,
       maxHeight: 2000,
       maxWidth: 2000,
-      quality: 0.8,
+      quality: 0.8 as const,
       selectionLimit: type === 'photo' ? 10 : type === 'video' ? 5 : 15, // Total limit for mixed
     };
 

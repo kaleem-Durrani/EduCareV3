@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Alert, RefreshControl, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useTeacherClasses } from '../../../contexts';
 import { useApi } from '../../../hooks';
@@ -14,13 +14,12 @@ import {
 } from '../../../services';
 import { PostItem, CreatePostModal } from './components';
 import { PaginationControls, StudentSelector } from '../../../components';
-import { SelectModal } from '../../../components';
 
 const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
 
   // Use TeacherClassesContext for classes and students
-  const { classes, allStudents: students, isLoading: isLoadingClasses } = useTeacherClasses();
+  const { classes = [], allStudents: students = [] } = useTeacherClasses();
 
   // State management
   const [posts, setPosts] = useState<Post[]>([]);
@@ -28,9 +27,9 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
   const [pageSize, setPageSize] = useState(10);
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
 
   // Filter state
-  const [filters, setFilters] = useState<PostFilters>({ page: 1, limit: 10 });
   const [selectedClass, setSelectedClass] = useState<EnrolledClass | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<ClassStudent | null>(null);
   const [showClassModal, setShowClassModal] = useState(false);
@@ -43,14 +42,6 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
     data: postsResponse,
     request: fetchPosts,
   } = useApi<PaginatedPostsResponse>(postService.getPosts);
-
-  const {
-    isLoading: isCreatingPost,
-    error: createError,
-    request: createPost,
-  } = useApi<Post>(postService.createPost);
-
-  const { isLoading: isDeletingPost, request: deletePost } = useApi<void>(postService.deletePost);
 
   // Load initial data
   useEffect(() => {
@@ -92,9 +83,10 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
     loadPosts(1);
   };
 
-  const handleCreatePost = async (postData: CreatePostData, mediaFiles?: File[]) => {
+  const handleCreatePost = async (postData: CreatePostData, mediaFiles?: any[]) => {
     try {
-      const response = await createPost(postData, mediaFiles);
+      setIsCreatingPost(true);
+      const response = await postService.createPost(postData, mediaFiles);
       if (response.success) {
         setIsCreateModalVisible(false);
         Alert.alert('Success', 'Post created successfully!');
@@ -102,17 +94,19 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to create post. Please try again.');
+    } finally {
+      setIsCreatingPost(false);
     }
   };
 
-  const handleEditPost = (post: Post) => {
+  const handleEditPost = (_post: Post) => {
     // TODO: Implement edit functionality
     Alert.alert('Edit Post', 'Edit functionality will be implemented');
   };
 
   const handleDeletePost = async (postId: string) => {
     try {
-      const response = await deletePost(postId);
+      const response = await postService.deletePost(postId);
       if (response.success) {
         Alert.alert('Success', 'Post deleted successfully!');
         await loadPosts(pagination?.currentPage || 1); // Refresh current page
@@ -334,24 +328,54 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
         onClose={() => setIsCreateModalVisible(false)}
         onCreate={handleCreatePost}
         isCreating={isCreatingPost}
-        classes={classes}
-        students={students}
+        classes={classes || []}
+        students={students || []}
       />
 
       {/* Class Selection Modal */}
-      <SelectModal
+      <Modal
         visible={showClassModal}
-        title="Select Class"
-        data={classes.map((cls) => ({
-          id: cls._id,
-          label: cls.name,
-          value: cls,
-        }))}
-        onSelect={(item) => handleClassSelect(item.value)}
-        onClose={() => setShowClassModal(false)}
-        searchable={true}
-        searchPlaceholder="Search classes..."
-      />
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowClassModal(false)}>
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View
+            className="rounded-t-lg p-4"
+            style={{ backgroundColor: colors.card, maxHeight: '70%' }}>
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
+                Select Class
+              </Text>
+              <TouchableOpacity onPress={() => setShowClassModal(false)}>
+                <Text className="text-lg" style={{ color: colors.textSecondary }}>
+                  ✕
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={classes || []}
+              keyExtractor={(item) => item._id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  className="border-b p-3"
+                  style={{ borderBottomColor: colors.border }}
+                  onPress={() => handleClassSelect(item)}>
+                  <Text className="text-base" style={{ color: colors.textPrimary }}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <Text className="p-4 text-center" style={{ color: colors.textSecondary }}>
+                  No classes available
+                </Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
