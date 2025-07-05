@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useTeacherClasses } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import { studentService, StudentDetails, ClassStudent } from '../../../services';
-import LoadingScreen from '../../../components/LoadingScreen';
-import StudentSelector from './components/StudentSelector';
+import { LoadingScreen, StudentSelector } from '../../../components';
 import StudentContactInfo from './components/StudentContactInfo';
 
 const ContactsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
@@ -14,21 +13,14 @@ const ContactsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation
   const [hasSearched, setHasSearched] = useState(false);
 
   // Use teacher classes context
-  const {
-    classes,
-    allStudents,
-    studentsByClass,
-    isLoading: isLoadingClasses,
-    error: classesError,
-    refreshClasses
-  } = useTeacherClasses();
+  const { isLoading: isLoadingClasses, error: classesError, refreshClasses } = useTeacherClasses();
 
   // API hook for fetching student details
   const {
     request: fetchStudent,
     isLoading: isLoadingStudent,
     error: studentError,
-    data: studentDetails
+    data: studentDetails,
   } = useApi<StudentDetails>(studentService.getStudentById);
 
   const handleStudentSelect = async (student: ClassStudent) => {
@@ -70,37 +62,26 @@ const ContactsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation
       <ScrollView className="flex-1 px-4">
         {classesError ? (
           <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-center text-lg mb-2" style={{ color: colors.textPrimary }}>
+            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
               Failed to load classes
             </Text>
-            <Text className="text-center text-sm mb-4" style={{ color: colors.textSecondary }}>
+            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
               {classesError}
             </Text>
-            <TouchableOpacity
-              className="bg-blue-500 px-6 py-3 rounded-lg"
-              onPress={refreshClasses}
-            >
-              <Text className="text-white font-medium">Retry</Text>
+            <TouchableOpacity className="rounded-lg bg-blue-500 px-6 py-3" onPress={refreshClasses}>
+              <Text className="font-medium text-white">Retry</Text>
             </TouchableOpacity>
-          </View>
-        ) : !classes || classes.length === 0 ? (
-          <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-              No classes assigned
-            </Text>
-            <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-              You are not currently assigned to any classes.
-            </Text>
           </View>
         ) : (
           <>
             {/* Student Selector */}
             <StudentSelector
-              classes={classes}
-              allStudents={allStudents}
-              studentsByClass={studentsByClass}
+              selectedStudent={selectedStudent}
               onStudentSelect={handleStudentSelect}
               onResetSelection={handleResetSelection}
+              placeholder="Select a student to view contact info"
+              showAsTag={true}
+              compact={false}
             />
 
             {/* Student Contact Info */}
