@@ -4,3 +4,4 @@ export { default as SelectModal } from './SelectModal';
 export type { SelectableItem } from './SelectModal';
 export { PaginationControls } from './PaginationControls';
 export { StudentSelector } from './StudentSelector';
+export { KeyboardAwareView } from './KeyboardAwareView';
