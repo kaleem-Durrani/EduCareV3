@@ -10,3 +10,4 @@ export * from './boxService';
 export * from './documentService';
 export * from './activityService';
 export * from './noteService';
+export * from './postService';
