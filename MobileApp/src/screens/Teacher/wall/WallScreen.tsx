@@ -38,19 +38,19 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
 
   // API hooks
   const {
-    loading: isLoadingPosts,
+    isLoading: isLoadingPosts,
     error: postsError,
     data: postsResponse,
-    fetchData: fetchPosts,
+    request: fetchPosts,
   } = useApi<PaginatedPostsResponse>(postService.getPosts);
 
   const {
-    loading: isCreatingPost,
+    isLoading: isCreatingPost,
     error: createError,
-    fetchData: createPost,
+    request: createPost,
   } = useApi<Post>(postService.createPost);
 
-  const { loading: isDeletingPost, fetchData: deletePost } = useApi<void>(postService.deletePost);
+  const { isLoading: isDeletingPost, request: deletePost } = useApi<void>(postService.deletePost);
 
   // Load initial data
   useEffect(() => {

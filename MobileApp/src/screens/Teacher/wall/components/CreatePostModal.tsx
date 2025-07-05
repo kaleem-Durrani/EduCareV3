@@ -12,14 +12,14 @@ import {
 } from 'react-native';
 import { launchImageLibrary, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import { useTheme } from '../../../../contexts';
-import { CreatePostData, ClassStudent, Class } from '../../../../services';
+import { CreatePostData, ClassStudent, EnrolledClass } from '../../../../services';
 
 interface CreatePostModalProps {
   visible: boolean;
   onClose: () => void;
   onCreate: (postData: CreatePostData, mediaFiles?: File[]) => void;
   isCreating: boolean;
-  classes: Class[];
+  classes: EnrolledClass[];
   students: ClassStudent[];
 }
 
