@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { Note, ClassStudent } from '../../../../services';
 import { NoteItem } from './NoteItem';
@@ -82,8 +82,10 @@ export const NotesList: React.FC<NotesListProps> = ({
         data={notes}
         renderItem={renderNoteItem}
         keyExtractor={(item) => item._id}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
         showsVerticalScrollIndicator={false}
-        scrollEnabled={false}
         contentContainerStyle={{ paddingBottom: 16 }}
       />
 

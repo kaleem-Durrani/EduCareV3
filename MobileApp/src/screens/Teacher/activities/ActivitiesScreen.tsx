@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useTheme } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import {
@@ -132,56 +131,42 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
         </TouchableOpacity>
       </View>
 
-      {/* Content with Keyboard Awareness */}
-      <KeyboardAwareScrollView
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
-        extraScrollHeight={20}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-          />
-        }>
-        {/* Filters */}
-        <View className="px-4 py-2">
-          <ActivityFilters filters={filters} onFiltersChange={handleFiltersChange} />
-        </View>
+      {/* Filters */}
+      <View className="px-4 py-2">
+        <ActivityFilters filters={filters} onFiltersChange={handleFiltersChange} />
+      </View>
 
-        {/* Activities List */}
-        {activitiesError ? (
-          <View className="flex-1 items-center justify-center py-8">
-            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
-              Failed to load activities
-            </Text>
-            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
-              {activitiesError}
-            </Text>
-            <TouchableOpacity
-              className="rounded-lg bg-blue-500 px-6 py-3"
-              onPress={() => loadActivities()}>
-              <Text className="font-medium text-white">Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View className="flex-1 px-4">
-            <ActivityList
-              activities={activities}
-              pagination={pagination}
-              isLoading={isLoadingActivities}
-              pageSize={pageSize}
-              onActivityUpdated={handleActivityUpdated}
-              onActivityDeleted={handleActivityDeleted}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-            />
-          </View>
-        )}
-      </KeyboardAwareScrollView>
+      {/* Activities List */}
+      {activitiesError ? (
+        <View className="flex-1 items-center justify-center py-8">
+          <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
+            Failed to load activities
+          </Text>
+          <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
+            {activitiesError}
+          </Text>
+          <TouchableOpacity
+            className="rounded-lg bg-blue-500 px-6 py-3"
+            onPress={() => loadActivities()}>
+            <Text className="font-medium text-white">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View className="flex-1 px-4">
+          <ActivityList
+            activities={activities}
+            pagination={pagination}
+            isLoading={isLoadingActivities}
+            pageSize={pageSize}
+            onActivityUpdated={handleActivityUpdated}
+            onActivityDeleted={handleActivityDeleted}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+          />
+        </View>
+      )}
 
       {/* Create Activity Modal */}
       <CreateActivityModal
