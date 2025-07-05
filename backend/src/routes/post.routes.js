@@ -62,10 +62,7 @@ router.post(
   "/posts",
   authenticate,
   requireAdminOrTeacher,
-  uploadPostMedia.fields([
-    { name: "images", maxCount: 10 }, // Support up to 10 images
-    { name: "videos", maxCount: 5 },  // Support up to 5 videos
-  ]),
+  uploadPostMedia.any(), // Accept any fields (files and text)
   createPost
 );
 
@@ -78,10 +75,7 @@ router.put(
   "/posts/:post_id",
   authenticate,
   requireAdminOrTeacher,
-  uploadPostMedia.fields([
-    { name: "images", maxCount: 10 }, // Support up to 10 images
-    { name: "videos", maxCount: 5 },  // Support up to 5 videos
-  ]),
+  uploadPostMedia.any(), // Accept any fields (files and text)
   updatePost
 );
 

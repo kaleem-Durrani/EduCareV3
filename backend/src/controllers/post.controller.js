@@ -11,7 +11,6 @@ import {
 } from "../utils/transaction.utils.js";
 import { normalizePath } from "../middleware/upload.middleware.js";
 import fs from "fs";
-import path from "path";
 
 // Removed getPosts - use getPaginatedPosts instead
 
@@ -280,7 +279,7 @@ export const createPost = asyncHandler(async (req, res) => {
     const media = [];
 
     if (req.files) {
-      // Handle multiple images
+      // Handle files from .fields() format (req.files.images, req.files.videos)
       if (req.files.images) {
         for (const file of req.files.images) {
           media.push({
@@ -291,7 +290,6 @@ export const createPost = asyncHandler(async (req, res) => {
         }
       }
 
-      // Handle multiple videos
       if (req.files.videos) {
         for (const file of req.files.videos) {
           media.push({
@@ -299,6 +297,25 @@ export const createPost = asyncHandler(async (req, res) => {
             url: normalizePath(file.path),
             filename: file.originalname
           });
+        }
+      }
+
+      // Handle files from .any() format (req.files as array)
+      if (Array.isArray(req.files)) {
+        for (const file of req.files) {
+          if (file.fieldname === 'images') {
+            media.push({
+              type: 'image',
+              url: normalizePath(file.path),
+              filename: file.originalname
+            });
+          } else if (file.fieldname === 'videos') {
+            media.push({
+              type: 'video',
+              url: normalizePath(file.path),
+              filename: file.originalname
+            });
+          }
         }
       }
     }
@@ -401,7 +418,7 @@ export const updatePost = asyncHandler(async (req, res) => {
         }
       }
 
-      // Handle new multiple images
+      // Handle files from .fields() format (req.files.images, req.files.videos)
       if (req.files.images) {
         for (const file of req.files.images) {
           newMedia.push({
@@ -412,7 +429,6 @@ export const updatePost = asyncHandler(async (req, res) => {
         }
       }
 
-      // Handle new multiple videos
       if (req.files.videos) {
         for (const file of req.files.videos) {
           newMedia.push({
@@ -420,6 +436,25 @@ export const updatePost = asyncHandler(async (req, res) => {
             url: normalizePath(file.path),
             filename: file.originalname
           });
+        }
+      }
+
+      // Handle files from .any() format (req.files as array)
+      if (Array.isArray(req.files)) {
+        for (const file of req.files) {
+          if (file.fieldname === 'images') {
+            newMedia.push({
+              type: 'image',
+              url: normalizePath(file.path),
+              filename: file.originalname
+            });
+          } else if (file.fieldname === 'videos') {
+            newMedia.push({
+              type: 'video',
+              url: normalizePath(file.path),
+              filename: file.originalname
+            });
+          }
         }
       }
 

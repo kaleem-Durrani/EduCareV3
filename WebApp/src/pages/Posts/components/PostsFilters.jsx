@@ -1,16 +1,16 @@
 import React, { useContext } from "react";
 import { Card, Row, Col, Input, Select } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import { TeachersContext } from "../../../context/TeachersContext";
-import { ClassesContext } from "../../../context/ClassesContext";
-import { StudentsContext } from "../../../context/StudentsContext";
+import { useTeachersContext } from "../../../context/TeachersContext";
+import { useClassesContext } from "../../../context/ClassesContext";
+import { useStudentsContext } from "../../../context/StudentsContext";
 
 const { Option } = Select;
 
 export default function PostsFilters({ filters, onFilterChange }) {
-  const { teachers } = useContext(TeachersContext);
-  const { classes } = useContext(ClassesContext);
-  const { students } = useContext(StudentsContext);
+  const { teachers } = useTeachersContext();
+  const { classes } = useClassesContext();
+  const { students } = useStudentsContext();
 
   return (
     <Card title="Filters">
