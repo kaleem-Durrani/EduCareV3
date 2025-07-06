@@ -18,7 +18,7 @@ const validateWeekPeriod = (value, { req }) => {
 // Custom validation function for daily reports uniqueness
 const validateDailyReportsUniqueness = (dailyReports) => {
   if (dailyReports && Array.isArray(dailyReports)) {
-    const days = dailyReports.map(report => report.day);
+    const days = dailyReports.map((report) => report.day);
     const uniqueDays = [...new Set(days)];
 
     if (days.length !== uniqueDays.length) {
@@ -26,19 +26,21 @@ const validateDailyReportsUniqueness = (dailyReports) => {
     }
 
     // Ensure only valid weekdays (Sunday to Saturday)
-    const validDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const invalidDays = days.filter(day => !validDays.includes(day));
+    const validDays = ["M", "T", "W", "Th", "F"];
+    const invalidDays = days.filter((day) => !validDays.includes(day));
     if (invalidDays.length > 0) {
-      throw new Error(`Invalid days found: ${invalidDays.join(", ")}. Only Sun, Mon, Tue, Wed, Thu, Fri, Sat are allowed`);
+      throw new Error(
+        `Invalid days found: ${invalidDays.join(
+          ", "
+        )}. Only Sun, Mon, Tue, Wed, Thu, Fri, Sat are allowed`
+      );
     }
   }
   return true;
 };
 
 export const createReportValidation = [
-  body("student_id")
-    .isMongoId()
-    .withMessage("Invalid student ID"),
+  body("student_id").isMongoId().withMessage("Invalid student ID"),
   body("weekStart")
     .isISO8601()
     .withMessage("Please provide a valid week start date"),
@@ -74,9 +76,7 @@ export const createReportValidation = [
 ];
 
 export const updateReportValidation = [
-  param("report_id")
-    .isMongoId()
-    .withMessage("Invalid report ID"),
+  param("report_id").isMongoId().withMessage("Invalid report ID"),
   body("weekStart")
     .optional()
     .isISO8601()
@@ -114,21 +114,15 @@ export const updateReportValidation = [
 ];
 
 export const studentIdValidation = [
-  param("student_id")
-    .isMongoId()
-    .withMessage("Invalid student ID"),
+  param("student_id").isMongoId().withMessage("Invalid student ID"),
 ];
 
 export const reportIdValidation = [
-  param("report_id")
-    .isMongoId()
-    .withMessage("Invalid report ID"),
+  param("report_id").isMongoId().withMessage("Invalid report ID"),
 ];
 
 export const batchReportValidation = [
-  param("student_id")
-    .isMongoId()
-    .withMessage("Invalid student ID"),
+  param("student_id").isMongoId().withMessage("Invalid student ID"),
   body("reports")
     .isArray({ min: 1 })
     .withMessage("Reports must be an array with at least one report"),
