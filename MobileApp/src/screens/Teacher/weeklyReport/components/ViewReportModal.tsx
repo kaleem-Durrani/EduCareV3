@@ -1,12 +1,7 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  Modal, 
-  ScrollView 
-} from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../../contexts';
 import { WeeklyReport } from '../../../../services';
 
@@ -16,11 +11,7 @@ interface ViewReportModalProps {
   onClose: () => void;
 }
 
-export const ViewReportModal: React.FC<ViewReportModalProps> = ({
-  visible,
-  report,
-  onClose,
-}) => {
+export const ViewReportModal: React.FC<ViewReportModalProps> = ({ visible, report, onClose }) => {
   const { colors } = useTheme();
 
   const formatDate = (dateString: string) => {
@@ -34,21 +25,31 @@ export const ViewReportModal: React.FC<ViewReportModalProps> = ({
 
   const getFieldIcon = (field: string) => {
     switch (field) {
-      case 'toilet': return 'wc';
-      case 'food_intake': return 'restaurant';
-      case 'friends_interaction': return 'group';
-      case 'studies_mood': return 'school';
-      default: return 'info';
+      case 'toilet':
+        return { name: 'toilet', type: 'MaterialCommunityIcons' };
+      case 'food_intake':
+        return { name: 'restaurant', type: 'MaterialIcons' };
+      case 'friends_interaction':
+        return { name: 'group', type: 'MaterialIcons' };
+      case 'studies_mood':
+        return { name: 'school', type: 'MaterialIcons' };
+      default:
+        return { name: 'info', type: 'MaterialIcons' };
     }
   };
 
   const getFieldLabel = (field: string) => {
     switch (field) {
-      case 'toilet': return 'Toilet';
-      case 'food_intake': return 'Food Intake';
-      case 'friends_interaction': return 'Friends Interaction';
-      case 'studies_mood': return 'Studies & Mood';
-      default: return field;
+      case 'toilet':
+        return 'Toilet';
+      case 'food_intake':
+        return 'Food Intake';
+      case 'friends_interaction':
+        return 'Friends Interaction';
+      case 'studies_mood':
+        return 'Studies & Mood';
+      default:
+        return field;
     }
   };
 
@@ -61,8 +62,7 @@ export const ViewReportModal: React.FC<ViewReportModalProps> = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+      onRequestClose={onClose}>
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         {/* Header */}
         <View
@@ -71,16 +71,15 @@ export const ViewReportModal: React.FC<ViewReportModalProps> = ({
             backgroundColor: colors.card,
             borderBottomColor: colors.border,
             borderBottomWidth: 1,
-          }}
-        >
+          }}>
           <TouchableOpacity onPress={onClose}>
             <Icon name="close" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          
+
           <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
             Weekly Report Details
           </Text>
-          
+
           <View style={{ width: 24 }} />
         </View>
 
@@ -107,33 +106,38 @@ export const ViewReportModal: React.FC<ViewReportModalProps> = ({
                   Day
                 </Text>
               </View>
-              {fields.map((field) => (
-                <View key={field} className="flex-1 items-center">
-                  <Icon 
-                    name={getFieldIcon(field)} 
-                    size={20} 
-                    color={colors.primary} 
-                  />
-                  <Text 
-                    className="mt-1 text-xs text-center" 
-                    style={{ color: colors.textSecondary }}
-                  >
-                    {getFieldLabel(field)}
-                  </Text>
-                </View>
-              ))}
+              {fields.map((field) => {
+                const iconInfo = getFieldIcon(field);
+                return (
+                  <View key={field} className="flex-1 items-center">
+                    {iconInfo.type === 'MaterialCommunityIcons' ? (
+                      <MaterialCommunityIcons
+                        name={iconInfo.name}
+                        size={20}
+                        color={colors.primary}
+                      />
+                    ) : (
+                      <Icon name={iconInfo.name} size={20} color={colors.primary} />
+                    )}
+                    <Text
+                      className="mt-1 text-center text-xs"
+                      style={{ color: colors.textSecondary }}>
+                      {getFieldLabel(field)}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
 
             {/* Table Rows */}
             {report.dailyReports.map((dayReport, index) => (
-              <View 
+              <View
                 key={dayReport.day}
                 className={`flex-row p-3 ${index < report.dailyReports.length - 1 ? 'border-b' : ''}`}
-                style={{ 
+                style={{
                   borderBottomColor: colors.border,
                   backgroundColor: index % 2 === 0 ? colors.background : colors.card,
-                }}
-              >
+                }}>
                 {/* Day Column */}
                 <View className="w-16 justify-center">
                   <Text className="font-semibold" style={{ color: colors.primary }}>
@@ -145,15 +149,14 @@ export const ViewReportModal: React.FC<ViewReportModalProps> = ({
                 {fields.map((field) => {
                   const value = dayReport[field as keyof typeof dayReport];
                   const hasValue = value && value.trim() !== '';
-                  
+
                   return (
                     <View key={field} className="flex-1 items-center justify-center px-1">
                       {hasValue ? (
-                        <Text 
-                          className="text-center text-xs" 
+                        <Text
+                          className="text-center text-xs"
                           style={{ color: colors.textPrimary }}
-                          numberOfLines={2}
-                        >
+                          numberOfLines={2}>
                           {value}
                         </Text>
                       ) : (

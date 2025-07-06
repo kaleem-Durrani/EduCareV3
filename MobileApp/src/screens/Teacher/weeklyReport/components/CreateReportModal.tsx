@@ -34,11 +34,13 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [selectedDay, setSelectedDay] = useState('M');
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([
-    { day: 'M', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'T', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'W', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'Th', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'F', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Sun', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Mon', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Tue', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Wed', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Thu', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Fri', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Sat', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
   ]);
 
   // API hook
@@ -53,23 +55,25 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
   useEffect(() => {
     if (visible) {
       const today = new Date();
-      const monday = new Date(today);
+      const sunday = new Date(today);
       const dayOfWeek = today.getDay();
-      const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      monday.setDate(today.getDate() + daysToMonday);
+      const daysToSunday = -dayOfWeek; // Sunday is 0, so subtract current day
+      sunday.setDate(today.getDate() + daysToSunday);
 
-      const friday = new Date(monday);
-      friday.setDate(monday.getDate() + 4);
+      const saturday = new Date(sunday);
+      saturday.setDate(sunday.getDate() + 6); // 6 days after Sunday
 
-      setWeekStart(monday);
-      setWeekEnd(friday);
-      setSelectedDay('M');
+      setWeekStart(sunday);
+      setWeekEnd(saturday);
+      setSelectedDay('Sun');
       setDailyReports([
-        { day: 'M', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'T', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'W', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'Th', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'F', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Sun', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Mon', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Tue', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Wed', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Thu', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Fri', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Sat', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
       ]);
     }
   }, [visible]);
@@ -82,18 +86,18 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
     });
   };
 
-  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+  const handleStartDateChange = (_: any, selectedDate?: Date) => {
     setShowStartPicker(Platform.OS === 'ios');
     if (selectedDate) {
       setWeekStart(selectedDate);
-      // Auto-calculate end date (4 days later for M-F)
+      // Auto-calculate end date (6 days later for Sun-Sat)
       const endDate = new Date(selectedDate);
-      endDate.setDate(selectedDate.getDate() + 4);
+      endDate.setDate(selectedDate.getDate() + 6);
       setWeekEnd(endDate);
     }
   };
 
-  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+  const handleEndDateChange = (_: any, selectedDate?: Date) => {
     setShowEndPicker(Platform.OS === 'ios');
     if (selectedDate) {
       setWeekEnd(selectedDate);
@@ -118,8 +122,18 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
     }
 
     const daysDiff = Math.ceil((weekEnd.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff !== 4) {
-      Alert.alert('Error', 'Week must be exactly 5 days (Monday to Friday)');
+    if (daysDiff !== 6) {
+      Alert.alert('Error', 'Week must be exactly 7 days (Sunday to Saturday)');
+      return false;
+    }
+
+    // Validate that start date is Sunday (0) and end date is Saturday (6)
+    if (weekStart.getDay() !== 0) {
+      Alert.alert('Error', 'Week must start on Sunday');
+      return false;
+    }
+    if (weekEnd.getDay() !== 6) {
+      Alert.alert('Error', 'Week must end on Saturday');
       return false;
     }
 
@@ -204,7 +218,7 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
           {/* Week Period */}
           <View className="mb-4">
             <Text className="mb-2 font-medium" style={{ color: colors.textPrimary }}>
-              Week Period (Monday to Friday)
+              Week Period (Sunday to Saturday)
             </Text>
 
             <View className="flex-row">

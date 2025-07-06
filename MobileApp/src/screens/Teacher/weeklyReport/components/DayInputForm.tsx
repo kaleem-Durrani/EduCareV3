@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TextInput, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../../contexts';
 
 interface DayInputFormProps {
@@ -25,7 +26,8 @@ export const DayInputForm: React.FC<DayInputFormProps> = ({
     {
       key: 'toilet',
       label: 'Toilet',
-      icon: 'wc',
+      icon: 'toilet',
+      iconType: 'MaterialCommunityIcons',
       placeholder: 'e.g., Pee 💧, Poop 💩, Both',
       multiline: false,
     },
@@ -33,6 +35,7 @@ export const DayInputForm: React.FC<DayInputFormProps> = ({
       key: 'food_intake',
       label: 'Food Intake',
       icon: 'restaurant',
+      iconType: 'MaterialIcons',
       placeholder: 'e.g., Ate well 🍎, Picky, Good appetite',
       multiline: false,
     },
@@ -40,6 +43,7 @@ export const DayInputForm: React.FC<DayInputFormProps> = ({
       key: 'friends_interaction',
       label: 'Friends Interaction',
       icon: 'group',
+      iconType: 'MaterialIcons',
       placeholder: 'e.g., Played well 🤝, Shy, Social',
       multiline: false,
     },
@@ -47,6 +51,7 @@ export const DayInputForm: React.FC<DayInputFormProps> = ({
       key: 'studies_mood',
       label: 'Studies & Mood',
       icon: 'school',
+      iconType: 'MaterialIcons',
       placeholder: 'e.g., Focused 📚, Happy, Distracted',
       multiline: true,
     },
@@ -54,11 +59,13 @@ export const DayInputForm: React.FC<DayInputFormProps> = ({
 
   const getDayName = (day: string) => {
     const dayNames: Record<string, string> = {
-      'M': 'Monday',
-      'T': 'Tuesday',
-      'W': 'Wednesday',
-      'Th': 'Thursday',
-      'F': 'Friday',
+      Sun: 'Sunday',
+      Mon: 'Monday',
+      Tue: 'Tuesday',
+      Wed: 'Wednesday',
+      Thu: 'Thursday',
+      Fri: 'Friday',
+      Sat: 'Saturday',
     };
     return dayNames[day] || day;
   };
@@ -77,12 +84,16 @@ export const DayInputForm: React.FC<DayInputFormProps> = ({
       {fields.map((field) => (
         <View key={field.key} className="mb-4">
           <View className="mb-2 flex-row items-center">
-            <Icon name={field.icon} size={20} color={colors.primary} />
+            {field.iconType === 'MaterialCommunityIcons' ? (
+              <MaterialCommunityIcons name={field.icon} size={20} color={colors.primary} />
+            ) : (
+              <Icon name={field.icon} size={20} color={colors.primary} />
+            )}
             <Text className="ml-2 font-medium" style={{ color: colors.textPrimary }}>
               {field.label}
             </Text>
           </View>
-          
+
           <TextInput
             className="rounded-lg border p-3"
             style={{
