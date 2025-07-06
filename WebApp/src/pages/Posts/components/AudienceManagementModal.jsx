@@ -22,19 +22,12 @@ export default function AudienceManagementModal({
   const { students } = useStudentsContext();
   const { classes } = useClassesContext();
 
-  // Fetch post students
+  // Fetch post details (includes students and classes)
   const {
-    data: studentsData,
-    request: fetchStudents,
-    isLoading: loadingStudents,
-  } = useApi(postService.getPostStudents);
-
-  // Fetch post classes
-  const {
-    data: classesData,
-    request: fetchClasses,
-    isLoading: loadingClasses,
-  } = useApi(postService.getPostClasses);
+    data: postData,
+    request: fetchPostDetails,
+    isLoading: loadingPostDetails,
+  } = useApi(postService.getPostById);
 
   // Add students API
   const { request: addStudents, isLoading: addingStudents } = useApi(
@@ -58,15 +51,14 @@ export default function AudienceManagementModal({
 
   useEffect(() => {
     if (visible && post) {
+      fetchPostDetails(post._id);
       if (post.audience?.type === "individual") {
-        fetchStudents(post._id, { page: studentsPage, limit: 10 });
         setActiveTab("1");
       } else if (post.audience?.type === "class") {
-        fetchClasses(post._id, { page: classesPage, limit: 10 });
         setActiveTab("2");
       }
     }
-  }, [visible, post, studentsPage, classesPage]);
+  }, [visible, post]);
 
   const handleAddStudents = async () => {
     if (selectedStudents.length === 0) {
@@ -78,7 +70,7 @@ export default function AudienceManagementModal({
       await addStudents(post._id, selectedStudents);
       message.success("Students added successfully!");
       setSelectedStudents([]);
-      fetchStudents(post._id, { page: studentsPage, limit: 10 });
+      fetchPostDetails(post._id);
     } catch (error) {
       console.log("Add students error handled by useApi");
     }
@@ -88,7 +80,7 @@ export default function AudienceManagementModal({
     try {
       await removeStudents(post._id, studentIds);
       message.success("Students removed successfully!");
-      fetchStudents(post._id, { page: studentsPage, limit: 10 });
+      fetchPostDetails(post._id);
     } catch (error) {
       console.log("Remove students error handled by useApi");
     }
@@ -104,7 +96,7 @@ export default function AudienceManagementModal({
       await addClasses(post._id, selectedClasses);
       message.success("Classes added successfully!");
       setSelectedClasses([]);
-      fetchClasses(post._id, { page: classesPage, limit: 10 });
+      fetchPostDetails(post._id);
     } catch (error) {
       console.log("Add classes error handled by useApi");
     }
@@ -114,7 +106,7 @@ export default function AudienceManagementModal({
     try {
       await removeClasses(post._id, classIds);
       message.success("Classes removed successfully!");
-      fetchClasses(post._id, { page: classesPage, limit: 10 });
+      fetchPostDetails(post._id);
     } catch (error) {
       console.log("Remove classes error handled by useApi");
     }
@@ -223,7 +215,7 @@ export default function AudienceManagementModal({
       label: (
         <span>
           <UserOutlined />
-          Students ({studentsData?.pagination?.totalItems || 0})
+          Students ({postData?.audience?.student_ids?.length || 0})
         </span>
       ),
       children: (
@@ -237,7 +229,7 @@ export default function AudienceManagementModal({
               onChange={setSelectedStudents}
               options={students?.filter(
                 (student) =>
-                  !studentsData?.students?.some((s) => s._id === student.value)
+                  !postData?.audience?.student_ids?.some((s) => s._id === student.value)
               )}
             />
             <Button
@@ -252,8 +244,8 @@ export default function AudienceManagementModal({
 
           <Table
             columns={studentsColumns}
-            dataSource={studentsData?.students || []}
-            loading={loadingStudents || removingStudents}
+            dataSource={postData?.audience?.student_ids || []}
+            loading={loadingPostDetails || removingStudents}
             rowKey="_id"
             pagination={{
               current: studentsPage,
@@ -273,7 +265,7 @@ export default function AudienceManagementModal({
       label: (
         <span>
           <TeamOutlined />
-          Classes ({classesData?.pagination?.totalItems || 0})
+          Classes ({postData?.audience?.class_ids?.length || 0})
         </span>
       ),
       children: (
@@ -287,7 +279,7 @@ export default function AudienceManagementModal({
               onChange={setSelectedClasses}
               options={classes?.filter(
                 (classItem) =>
-                  !classesData?.classes?.some((c) => c._id === classItem.value)
+                  !postData?.audience?.class_ids?.some((c) => c._id === classItem.value)
               )}
             />
             <Button
@@ -302,13 +294,13 @@ export default function AudienceManagementModal({
 
           <Table
             columns={classesColumns}
-            dataSource={classesData?.classes || []}
-            loading={loadingClasses || removingClasses}
+            dataSource={postData?.audience?.class_ids || []}
+            loading={loadingPostDetails || removingClasses}
             rowKey="_id"
             pagination={{
               current: classesPage,
               pageSize: 10,
-              total: classesData?.pagination?.totalItems || 0,
+              total: postData?.audience?.class_ids?.length || 0,
               onChange: setClassesPage,
             }}
           />

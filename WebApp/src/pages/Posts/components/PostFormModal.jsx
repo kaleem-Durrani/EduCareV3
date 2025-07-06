@@ -82,19 +82,50 @@ export default function PostFormModal({
         JSON.stringify(values.audience || { type: "class" })
       );
 
-      // Add multiple images
+      // Add multiple images (only new files)
       imageFileList.forEach((file) => {
         if (file.originFileObj) {
           formData.append("images", file.originFileObj);
         }
       });
 
-      // Add multiple videos
+      // Add multiple videos (only new files)
       videoFileList.forEach((file) => {
         if (file.originFileObj) {
           formData.append("videos", file.originFileObj);
         }
       });
+
+      // For editing: send existing media that should be preserved
+      if (isEditing && editingPost?.media) {
+        const existingMedia = [];
+
+        // Add existing images that are still in the file list (not removed)
+        imageFileList.forEach((file) => {
+          if (!file.originFileObj && file.url) {
+            existingMedia.push({
+              type: 'image',
+              url: file.url.replace(SERVER_URL + "/", ""),
+              filename: file.name
+            });
+          }
+        });
+
+        // Add existing videos that are still in the file list (not removed)
+        videoFileList.forEach((file) => {
+          if (!file.originFileObj && file.url) {
+            existingMedia.push({
+              type: 'video',
+              url: file.url.replace(SERVER_URL + "/", ""),
+              filename: file.name
+            });
+          }
+        });
+
+        if (existingMedia.length > 0) {
+          formData.append("existingMedia", JSON.stringify(existingMedia));
+        }
+      }
 
       await onSubmit(formData);
       form.resetFields();
@@ -137,7 +168,7 @@ export default function PostFormModal({
     maxCount: 10, // Support up to 10 images
     listType: "picture-card",
     showUploadList: {
-      showPreviewIcon: true,
+      showPreviewIcon: false, // Remove eye icon
       showRemoveIcon: true,
     },
   };
@@ -168,34 +199,7 @@ export default function PostFormModal({
       showPreviewIcon: false,
       showRemoveIcon: true,
     },
-    itemRender: (originNode, file) => {
-      return (
-        <div style={{ position: "relative" }}>
-          <div
-            style={{
-              width: "100%",
-              height: "100px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#f5f5f5",
-              border: "1px dashed #d9d9d9",
-              borderRadius: "6px",
-            }}
-          >
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "24px", marginBottom: "4px" }}>🎥</div>
-              <div style={{ fontSize: "12px", color: "#666" }}>
-                {file.name?.length > 15
-                  ? `${file.name.substring(0, 15)}...`
-                  : file.name}
-              </div>
-            </div>
-          </div>
-          {originNode.props.children[1]} {/* Remove button */}
-        </div>
-      );
-    },
+    iconRender: () => <div style={{ fontSize: "24px" }}>🎥</div>,
   };
 
   return (

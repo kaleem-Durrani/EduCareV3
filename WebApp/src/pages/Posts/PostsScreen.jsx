@@ -166,29 +166,8 @@ export default function PostsScreen() {
     setIsAudienceModalVisible(true);
   };
 
-  const handleFormSubmit = async (values) => {
+  const handleFormSubmit = async (formData) => {
     try {
-      const formData = new FormData();
-
-      // Add form fields
-      Object.keys(values).forEach((key) => {
-        if (key !== "image" && key !== "video" && values[key] !== undefined) {
-          if (key === "audience") {
-            formData.append(key, JSON.stringify(values[key]));
-          } else {
-            formData.append(key, values[key]);
-          }
-        }
-      });
-
-      // Add media files if provided
-      if (values.image && values.image.file) {
-        formData.append("image", values.image.file);
-      }
-      if (values.video && values.video.file) {
-        formData.append("video", values.video.file);
-      }
-
       if (editingPost) {
         await updatePostRequest(editingPost._id, formData);
         message.success("Post updated successfully!");
