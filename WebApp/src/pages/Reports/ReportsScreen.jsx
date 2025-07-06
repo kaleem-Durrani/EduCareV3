@@ -24,6 +24,7 @@ import { useAuth } from "../../context/AuthContext";
 import AdminLayout from "../../components/Layout/AdminLayout";
 import ReportsTable from "./components/ReportsTable";
 import ReportFormModal from "./components/ReportFormModal";
+import DailyReportDetailsModal from "./components/DailyReportDetailsModal";
 import dayjs from "dayjs";
 
 const { Title } = Typography;
@@ -34,8 +35,10 @@ export default function ReportsScreen() {
   const { user } = useAuth();
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [editingReport, setEditingReport] = useState(null);
+  const [viewingReport, setViewingReport] = useState(null);
   const [dateRange, setDateRange] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -67,6 +70,11 @@ export default function ReportsScreen() {
   // Update report API
   const { request: updateReportRequest, isLoading: updating } = useApi(
     ({ id, data }) => reportService.updateWeeklyReport(id, data)
+  );
+
+  // Delete report API
+  const { request: deleteReportRequest, isLoading: deleting } = useApi(
+    reportService.deleteWeeklyReport
   );
 
   useEffect(() => {
@@ -136,6 +144,31 @@ export default function ReportsScreen() {
     setIsEditModalVisible(true);
   };
 
+  const handleDelete = async (report) => {
+    try {
+      await deleteReportRequest(report._id);
+      message.success("Report deleted successfully!");
+      // Refresh the reports list
+      if (selectedStudent) {
+        const params = {
+          studentId: selectedStudent._id,
+          startDate: dateRange?.[0]?.format("YYYY-MM-DD"),
+          endDate: dateRange?.[1]?.format("YYYY-MM-DD"),
+          page: currentPage,
+          limit: pageSize,
+        };
+        fetchReports(params);
+      }
+    } catch (error) {
+      message.error("Failed to delete report");
+    }
+  };
+
+  const handleViewDetails = (report) => {
+    setViewingReport(report);
+    setIsDetailsModalVisible(true);
+  };
+
   const handleCancelCreate = () => {
     setIsCreateModalVisible(false);
   };
@@ -143,6 +176,11 @@ export default function ReportsScreen() {
   const handleCancelEdit = () => {
     setIsEditModalVisible(false);
     setEditingReport(null);
+  };
+
+  const handleCancelDetails = () => {
+    setIsDetailsModalVisible(false);
+    setViewingReport(null);
   };
 
   const handleStudentChange = (studentId) => {
@@ -256,13 +294,11 @@ export default function ReportsScreen() {
               </div>
             </Col>
             <Col span={8}>
-              {isTeacher && (
-                <div style={{ paddingTop: 32 }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                    Create Report
-                  </Button>
-                </div>
-              )}
+              <div style={{ paddingTop: 32 }}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                  Create Report
+                </Button>
+              </div>
             </Col>
           </Row>
         </Card>
@@ -284,6 +320,8 @@ export default function ReportsScreen() {
                 reports={reports}
                 loading={loading}
                 onEdit={handleEdit}
+                onDelete={handleDelete}
+                onViewDetails={handleViewDetails}
                 isTeacher={isTeacher}
                 pagination={reportsData?.pagination}
                 onTableChange={handleTableChange}
@@ -318,6 +356,13 @@ export default function ReportsScreen() {
           mode="edit"
           students={students}
           initialData={editingReport}
+        />
+
+        {/* Daily Report Details Modal */}
+        <DailyReportDetailsModal
+          visible={isDetailsModalVisible}
+          onCancel={handleCancelDetails}
+          report={viewingReport}
         />
       </Space>
     </AdminLayout>

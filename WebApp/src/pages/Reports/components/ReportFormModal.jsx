@@ -8,13 +8,20 @@ import {
   Button,
   Typography,
   Divider,
+  Input,
+  Table,
+  message,
 } from "antd";
+import {
+  RestOutlined,
+  UtensilsOutlined,
+  TeamOutlined,
+  BookOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
-import DailyReportEditor from "./DailyReportEditor";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 export default function ReportFormModal({
   visible,
@@ -28,52 +35,68 @@ export default function ReportFormModal({
 }) {
   const [form] = Form.useForm();
   const [dailyReports, setDailyReports] = useState([
-    { day: "Monday", pee: "", poop: "", food: "", mood: "" },
-    { day: "Tuesday", pee: "", poop: "", food: "", mood: "" },
-    { day: "Wednesday", pee: "", poop: "", food: "", mood: "" },
-    { day: "Thursday", pee: "", poop: "", food: "", mood: "" },
-    { day: "Friday", pee: "", poop: "", food: "", mood: "" },
-    { day: "Saturday", pee: "", poop: "", food: "", mood: "" },
-    { day: "Sunday", pee: "", poop: "", food: "", mood: "" },
+    { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
   ]);
+
+  const dayNames = {
+    M: "Monday",
+    T: "Tuesday",
+    W: "Wednesday",
+    Th: "Thursday",
+    F: "Friday",
+  };
 
   useEffect(() => {
     if (visible) {
       if (mode === "edit" && initialData) {
         // Set form values for edit mode
         form.setFieldsValue({
-          student_id: initialData.student_id,
-          dateRange: [
-            dayjs(initialData.weekStart),
-            dayjs(initialData.weekEnd),
-          ],
+          student_id: initialData.student_id?._id || initialData.student_id,
+          weekStart: dayjs(initialData.weekStart),
+          weekEnd: dayjs(initialData.weekEnd),
         });
         
         // Set daily reports data
-        setDailyReports(initialData.dailyReports || []);
+        setDailyReports(initialData.dailyReports || [
+          { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+        ]);
       } else {
         // Reset for create mode
         form.resetFields();
         setDailyReports([
-          { day: "Monday", pee: "", poop: "", food: "", mood: "" },
-          { day: "Tuesday", pee: "", poop: "", food: "", mood: "" },
-          { day: "Wednesday", pee: "", poop: "", food: "", mood: "" },
-          { day: "Thursday", pee: "", poop: "", food: "", mood: "" },
-          { day: "Friday", pee: "", poop: "", food: "", mood: "" },
-          { day: "Saturday", pee: "", poop: "", food: "", mood: "" },
-          { day: "Sunday", pee: "", poop: "", food: "", mood: "" },
+          { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+          { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
         ]);
       }
     }
   }, [visible, mode, initialData, form]);
 
   const handleSubmit = async (values) => {
-    const [weekStart, weekEnd] = values.dateRange;
-    
+    // Validate that week dates are exactly 7 days apart
+    const startDate = dayjs(values.weekStart);
+    const endDate = dayjs(values.weekEnd);
+    const daysDiff = endDate.diff(startDate, 'day');
+
+    if (daysDiff !== 6) {
+      message.error("Week must be exactly 7 days (Monday to Sunday)");
+      return;
+    }
+
     const formData = {
       student_id: values.student_id,
-      weekStart: weekStart.format("YYYY-MM-DD"),
-      weekEnd: weekEnd.format("YYYY-MM-DD"),
+      weekStart: values.weekStart.format("YYYY-MM-DD"),
+      weekEnd: values.weekEnd.format("YYYY-MM-DD"),
       dailyReports: dailyReports,
     };
 
@@ -83,13 +106,11 @@ export default function ReportFormModal({
   const handleCancel = () => {
     form.resetFields();
     setDailyReports([
-      { day: "Monday", pee: "", poop: "", food: "", mood: "" },
-      { day: "Tuesday", pee: "", poop: "", food: "", mood: "" },
-      { day: "Wednesday", pee: "", poop: "", food: "", mood: "" },
-      { day: "Thursday", pee: "", poop: "", food: "", mood: "" },
-      { day: "Friday", pee: "", poop: "", food: "", mood: "" },
-      { day: "Saturday", pee: "", poop: "", food: "", mood: "" },
-      { day: "Sunday", pee: "", poop: "", food: "", mood: "" },
+      { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
     ]);
     onCancel();
   };
@@ -132,33 +153,138 @@ export default function ReportFormModal({
           </Select>
         </Form.Item>
 
-        <Form.Item
-          name="dateRange"
-          label="Week Period"
-          rules={[
-            { required: true, message: "Please select week period!" },
-          ]}
-        >
-          <RangePicker
-            style={{ width: "100%" }}
-            format="YYYY-MM-DD"
-            placeholder={["Week Start", "Week End"]}
-          />
-        </Form.Item>
+        <Space style={{ width: "100%" }}>
+          <Form.Item
+            name="weekStart"
+            label="Week Start (Monday)"
+            rules={[
+              { required: true, message: "Please select week start date!" },
+            ]}
+            style={{ flex: 1 }}
+          >
+            <DatePicker
+              style={{ width: "100%" }}
+              format="YYYY-MM-DD"
+              placeholder="Select Monday"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="weekEnd"
+            label="Week End (Sunday)"
+            rules={[
+              { required: true, message: "Please select week end date!" },
+            ]}
+            style={{ flex: 1 }}
+          >
+            <DatePicker
+              style={{ width: "100%" }}
+              format="YYYY-MM-DD"
+              placeholder="Select Sunday"
+            />
+          </Form.Item>
+        </Space>
 
         <Divider>Daily Reports</Divider>
 
-        <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-          {dailyReports.map((dayReport) => (
-            <div key={dayReport.day} style={{ marginBottom: 24 }}>
-              <Title level={4}>{dayReport.day}</Title>
-              <DailyReportEditor
-                day={dayReport.day}
-                report={dayReport}
-                onReportChange={updateDailyReport}
-              />
-            </div>
-          ))}
+        <div style={{ marginBottom: 24 }}>
+          <Text type="secondary" style={{ marginBottom: 16, display: "block" }}>
+            Fill in the daily reports for each weekday. You can use words or emojis.
+          </Text>
+
+          <Table
+            dataSource={dailyReports}
+            pagination={false}
+            size="small"
+            bordered
+            rowKey="day"
+            columns={[
+              {
+                title: "Day",
+                dataIndex: "day",
+                key: "day",
+                width: 80,
+                render: (day) => (
+                  <Space direction="vertical" size={0}>
+                    <Text strong>{dayNames[day]}</Text>
+                    <Text type="secondary">{day}</Text>
+                  </Space>
+                ),
+              },
+              {
+                title: (
+                  <Space>
+                    <RestOutlined />
+                    <span>Toilet</span>
+                  </Space>
+                ),
+                dataIndex: "toilet",
+                key: "toilet",
+                render: (value, record) => (
+                  <Input
+                    value={value}
+                    onChange={(e) => updateDailyReport(record.day, "toilet", e.target.value)}
+                    placeholder="e.g., Good, 😊, Normal"
+                    size="small"
+                  />
+                ),
+              },
+              {
+                title: (
+                  <Space>
+                    <UtensilsOutlined />
+                    <span>Food Intake</span>
+                  </Space>
+                ),
+                dataIndex: "food_intake",
+                key: "food_intake",
+                render: (value, record) => (
+                  <Input
+                    value={value}
+                    onChange={(e) => updateDailyReport(record.day, "food_intake", e.target.value)}
+                    placeholder="e.g., Ate well, 🍎, Picky"
+                    size="small"
+                  />
+                ),
+              },
+              {
+                title: (
+                  <Space>
+                    <TeamOutlined />
+                    <span>Friends Interaction</span>
+                  </Space>
+                ),
+                dataIndex: "friends_interaction",
+                key: "friends_interaction",
+                render: (value, record) => (
+                  <Input
+                    value={value}
+                    onChange={(e) => updateDailyReport(record.day, "friends_interaction", e.target.value)}
+                    placeholder="e.g., Played well, 🤝, Shy"
+                    size="small"
+                  />
+                ),
+              },
+              {
+                title: (
+                  <Space>
+                    <BookOutlined />
+                    <span>Studies Mood</span>
+                  </Space>
+                ),
+                dataIndex: "studies_mood",
+                key: "studies_mood",
+                render: (value, record) => (
+                  <Input
+                    value={value}
+                    onChange={(e) => updateDailyReport(record.day, "studies_mood", e.target.value)}
+                    placeholder="e.g., Focused, 📚, Distracted"
+                    size="small"
+                  />
+                ),
+              },
+            ]}
+          />
         </div>
 
         <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>

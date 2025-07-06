@@ -1,9 +1,9 @@
 import React from "react";
-import { Table, Button, Space, Tag } from "antd";
-import { EditOutlined, CalendarOutlined } from "@ant-design/icons";
+import { Table, Button, Space, Tag, Popconfirm } from "antd";
+import { EditOutlined, CalendarOutlined, EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
-export default function ReportsTable({ reports, loading, onEdit, isTeacher, pagination, onTableChange }) {
+export default function ReportsTable({ reports, loading, onEdit, onDelete, onViewDetails, isTeacher, pagination, onTableChange }) {
   const columns = [
     {
       title: "Week Period",
@@ -24,13 +24,21 @@ export default function ReportsTable({ reports, loading, onEdit, isTeacher, pagi
       title: "Daily Reports",
       dataIndex: "dailyReports",
       key: "dailyReports",
-      render: (dailyReports) => (
+      render: (dailyReports, record) => (
         <Space size={[0, 4]} wrap>
           {dailyReports?.map((report, index) => (
             <Tag key={index} color="blue" style={{ margin: "2px" }}>
               {report.day}
             </Tag>
           )) || <span style={{ color: "#999" }}>No daily reports</span>}
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => onViewDetails && onViewDetails(record)}
+            size="small"
+          >
+            View Details
+          </Button>
         </Space>
       ),
     },
@@ -61,17 +69,32 @@ export default function ReportsTable({ reports, loading, onEdit, isTeacher, pagi
       key: "actions",
       render: (_, record) => (
         <Space>
-          {isTeacher && (
+          <Button
+            type="primary"
+            ghost
+            icon={<EditOutlined />}
+            onClick={() => onEdit && onEdit(record)}
+            size="small"
+          >
+            Edit
+          </Button>
+          <Popconfirm
+            title="Delete Report"
+            description="Are you sure you want to delete this weekly report?"
+            onConfirm={() => onDelete && onDelete(record)}
+            okText="Yes"
+            cancelText="No"
+          >
             <Button
               type="primary"
+              danger
               ghost
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
+              icon={<DeleteOutlined />}
               size="small"
             >
-              Edit
+              Delete
             </Button>
-          )}
+          </Popconfirm>
         </Space>
       ),
     },
