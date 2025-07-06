@@ -1,5 +1,20 @@
-import { Modal, Tabs, Table, Button, Select, message, Space, Tag, Popconfirm } from "antd";
-import { PlusOutlined, DeleteOutlined, UserOutlined, TeamOutlined } from "@ant-design/icons";
+import {
+  Modal,
+  Tabs,
+  Table,
+  Button,
+  Select,
+  message,
+  Space,
+  Tag,
+  Popconfirm,
+} from "antd";
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  UserOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import useApi from "../../../hooks/useApi";
 import { postService } from "../../../services/index";
@@ -8,17 +23,13 @@ import { useClassesContext } from "../../../context/ClassesContext";
 
 const { Option } = Select;
 
-export default function AudienceManagementModal({
-  visible,
-  post,
-  onCancel,
-}) {
+export default function AudienceManagementModal({ visible, post, onCancel }) {
   const [activeTab, setActiveTab] = useState("1");
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [studentsPage, setStudentsPage] = useState(1);
   const [classesPage, setClassesPage] = useState(1);
-  
+
   const { students } = useStudentsContext();
   const { classes } = useClassesContext();
 
@@ -140,12 +151,7 @@ export default function AudienceManagementModal({
           okText="Yes"
           cancelText="No"
         >
-          <Button
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-          >
+          <Button type="text" danger icon={<DeleteOutlined />} size="small">
             Remove
           </Button>
         </Popconfirm>
@@ -190,12 +196,7 @@ export default function AudienceManagementModal({
           okText="Yes"
           cancelText="No"
         >
-          <Button
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-          >
+          <Button type="text" danger icon={<DeleteOutlined />} size="small">
             Remove
           </Button>
         </Popconfirm>
@@ -229,7 +230,9 @@ export default function AudienceManagementModal({
               onChange={setSelectedStudents}
               options={students?.filter(
                 (student) =>
-                  !postData?.audience?.student_ids?.some((s) => s._id === student.value)
+                  !postData?.audience?.student_ids?.some(
+                    (s) => s._id === student.value
+                  )
               )}
             />
             <Button
@@ -250,7 +253,7 @@ export default function AudienceManagementModal({
             pagination={{
               current: studentsPage,
               pageSize: 10,
-              total: studentsData?.pagination?.totalItems || 0,
+              total: postData?.audience?.student_ids?.length || 0,
               onChange: setStudentsPage,
             }}
           />
@@ -279,7 +282,9 @@ export default function AudienceManagementModal({
               onChange={setSelectedClasses}
               options={classes?.filter(
                 (classItem) =>
-                  !postData?.audience?.class_ids?.some((c) => c._id === classItem.value)
+                  !postData?.audience?.class_ids?.some(
+                    (c) => c._id === classItem.value
+                  )
               )}
             />
             <Button
@@ -321,11 +326,7 @@ export default function AudienceManagementModal({
         </Button>,
       ]}
     >
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={tabItems}
-      />
+      <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
     </Modal>
   );
 }
