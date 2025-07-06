@@ -45,32 +45,49 @@ export const createWeeklyReport = asyncHandler(async (req, res) => {
       }
     }
 
-    // Validate week dates (should be exactly 7 days apart)
+    // Validate week dates (should be exactly 7 days apart, Sunday to Saturday)
     const startDate = new Date(weekStart);
     const endDate = new Date(weekEnd);
     const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
 
     if (daysDiff !== 6) {
-      throwBadRequest("Week must be exactly 7 days (Monday to Sunday)");
+      throwBadRequest("Week must be exactly 7 days (Sunday to Saturday)");
     }
 
-    // Check if report already exists for this student and week
-    const existingReport = await WeeklyReport.findOne({
+    // Validate that start date is Sunday (0) and end date is Saturday (6)
+    if (startDate.getDay() !== 0) {
+      throwBadRequest("Week must start on Sunday");
+    }
+    if (endDate.getDay() !== 6) {
+      throwBadRequest("Week must end on Saturday");
+    }
+
+    // Check for overlapping weeks for this student
+    const overlappingReport = await WeeklyReport.findOne({
       student_id,
-      weekStart: startDate,
+      $or: [
+        // New week starts during existing week
+        { weekStart: { $lte: startDate }, weekEnd: { $gte: startDate } },
+        // New week ends during existing week
+        { weekStart: { $lte: endDate }, weekEnd: { $gte: endDate } },
+        // New week completely contains existing week
+        { weekStart: { $gte: startDate }, weekEnd: { $lte: endDate } }
+      ]
     }).session(session);
 
-    if (existingReport) {
-      throwConflict("Report already exists for this student and week");
+    if (overlappingReport) {
+      throwConflict("A report already exists for an overlapping week period");
     }
 
-    // Initialize daily reports structure if not provided
+    // Initialize daily reports structure if not provided (Sunday to Saturday)
     const defaultDailyReports = dailyReports || [
-      { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Sun", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Mon", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Tue", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Wed", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Thu", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Fri", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Sat", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
     ];
 
     const newReport = new WeeklyReport({

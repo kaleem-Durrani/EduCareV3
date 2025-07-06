@@ -25,11 +25,11 @@ const validateDailyReportsUniqueness = (dailyReports) => {
       throw new Error("Each day can only appear once in daily reports");
     }
 
-    // Ensure only valid weekdays
-    const validDays = ["M", "T", "W", "Th", "F"];
+    // Ensure only valid weekdays (Sunday to Saturday)
+    const validDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const invalidDays = days.filter(day => !validDays.includes(day));
     if (invalidDays.length > 0) {
-      throw new Error(`Invalid days found: ${invalidDays.join(", ")}. Only M, T, W, Th, F are allowed`);
+      throw new Error(`Invalid days found: ${invalidDays.join(", ")}. Only Sun, Mon, Tue, Wed, Thu, Fri, Sat are allowed`);
     }
   }
   return true;
