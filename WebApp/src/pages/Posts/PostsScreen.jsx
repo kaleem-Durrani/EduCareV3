@@ -27,9 +27,6 @@ export default function PostsScreen() {
   const [statistics, setStatistics] = useState(null);
   const [filters, setFilters] = useState({
     search: "",
-    teacherId: "",
-    classId: "",
-    studentId: "",
   });
   const [form] = Form.useForm();
   const pageSize = 10;
@@ -134,8 +131,10 @@ export default function PostsScreen() {
     // Transform audience data for form
     const audienceForForm = {
       type: post.audience.type,
-      class_ids: post.audience.class_ids?.map(cls => cls._id || cls) || [],
-      student_ids: post.audience.student_ids?.map(student => student._id || student) || [],
+      class_ids: post.audience.class_ids?.map((cls) => cls._id || cls) || [],
+      student_ids:
+        post.audience.student_ids?.map((student) => student._id || student) ||
+        [],
     };
 
     form.setFieldsValue({
