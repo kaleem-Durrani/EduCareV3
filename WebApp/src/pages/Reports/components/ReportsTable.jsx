@@ -1,6 +1,7 @@
 import React from "react";
 import { Table, Button, Space, Tag, Popconfirm } from "antd";
 import { EditOutlined, CalendarOutlined, EyeOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Toilet, Apple, Users, BookOpen, X } from "lucide-react";
 import dayjs from "dayjs";
 
 export default function ReportsTable({ reports, loading, onEdit, onDelete, onViewDetails, isTeacher, pagination, onTableChange }) {
@@ -26,11 +27,14 @@ export default function ReportsTable({ reports, loading, onEdit, onDelete, onVie
       key: "dailyReports",
       render: (dailyReports, record) => (
         <Space size={[0, 4]} wrap>
-          {dailyReports?.map((report, index) => (
-            <Tag key={index} color="blue" style={{ margin: "2px" }}>
-              {report.day}
-            </Tag>
-          )) || <span style={{ color: "#999" }}>No daily reports</span>}
+          {dailyReports?.map((report, index) => {
+            const isCompleted = report.toilet || report.food_intake || report.friends_interaction || report.studies_mood;
+            return (
+              <Tag key={index} color={isCompleted ? "green" : "red"} style={{ margin: "2px" }}>
+                {report.day}
+              </Tag>
+            );
+          }) || <span style={{ color: "#999" }}>No daily reports</span>}
           <Button
             type="link"
             icon={<EyeOutlined />}
@@ -149,10 +153,22 @@ export default function ReportsTable({ reports, loading, onEdit, onDelete, onVie
                 }}>
                   <h5 style={{ marginBottom: 8, color: "#1890ff" }}>{day.day}</h5>
                   <div style={{ fontSize: "12px" }}>
-                    <div><strong>Toilet:</strong> {day.toilet || "Not recorded"}</div>
-                    <div><strong>Food Intake:</strong> {day.food_intake || "Not recorded"}</div>
-                    <div><strong>Friends Interaction:</strong> {day.friends_interaction || "Not recorded"}</div>
-                    <div><strong>Studies Mood:</strong> {day.studies_mood || "Not recorded"}</div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <Toilet size={14} style={{ marginRight: "6px" }} />
+                      {day.toilet ? <span>{day.toilet}</span> : <X size={14} color="red" />}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <Apple size={14} style={{ marginRight: "6px" }} />
+                      {day.food_intake ? <span>{day.food_intake}</span> : <X size={14} color="red" />}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <Users size={14} style={{ marginRight: "6px" }} />
+                      {day.friends_interaction ? <span>{day.friends_interaction}</span> : <X size={14} color="red" />}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <BookOpen size={14} style={{ marginRight: "6px" }} />
+                      {day.studies_mood ? <span>{day.studies_mood}</span> : <X size={14} color="red" />}
+                    </div>
                   </div>
                 </div>
               ))}

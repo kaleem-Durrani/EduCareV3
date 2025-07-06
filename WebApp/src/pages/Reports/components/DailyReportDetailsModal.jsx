@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Table, Typography, Space, Tag } from "antd";
-import { Home, Apple, Users, BookOpen } from "lucide-react";
+import { Toilet, Apple, Users, BookOpen } from "lucide-react";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
@@ -29,7 +29,7 @@ const DailyReportDetailsModal = ({ visible, onCancel, report }) => {
     {
       title: (
         <Space>
-          <Home size={18} />
+          <Toilet size={18} />
           <span>Toilet</span>
         </Space>
       ),

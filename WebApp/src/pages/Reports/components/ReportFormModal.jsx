@@ -12,11 +12,12 @@ import {
   Table,
   message,
 } from "antd";
-import { Home, Apple, Users, BookOpen } from "lucide-react";
+import { Home, Apple, Users, BookOpen, Toilet } from "lucide-react";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function ReportFormModal({
   visible,
@@ -30,11 +31,13 @@ export default function ReportFormModal({
 }) {
   const [form] = Form.useForm();
   const [dailyReports, setDailyReports] = useState([
-    { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-    { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-    { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-    { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-    { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Sun", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Mon", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Tue", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Wed", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Thu", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Fri", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    { day: "Sat", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
   ]);
 
   const dayNames = {
@@ -51,8 +54,7 @@ export default function ReportFormModal({
         // Set form values for edit mode
         form.setFieldsValue({
           student_id: initialData.student_id?._id || initialData.student_id,
-          weekStart: dayjs(initialData.weekStart),
-          weekEnd: dayjs(initialData.weekEnd),
+          weekRange: [dayjs(initialData.weekStart), dayjs(initialData.weekEnd)],
         });
         
         // Set daily reports data
@@ -78,20 +80,29 @@ export default function ReportFormModal({
   }, [visible, mode, initialData, form]);
 
   const handleSubmit = async (values) => {
-    // Validate that week dates are exactly 7 days apart
-    const startDate = dayjs(values.weekStart);
-    const endDate = dayjs(values.weekEnd);
+    // Extract dates from range picker
+    const [startDate, endDate] = values.weekRange;
     const daysDiff = endDate.diff(startDate, 'day');
 
     if (daysDiff !== 6) {
-      message.error("Week must be exactly 7 days (Monday to Sunday)");
+      message.error("Week must be exactly 7 days (Sunday to Saturday)");
+      return;
+    }
+
+    if (startDate.day() !== 0) {
+      message.error("Week must start on Sunday");
+      return;
+    }
+
+    if (endDate.day() !== 6) {
+      message.error("Week must end on Saturday");
       return;
     }
 
     const formData = {
       student_id: values.student_id,
-      weekStart: values.weekStart.format("YYYY-MM-DD"),
-      weekEnd: values.weekEnd.format("YYYY-MM-DD"),
+      weekStart: startDate.format("YYYY-MM-DD"),
+      weekEnd: endDate.format("YYYY-MM-DD"),
       dailyReports: dailyReports,
     };
 
@@ -101,11 +112,13 @@ export default function ReportFormModal({
   const handleCancel = () => {
     form.resetFields();
     setDailyReports([
-      { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Sun", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Mon", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Tue", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Wed", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Thu", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Fri", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Sat", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
     ]);
     onCancel();
   };
@@ -148,37 +161,38 @@ export default function ReportFormModal({
           </Select>
         </Form.Item>
 
-        <Space style={{ width: "100%" }}>
-          <Form.Item
-            name="weekStart"
-            label="Week Start (Monday)"
-            rules={[
-              { required: true, message: "Please select week start date!" },
-            ]}
-            style={{ flex: 1 }}
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              format="YYYY-MM-DD"
-              placeholder="Select Monday"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="weekEnd"
-            label="Week End (Sunday)"
-            rules={[
-              { required: true, message: "Please select week end date!" },
-            ]}
-            style={{ flex: 1 }}
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              format="YYYY-MM-DD"
-              placeholder="Select Sunday"
-            />
-          </Form.Item>
-        </Space>
+        <Form.Item
+          name="weekRange"
+          label="Week Period (Sunday to Saturday)"
+          rules={[
+            { required: true, message: "Please select week period!" },
+          ]}
+        >
+          <RangePicker
+            style={{ width: "100%" }}
+            format="YYYY-MM-DD"
+            placeholder={["Select Sunday", "Select Saturday"]}
+            onChange={(dates) => {
+              if (dates && dates.length === 2) {
+                const [start, end] = dates;
+                // Validate that it's exactly 7 days and starts on Sunday
+                const daysDiff = end.diff(start, 'day');
+                if (daysDiff !== 6) {
+                  message.error("Week must be exactly 7 days");
+                  return;
+                }
+                if (start.day() !== 0) {
+                  message.error("Week must start on Sunday");
+                  return;
+                }
+                if (end.day() !== 6) {
+                  message.error("Week must end on Saturday");
+                  return;
+                }
+              }
+            }}
+          />
+        </Form.Item>
 
         <Divider>Daily Reports</Divider>
 
@@ -209,7 +223,7 @@ export default function ReportFormModal({
               {
                 title: (
                   <Space>
-                    <Home size={18} />
+                    <Toilet size={18} />
                     <span>Toilet</span>
                   </Space>
                 ),
@@ -219,7 +233,7 @@ export default function ReportFormModal({
                   <Input
                     value={value}
                     onChange={(e) => updateDailyReport(record.day, "toilet", e.target.value)}
-                    placeholder="e.g., Good, 😊, Normal"
+                    placeholder="e.g., Pee 💧, Poop 💩, Both"
                     size="small"
                   />
                 ),
