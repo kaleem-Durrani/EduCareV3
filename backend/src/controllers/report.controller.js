@@ -87,7 +87,7 @@ export const createWeeklyReport = asyncHandler(async (req, res) => {
  */
 export const getWeeklyReports = asyncHandler(async (req, res) => {
   const { student_id } = req.params;
-  const { weekStart, weekEnd } = req.query;
+  const { weekStart, weekEnd, page = 1, limit = 10 } = req.query;
 
   // Check if student exists
   const student = await Student.findById(student_id);
@@ -139,12 +139,36 @@ export const getWeeklyReports = asyncHandler(async (req, res) => {
     query.weekStart = { $lte: new Date(weekEnd) };
   }
 
+  // Calculate pagination
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Get total count for pagination
+  const totalReports = await WeeklyReport.countDocuments(query);
+  const totalPages = Math.ceil(totalReports / limitNum);
+
+  // Get paginated reports
   const reports = await WeeklyReport.find(query)
     .populate("student_id", "fullName rollNum class")
     .populate("createdBy", "name email")
-    .sort({ weekStart: -1 });
+    .sort({ weekStart: -1 })
+    .skip(skip)
+    .limit(limitNum);
 
-  return sendSuccess(res, reports, "Weekly reports retrieved successfully");
+  const result = {
+    reports,
+    pagination: {
+      currentPage: pageNum,
+      totalPages,
+      totalItems: totalReports,
+      itemsPerPage: limitNum,
+      hasNextPage: pageNum < totalPages,
+      hasPrevPage: pageNum > 1,
+    },
+  };
+
+  return sendSuccess(res, result, "Weekly reports retrieved successfully");
 });
 
 /**

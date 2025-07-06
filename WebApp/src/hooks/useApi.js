@@ -26,7 +26,9 @@ export default function useApi(apiCall, options = {}) {
       const response = await apiCall(...args);
       console.log(response);
 
-      // Axios successful response structure
+      // API service returns response.data, which contains the backend response structure
+      // Backend response: { success: true, message: "...", data: [...] }
+      // Extract the actual data from the backend response structure
       setData(response.data);
       setResponse(response);
       return response.data; // Return data for easier access
