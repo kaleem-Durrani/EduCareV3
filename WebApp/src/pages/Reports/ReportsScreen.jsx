@@ -37,6 +37,8 @@ export default function ReportsScreen() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [editingReport, setEditingReport] = useState(null);
   const [dateRange, setDateRange] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Fetch students data
   const {
@@ -49,7 +51,13 @@ export default function ReportsScreen() {
     data: reportsData,
     isLoading: loading,
     request: fetchReports,
-  } = useApi((params) => reportService.getWeeklyReports(params.studentId, params.startDate, params.endDate));
+  } = useApi((params) => reportService.getWeeklyReports(
+    params.studentId,
+    params.startDate,
+    params.endDate,
+    params.page,
+    params.limit
+  ));
 
   // Create report API
   const { request: createReportRequest, isLoading: creating } = useApi(
@@ -71,10 +79,12 @@ export default function ReportsScreen() {
         studentId: selectedStudent._id,
         startDate: dateRange?.[0]?.format("YYYY-MM-DD"),
         endDate: dateRange?.[1]?.format("YYYY-MM-DD"),
+        page: currentPage,
+        limit: pageSize,
       };
       fetchReports(params);
     }
-  }, [selectedStudent, dateRange]);
+  }, [selectedStudent, dateRange, currentPage, pageSize]);
 
   const handleCreateReport = async (values) => {
     try {
@@ -86,6 +96,8 @@ export default function ReportsScreen() {
           studentId: selectedStudent._id,
           startDate: dateRange?.[0]?.format("YYYY-MM-DD"),
           endDate: dateRange?.[1]?.format("YYYY-MM-DD"),
+          page: currentPage,
+          limit: pageSize,
         };
         fetchReports(params);
       }
@@ -105,6 +117,8 @@ export default function ReportsScreen() {
           studentId: selectedStudent._id,
           startDate: dateRange?.[0]?.format("YYYY-MM-DD"),
           endDate: dateRange?.[1]?.format("YYYY-MM-DD"),
+          page: currentPage,
+          limit: pageSize,
         };
         fetchReports(params);
       }
@@ -134,15 +148,26 @@ export default function ReportsScreen() {
   const handleStudentChange = (studentId) => {
     const student = studentsData?.students?.find(s => s._id === studentId);
     setSelectedStudent(student);
+    setCurrentPage(1); // Reset to first page when student changes
   };
 
   const handleDateRangeChange = (dates) => {
     setDateRange(dates);
+    setCurrentPage(1); // Reset to first page when date range changes
+  };
+
+  const handleTableChange = ({ page, pageSize: newPageSize }) => {
+    setCurrentPage(page);
+    if (newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+      setCurrentPage(1); // Reset to first page when page size changes
+    }
   };
 
   // Calculate statistics
   const reports = reportsData?.reports || [];
-  const totalReports = reports.length;
+  const pagination = reportsData?.pagination;
+  const totalReports = pagination?.totalItems || reports.length;
   const totalDays = reports.reduce((sum, report) => sum + (report.dailyReports?.length || 0), 0);
   const avgDaysPerReport = totalReports > 0 ? Math.round(totalDays / totalReports * 10) / 10 : 0;
 
@@ -165,6 +190,7 @@ export default function ReportsScreen() {
                 value={totalReports}
                 prefix={<FileTextOutlined />}
                 valueStyle={{ color: "#3f8600" }}
+                loading={loading && !reports.length}
               />
             </Card>
           </Col>
@@ -175,6 +201,7 @@ export default function ReportsScreen() {
                 value={totalDays}
                 prefix={<CalendarOutlined />}
                 valueStyle={{ color: "#1890ff" }}
+                loading={loading && !reports.length}
               />
             </Card>
           </Col>
@@ -185,6 +212,7 @@ export default function ReportsScreen() {
                 value={avgDaysPerReport}
                 prefix={<FileTextOutlined />}
                 valueStyle={{ color: "#722ed1" }}
+                loading={loading && !reports.length}
               />
             </Card>
           </Col>
@@ -257,6 +285,8 @@ export default function ReportsScreen() {
                 loading={loading}
                 onEdit={handleEdit}
                 isTeacher={isTeacher}
+                pagination={reportsData?.pagination}
+                onTableChange={handleTableChange}
               />
             </div>
           ) : (

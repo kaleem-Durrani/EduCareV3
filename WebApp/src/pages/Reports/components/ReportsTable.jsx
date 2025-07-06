@@ -3,7 +3,7 @@ import { Table, Button, Space, Tag } from "antd";
 import { EditOutlined, CalendarOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
-export default function ReportsTable({ reports, loading, onEdit, isTeacher }) {
+export default function ReportsTable({ reports, loading, onEdit, isTeacher, pagination, onTableChange }) {
   const columns = [
     {
       title: "Week Period",
@@ -83,13 +83,35 @@ export default function ReportsTable({ reports, loading, onEdit, isTeacher }) {
       dataSource={reports}
       loading={loading}
       rowKey="reportId"
-      pagination={{
-        pageSize: 10,
-        showSizeChanger: false,
-        showQuickJumper: true,
-        showTotal: (total, range) =>
-          `${range[0]}-${range[1]} of ${total} reports`,
-      }}
+      pagination={
+        pagination
+          ? {
+              current: pagination.currentPage,
+              total: pagination.totalItems,
+              pageSize: pagination.itemsPerPage,
+              showQuickJumper: true,
+              showSizeChanger: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} reports`,
+              onChange: (page, pageSize) => {
+                if (onTableChange) {
+                  onTableChange({ page, pageSize });
+                }
+              },
+              onShowSizeChange: (_, size) => {
+                if (onTableChange) {
+                  onTableChange({ page: 1, pageSize: size });
+                }
+              },
+              pageSizeOptions: ["5", "10", "20", "50"],
+            }
+          : {
+              pageSize: 10,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} reports`,
+            }
+      }
       expandable={{
         expandedRowRender: (record) => (
           <div style={{ padding: "16px", backgroundColor: "#fafafa" }}>
