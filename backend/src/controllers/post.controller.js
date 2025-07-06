@@ -384,7 +384,10 @@ export const updatePost = asyncHandler(async (req, res) => {
     const updateData = { updatedBy: req.user.id };
     if (title !== undefined) updateData.title = title;
     if (content !== undefined) updateData.content = content;
-    if (teacherId !== undefined) updateData.teacherId = teacherId;
+    // Only update teacherId if it's provided and not empty (admins shouldn't change the original teacher)
+    if (teacherId !== undefined && teacherId !== null && teacherId.trim() !== "") {
+      updateData.teacherId = teacherId;
+    }
 
     // Process audience with "all" logic
     if (audience !== undefined) {

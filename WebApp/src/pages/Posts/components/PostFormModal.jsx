@@ -76,7 +76,15 @@ export default function PostFormModal({
       // Add form fields
       formData.append("title", values.title);
       formData.append("content", values.content);
-      formData.append("teacherId", values.teacherId || "");
+
+      // Get current user from localStorage
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      // Always append teacherId - use current admin/teacher ID
+      if (currentUser.id) {
+        formData.append("teacherId", currentUser.id);
+      }
+
       formData.append(
         "audience",
         JSON.stringify(values.audience || { type: "class" })
