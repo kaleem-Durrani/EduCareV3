@@ -26,7 +26,6 @@ export default function LostItemsScreen() {
   const [currentPage, setCurrentPage] = useState(1);
   const [statistics, setStatistics] = useState(null);
   const [filters, setFilters] = useState({
-    status: "",
     dateFrom: "",
     dateTo: "",
     search: "",

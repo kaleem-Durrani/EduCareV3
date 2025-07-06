@@ -28,7 +28,6 @@ export default function ParentsScreen() {
   const [statistics, setStatistics] = useState(null);
   const [filters, setFilters] = useState({
     search: "",
-    status: "",
   });
   const [form] = Form.useForm();
   const pageSize = 10;
