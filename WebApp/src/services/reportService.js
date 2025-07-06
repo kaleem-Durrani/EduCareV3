@@ -11,5 +11,6 @@ export const reportService = {
   },
   createWeeklyReport: (reportData) => api.post('/reports/weekly', reportData),
   updateWeeklyReport: (reportId, reportData) => api.put(`/reports/weekly/${reportId}`, reportData),
+  deleteWeeklyReport: (reportId) => api.delete(`/reports/weekly/${reportId}`),
   createBatchReports: (studentId, batchData) => api.post(`/reports/weekly/batch/${studentId}`, batchData),
 };

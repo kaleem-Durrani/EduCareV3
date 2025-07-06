@@ -17,8 +17,7 @@ import {
  * Admin/Teacher only
  */
 export const createWeeklyReport = asyncHandler(async (req, res) => {
-  const { student_id, weekStart, weekEnd, activities, behavior, mood, notes } =
-    req.body;
+  const { student_id, weekStart, weekEnd, dailyReports } = req.body;
 
   const result = await withTransaction(async (session) => {
     // Check if student exists
@@ -46,24 +45,39 @@ export const createWeeklyReport = asyncHandler(async (req, res) => {
       }
     }
 
+    // Validate week dates (should be exactly 7 days apart)
+    const startDate = new Date(weekStart);
+    const endDate = new Date(weekEnd);
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+    if (daysDiff !== 6) {
+      throwBadRequest("Week must be exactly 7 days (Monday to Sunday)");
+    }
+
     // Check if report already exists for this student and week
     const existingReport = await WeeklyReport.findOne({
       student_id,
-      weekStart: new Date(weekStart),
+      weekStart: startDate,
     }).session(session);
 
     if (existingReport) {
       throwConflict("Report already exists for this student and week");
     }
 
+    // Initialize daily reports structure if not provided
+    const defaultDailyReports = dailyReports || [
+      { day: "M", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "T", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "W", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "Th", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      { day: "F", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+    ];
+
     const newReport = new WeeklyReport({
       student_id,
-      weekStart: new Date(weekStart),
-      weekEnd: new Date(weekEnd),
-      activities: activities || [],
-      behavior,
-      mood,
-      notes,
+      weekStart: startDate,
+      weekEnd: endDate,
+      dailyReports: defaultDailyReports,
       createdBy: req.user.id,
     });
 
@@ -178,7 +192,7 @@ export const getWeeklyReports = asyncHandler(async (req, res) => {
  */
 export const updateWeeklyReport = asyncHandler(async (req, res) => {
   const { report_id } = req.params;
-  const { weekStart, weekEnd, activities, behavior, mood, notes } = req.body;
+  const { weekStart, weekEnd, dailyReports } = req.body;
 
   const result = await withTransaction(async (session) => {
     const report = await WeeklyReport.findById(report_id)
@@ -209,13 +223,20 @@ export const updateWeeklyReport = asyncHandler(async (req, res) => {
 
     // Update fields
     const updateData = { updatedBy: req.user.id };
-    if (weekStart !== undefined) updateData.weekStart = new Date(weekStart);
-    if (weekEnd !== undefined) updateData.weekEnd = new Date(weekEnd);
-    if (activities !== undefined) updateData.activities = activities;
-    if (behavior !== undefined) updateData.behavior = behavior;
-    if (mood !== undefined) updateData.mood = mood;
-    if (notes !== undefined) updateData.notes = notes;
-
+    if (weekStart !== undefined) {
+      updateData.weekStart = new Date(weekStart);
+    }
+    if (weekEnd !== undefined) {
+      updateData.weekEnd = new Date(weekEnd);
+    }
+    if (dailyReports !== undefined) {
+      // Validate daily reports structure
+      const validDays = ["M", "T", "W", "Th", "F"];
+      const validatedDailyReports = dailyReports.filter(report =>
+        validDays.includes(report.day)
+      );
+      updateData.dailyReports = validatedDailyReports;
+    }
     const updatedReport = await WeeklyReport.findByIdAndUpdate(
       report_id,
       updateData,
@@ -229,6 +250,49 @@ export const updateWeeklyReport = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, result, "Weekly report updated successfully");
+});
+
+/**
+ * Delete weekly report
+ * DELETE /api/reports/weekly/:report_id
+ * Admin/Teacher only
+ */
+export const deleteWeeklyReport = asyncHandler(async (req, res) => {
+  const { report_id } = req.params;
+
+  const result = await withTransaction(async (session) => {
+    const report = await WeeklyReport.findById(report_id)
+      .populate("student_id")
+      .session(session);
+    if (!report) {
+      throwNotFound("Weekly report");
+    }
+
+    // If user is a teacher, check if they have access to this student
+    if (req.user.role === "teacher") {
+      const teacherClasses = await Class.find({
+        teachers: req.user.id,
+        isActive: true,
+      })
+        .select("_id")
+        .session(session);
+
+      const classIds = teacherClasses.map((cls) => cls._id.toString());
+
+      if (
+        !report.student_id.current_class ||
+        !classIds.includes(report.student_id.current_class.toString())
+      ) {
+        throwForbidden("You don't have access to this student");
+      }
+    }
+
+    await WeeklyReport.findByIdAndDelete(report_id).session(session);
+
+    return { deletedId: report_id };
+  });
+
+  return sendSuccess(res, result, "Weekly report deleted successfully");
 });
 
 /**

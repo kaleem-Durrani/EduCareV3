@@ -3,6 +3,7 @@ import {
   createWeeklyReport,
   getWeeklyReports,
   updateWeeklyReport,
+  deleteWeeklyReport,
   createBatchReports,
 } from "../controllers/report.controller.js";
 import {
@@ -59,6 +60,20 @@ router.put(
   updateReportValidation,
   handleValidationErrors,
   updateWeeklyReport
+);
+
+/**
+ * @route   DELETE /api/reports/weekly/:report_id
+ * @desc    Delete weekly report
+ * @access  Private (Admin/Teacher)
+ */
+router.delete(
+  "/reports/weekly/:report_id",
+  authenticate,
+  requireAdminOrTeacher,
+  reportIdValidation,
+  handleValidationErrors,
+  deleteWeeklyReport
 );
 
 /**
