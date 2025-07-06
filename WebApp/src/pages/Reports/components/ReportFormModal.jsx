@@ -12,12 +12,7 @@ import {
   Table,
   message,
 } from "antd";
-import {
-  RestOutlined,
-  UtensilsOutlined,
-  TeamOutlined,
-  BookOutlined,
-} from "@ant-design/icons";
+import { Home, Apple, Users, BookOpen } from "lucide-react";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
@@ -214,7 +209,7 @@ export default function ReportFormModal({
               {
                 title: (
                   <Space>
-                    <RestOutlined />
+                    <Home size={18} />
                     <span>Toilet</span>
                   </Space>
                 ),
@@ -232,7 +227,7 @@ export default function ReportFormModal({
               {
                 title: (
                   <Space>
-                    <UtensilsOutlined />
+                    <Apple size={18} />
                     <span>Food Intake</span>
                   </Space>
                 ),
@@ -250,7 +245,7 @@ export default function ReportFormModal({
               {
                 title: (
                   <Space>
-                    <TeamOutlined />
+                    <Users size={18} />
                     <span>Friends Interaction</span>
                   </Space>
                 ),
@@ -268,7 +263,7 @@ export default function ReportFormModal({
               {
                 title: (
                   <Space>
-                    <BookOutlined />
+                    <BookOpen size={18} />
                     <span>Studies Mood</span>
                   </Space>
                 ),

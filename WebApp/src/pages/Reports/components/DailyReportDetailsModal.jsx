@@ -1,12 +1,6 @@
 import React from "react";
 import { Modal, Table, Typography, Space, Tag } from "antd";
-import {
-  RestOutlined,
-  UtensilsOutlined,
-  TeamOutlined,
-  BookOutlined,
-  SmileOutlined,
-} from "@ant-design/icons";
+import { Home, Apple, Users, BookOpen } from "lucide-react";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
@@ -35,7 +29,7 @@ const DailyReportDetailsModal = ({ visible, onCancel, report }) => {
     {
       title: (
         <Space>
-          <RestOutlined />
+          <Home size={18} />
           <span>Toilet</span>
         </Space>
       ),
@@ -46,7 +40,7 @@ const DailyReportDetailsModal = ({ visible, onCancel, report }) => {
     {
       title: (
         <Space>
-          <UtensilsOutlined />
+          <Apple size={18} />
           <span>Food Intake</span>
         </Space>
       ),
@@ -57,7 +51,7 @@ const DailyReportDetailsModal = ({ visible, onCancel, report }) => {
     {
       title: (
         <Space>
-          <TeamOutlined />
+          <Users size={18} />
           <span>Friends Interaction</span>
         </Space>
       ),
@@ -68,7 +62,7 @@ const DailyReportDetailsModal = ({ visible, onCancel, report }) => {
     {
       title: (
         <Space>
-          <BookOutlined />
+          <BookOpen size={18} />
           <span>Studies Mood</span>
         </Space>
       ),
