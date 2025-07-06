@@ -34,11 +34,11 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [selectedDay, setSelectedDay] = useState('M');
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([
-    { day: 'Mon', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'Tue', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'Wed', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'Thu', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'Fri', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'M', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'T', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'W', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'Th', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+    { day: 'F', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
   ]);
 
   // API hook
@@ -63,13 +63,13 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
 
       setWeekStart(sunday);
       setWeekEnd(saturday);
-      setSelectedDay('Mon');
+      setSelectedDay('M');
       setDailyReports([
-        { day: 'Mon', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'Tue', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'Wed', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'Thu', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'Fri', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'M', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'T', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'W', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'Th', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
+        { day: 'F', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
       ]);
     }
   }, [visible]);

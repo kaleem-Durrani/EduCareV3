@@ -59,11 +59,11 @@ export const DayInputForm: React.FC<DayInputFormProps> = ({
 
   const getDayName = (day: string) => {
     const dayNames: Record<string, string> = {
-      Mon: 'Monday',
-      Tue: 'Tuesday',
-      Wed: 'Wednesday',
-      Thu: 'Thursday',
-      Fri: 'Friday',
+      M: 'Monday',
+      T: 'Tuesday',
+      W: 'Wednesday',
+      Th: 'Thursday',
+      F: 'Friday',
     };
     return dayNames[day] || day;
   };

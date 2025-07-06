@@ -21,7 +21,7 @@ export const DaySelector: React.FC<DaySelectorProps> = ({
 }) => {
   const { colors } = useTheme();
 
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const days = ['M', 'T', 'W', 'Th', 'F'];
 
   const getDayStatus = (day: string) => {
     const dayReport = dailyReports.find((report) => report.day === day);
