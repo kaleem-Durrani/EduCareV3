@@ -1,4 +1,3 @@
-
 import {
   Modal,
   Descriptions,
@@ -18,10 +17,16 @@ import {
   VideoCameraOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
+import { SERVER_URL } from "../../../services";
 
 const { Paragraph, Title } = Typography;
 
-export default function ViewPostModal({ visible, onCancel, post, onManageAudience }) {
+export default function ViewPostModal({
+  visible,
+  onCancel,
+  post,
+  onManageAudience,
+}) {
   if (!post) return null;
 
   const formatDate = (dateString) => {
@@ -31,7 +36,11 @@ export default function ViewPostModal({ visible, onCancel, post, onManageAudienc
 
   const renderAudience = (audience) => {
     if (!audience || audience.type === "all") {
-      return <Tag color="blue" icon={<TeamOutlined />}>All Students</Tag>;
+      return (
+        <Tag color="blue" icon={<TeamOutlined />}>
+          All Students
+        </Tag>
+      );
     }
     if (audience.type === "class") {
       return (
@@ -107,16 +116,11 @@ export default function ViewPostModal({ visible, onCancel, post, onManageAudienc
             span={2}
           >
             <Space>
-              <Avatar
-                src={post.teacherId?.photoUrl}
-                size="small"
-              >
+              <Avatar src={post.teacherId?.photoUrl} size="small">
                 {post.teacherId?.name?.charAt(0)}
               </Avatar>
               <div>
-                <div style={{ fontWeight: "500" }}>
-                  {post.teacherId?.name}
-                </div>
+                <div style={{ fontWeight: "500" }}>{post.teacherId?.name}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>
                   {post.teacherId?.email}
                 </div>
@@ -180,20 +184,29 @@ export default function ViewPostModal({ visible, onCancel, post, onManageAudienc
             <Divider />
             <div>
               <Title level={4}>Media ({post.media.length} files)</Title>
-              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: "100%" }}
+              >
                 {post.media.map((mediaItem, index) => (
                   <div key={index}>
-                    {mediaItem.type === 'image' ? (
+                    {mediaItem.type === "image" ? (
                       <div>
                         <Space>
                           <PictureOutlined />
                           <span style={{ fontWeight: "500" }}>
-                            Image {index + 1}: {mediaItem.filename || 'Image file'}
+                            Image {index + 1}:{" "}
+                            {mediaItem.filename || "Image file"}
                           </span>
                         </Space>
                         <div style={{ marginTop: "8px" }}>
                           <Image
-                            src={mediaItem.url}
+                            src={
+                              mediaItem.url
+                                ? SERVER_URL + "/" + mediaItem.url
+                                : ""
+                            }
                             alt={`Post image ${index + 1}`}
                             style={{ maxWidth: "100%", maxHeight: "300px" }}
                           />
@@ -204,12 +217,17 @@ export default function ViewPostModal({ visible, onCancel, post, onManageAudienc
                         <Space>
                           <VideoCameraOutlined />
                           <span style={{ fontWeight: "500" }}>
-                            Video {index + 1}: {mediaItem.filename || 'Video file'}
+                            Video {index + 1}:{" "}
+                            {mediaItem.filename || "Video file"}
                           </span>
                         </Space>
                         <div style={{ marginTop: "8px" }}>
                           <video
-                            src={mediaItem.url}
+                            src={
+                              mediaItem.url
+                                ? SERVER_URL + "/" + mediaItem.url
+                                : ""
+                            }
                             controls
                             style={{ maxWidth: "100%", maxHeight: "300px" }}
                           >

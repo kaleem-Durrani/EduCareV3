@@ -12,6 +12,7 @@ import { InboxOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { useStudentsContext } from "../../../context/StudentsContext";
 import { useClassesContext } from "../../../context/ClassesContext";
+import { SERVER_URL } from "../../../services";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -39,21 +40,21 @@ export default function PostFormModal({
   useEffect(() => {
     if (isEditing && editingPost?.media) {
       const images = editingPost.media
-        .filter(m => m.type === 'image')
+        .filter((m) => m.type === "image")
         .map((media, index) => ({
           uid: `existing-image-${index}`,
           name: media.filename || `Image ${index + 1}`,
-          status: 'done',
-          url: media.url,
+          status: "done",
+          url: SERVER_URL + "/" + media.url,
         }));
 
       const videos = editingPost.media
-        .filter(m => m.type === 'video')
+        .filter((m) => m.type === "video")
         .map((media, index) => ({
           uid: `existing-video-${index}`,
           name: media.filename || `Video ${index + 1}`,
-          status: 'done',
-          url: media.url,
+          status: "done",
+          url: SERVER_URL + "/" + media.url,
         }));
 
       setImageFileList(images);
@@ -73,22 +74,25 @@ export default function PostFormModal({
       const formData = new FormData();
 
       // Add form fields
-      formData.append('title', values.title);
-      formData.append('content', values.content);
-      formData.append('teacherId', values.teacherId || '');
-      formData.append('audience', JSON.stringify(values.audience || { type: 'class' }));
+      formData.append("title", values.title);
+      formData.append("content", values.content);
+      formData.append("teacherId", values.teacherId || "");
+      formData.append(
+        "audience",
+        JSON.stringify(values.audience || { type: "class" })
+      );
 
       // Add multiple images
       imageFileList.forEach((file) => {
         if (file.originFileObj) {
-          formData.append('images', file.originFileObj);
+          formData.append("images", file.originFileObj);
         }
       });
 
       // Add multiple videos
       videoFileList.forEach((file) => {
         if (file.originFileObj) {
-          formData.append('videos', file.originFileObj);
+          formData.append("videos", file.originFileObj);
         }
       });
 
@@ -166,21 +170,25 @@ export default function PostFormModal({
     },
     itemRender: (originNode, file) => {
       return (
-        <div style={{ position: 'relative' }}>
-          <div style={{
-            width: '100%',
-            height: '100px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#f5f5f5',
-            border: '1px dashed #d9d9d9',
-            borderRadius: '6px'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', marginBottom: '4px' }}>🎥</div>
-              <div style={{ fontSize: '12px', color: '#666' }}>
-                {file.name?.length > 15 ? `${file.name.substring(0, 15)}...` : file.name}
+        <div style={{ position: "relative" }}>
+          <div
+            style={{
+              width: "100%",
+              height: "100px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f5f5f5",
+              border: "1px dashed #d9d9d9",
+              borderRadius: "6px",
+            }}
+          >
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "24px", marginBottom: "4px" }}>🎥</div>
+              <div style={{ fontSize: "12px", color: "#666" }}>
+                {file.name?.length > 15
+                  ? `${file.name.substring(0, 15)}...`
+                  : file.name}
               </div>
             </div>
           </div>
@@ -244,19 +252,22 @@ export default function PostFormModal({
                 <Form.Item
                   name={["audience", "class_ids"]}
                   label="Select Classes"
-                  rules={[{ required: true, message: "Please select at least one class" }]}
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please select at least one class",
+                    },
+                  ]}
                 >
                   <Select
                     mode="multiple"
                     placeholder="Select classes..."
                     showSearch
                     filterOption={(input, option) =>
-                      option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      option.label.toLowerCase().indexOf(input.toLowerCase()) >=
+                      0
                     }
-                    options={classes?.map(cls => ({
-                      value: cls._id,
-                      label: cls.name,
-                    })) || []}
+                    options={classes}
                   />
                 </Form.Item>
               );
@@ -267,7 +278,12 @@ export default function PostFormModal({
                 <Form.Item
                   name={["audience", "student_ids"]}
                   label="Select Students"
-                  rules={[{ required: true, message: "Please select at least one student" }]}
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please select at least one student",
+                    },
+                  ]}
                 >
                   <Select
                     mode="multiple"
@@ -276,10 +292,7 @@ export default function PostFormModal({
                     filterOption={(input, option) =>
                       option?.label?.toLowerCase().includes(input.toLowerCase())
                     }
-                    options={students?.map(student => ({
-                      value: student._id,
-                      label: student.fullName,
-                    })) || []}
+                    options={students}
                   />
                 </Form.Item>
               );
