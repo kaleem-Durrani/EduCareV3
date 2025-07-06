@@ -10,7 +10,7 @@ import {
   PostsFilters,
   PostsTable,
   PostFormModal,
-  PostDetailsModal,
+  ViewPostModal,
   AudienceManagementModal,
 } from "./components";
 
@@ -284,7 +284,7 @@ export default function PostsScreen() {
         />
 
         {/* Post Details Modal */}
-        <PostDetailsModal
+        <ViewPostModal
           visible={isDetailsModalVisible}
           post={selectedPost}
           onCancel={handleDetailsCancel}

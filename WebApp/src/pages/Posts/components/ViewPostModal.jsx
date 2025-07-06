@@ -1,4 +1,4 @@
-import React from "react";
+
 import {
   Modal,
   Descriptions,
@@ -8,6 +8,7 @@ import {
   Typography,
   Space,
   Divider,
+  Button,
 } from "antd";
 import {
   UserOutlined,
@@ -15,11 +16,12 @@ import {
   TeamOutlined,
   PictureOutlined,
   VideoCameraOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 
 const { Paragraph, Title } = Typography;
 
-export default function ViewPostModal({ visible, onCancel, post }) {
+export default function ViewPostModal({ visible, onCancel, post, onManageAudience }) {
   if (!post) return null;
 
   const formatDate = (dateString) => {
@@ -67,7 +69,24 @@ export default function ViewPostModal({ visible, onCancel, post }) {
       title="View Post"
       open={visible}
       onCancel={onCancel}
-      footer={null}
+      footer={[
+        <Button key="cancel" onClick={onCancel}>
+          Close
+        </Button>,
+        onManageAudience && (
+          <Button
+            key="manage"
+            type="primary"
+            icon={<SettingOutlined />}
+            onClick={() => {
+              onCancel(); // Close this modal first
+              onManageAudience(post);
+            }}
+          >
+            Manage Audience
+          </Button>
+        ),
+      ]}
       width={800}
     >
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
