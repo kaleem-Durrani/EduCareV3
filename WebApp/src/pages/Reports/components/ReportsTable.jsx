@@ -47,11 +47,11 @@ export default function ReportsTable({ reports, loading, onEdit, onDelete, onVie
       key: "completion",
       render: (_, record) => {
         const totalDays = record.dailyReports?.length || 0;
-        const completedDays = record.dailyReports?.filter(day => 
-          day.pee || day.poop || day.food || day.mood
+        const completedDays = record.dailyReports?.filter(day =>
+          day.toilet || day.food_intake || day.friends_interaction || day.studies_mood
         ).length || 0;
         const percentage = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
-        
+
         return (
           <Space direction="vertical" size={0}>
             <Tag color={percentage >= 80 ? "green" : percentage >= 50 ? "orange" : "red"}>
@@ -105,7 +105,7 @@ export default function ReportsTable({ reports, loading, onEdit, onDelete, onVie
       columns={columns}
       dataSource={reports}
       loading={loading}
-      rowKey="reportId"
+      rowKey="_id"
       pagination={
         pagination
           ? {
@@ -141,7 +141,7 @@ export default function ReportsTable({ reports, loading, onEdit, onDelete, onVie
             <h4 style={{ marginBottom: 16 }}>Daily Report Details</h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
               {record.dailyReports?.map((day, index) => (
-                <div key={index} style={{ 
+                <div key={`${record._id}-${day.day}`} style={{
                   padding: "12px", 
                   backgroundColor: "white", 
                   borderRadius: "6px",
@@ -149,10 +149,10 @@ export default function ReportsTable({ reports, loading, onEdit, onDelete, onVie
                 }}>
                   <h5 style={{ marginBottom: 8, color: "#1890ff" }}>{day.day}</h5>
                   <div style={{ fontSize: "12px" }}>
-                    <div><strong>Pee:</strong> {day.pee || "Not recorded"}</div>
-                    <div><strong>Poop:</strong> {day.poop || "Not recorded"}</div>
-                    <div><strong>Food:</strong> {day.food || "Not recorded"}</div>
-                    <div><strong>Mood:</strong> {day.mood || "Not recorded"}</div>
+                    <div><strong>Toilet:</strong> {day.toilet || "Not recorded"}</div>
+                    <div><strong>Food Intake:</strong> {day.food_intake || "Not recorded"}</div>
+                    <div><strong>Friends Interaction:</strong> {day.friends_interaction || "Not recorded"}</div>
+                    <div><strong>Studies Mood:</strong> {day.studies_mood || "Not recorded"}</div>
                   </div>
                 </div>
               ))}

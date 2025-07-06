@@ -9,10 +9,10 @@ export default function DailyReportEditor({ day, report, onReportChange }) {
   };
 
   const fields = [
-    { key: "pee", label: "Pee", placeholder: "Record pee activities..." },
-    { key: "poop", label: "Poop", placeholder: "Record poop activities..." },
-    { key: "food", label: "Food", placeholder: "Record food intake..." },
-    { key: "mood", label: "Mood", placeholder: "Record mood and behavior..." },
+    { key: "toilet", label: "Toilet", placeholder: "Record toilet activities..." },
+    { key: "food_intake", label: "Food Intake", placeholder: "Record food intake..." },
+    { key: "friends_interaction", label: "Friends Interaction", placeholder: "Record social interactions..." },
+    { key: "studies_mood", label: "Studies Mood", placeholder: "Record studies and mood..." },
   ];
 
   return (
