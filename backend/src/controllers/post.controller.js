@@ -404,13 +404,30 @@ export const updatePost = asyncHandler(async (req, res) => {
     }
 
     // Handle multiple media file uploads and cleanup
-    if (req.files) {
-      const newMedia = [];
+    const newMedia = [];
 
-      // Clean up old media files
+    // Parse existing media that should be preserved
+    let existingMedia = [];
+    if (req.body.existingMedia) {
+      try {
+        existingMedia = JSON.parse(req.body.existingMedia);
+      } catch (error) {
+        console.error("Error parsing existingMedia:", error);
+      }
+    }
+
+    // Add preserved existing media
+    existingMedia.forEach(media => {
+      newMedia.push(media);
+    });
+
+    // Handle new file uploads
+    if (req.files && (Array.isArray(req.files) ? req.files.length > 0 : Object.keys(req.files).length > 0)) {
+      // Clean up old media files that are not being preserved
       if (post.media && post.media.length > 0) {
+        const preservedUrls = existingMedia.map(media => media.url);
         for (const mediaItem of post.media) {
-          if (mediaItem.url && fs.existsSync(mediaItem.url)) {
+          if (mediaItem.url && !preservedUrls.includes(mediaItem.url) && fs.existsSync(mediaItem.url)) {
             fs.unlink(mediaItem.url, (err) => {
               if (err) console.error("Error deleting old media:", err);
             });
@@ -457,7 +474,10 @@ export const updatePost = asyncHandler(async (req, res) => {
           }
         }
       }
+    }
 
+    // Update media only if we have new files or existing media to preserve
+    if (req.files || existingMedia.length > 0) {
       updateData.media = newMedia;
     }
 
