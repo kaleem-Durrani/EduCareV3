@@ -116,7 +116,7 @@ export default function ReportsScreen() {
 
   const handleUpdateReport = async (values) => {
     try {
-      await updateReportRequest({ id: editingReport.reportId, data: values });
+      await updateReportRequest({ id: editingReport._id, data: values });
       message.success("Report updated successfully!");
       setIsEditModalVisible(false);
       setEditingReport(null);
