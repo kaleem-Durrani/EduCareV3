@@ -21,7 +21,7 @@ export const DaySelector: React.FC<DaySelectorProps> = ({
 }) => {
   const { colors } = useTheme();
 
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
   const getDayStatus = (day: string) => {
     const dayReport = dailyReports.find((report) => report.day === day);
@@ -38,9 +38,12 @@ export const DaySelector: React.FC<DaySelectorProps> = ({
   return (
     <View className="mb-4">
       <Text
-        className="mb-3 text-center text-lg font-semibold"
+        className="mb-2 text-center text-lg font-semibold"
         style={{ color: colors.textPrimary }}>
-        Select Day to Edit
+        Select School Day to Edit
+      </Text>
+      <Text className="mb-3 text-center text-sm" style={{ color: colors.textSecondary }}>
+        Monday to Friday (School Days)
       </Text>
 
       <View className="flex-row justify-between">

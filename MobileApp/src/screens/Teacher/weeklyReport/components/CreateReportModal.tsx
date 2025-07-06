@@ -34,13 +34,11 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [selectedDay, setSelectedDay] = useState('M');
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([
-    { day: 'Sun', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
     { day: 'Mon', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
     { day: 'Tue', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
     { day: 'Wed', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
     { day: 'Thu', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
     { day: 'Fri', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-    { day: 'Sat', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
   ]);
 
   // API hook
@@ -65,15 +63,13 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
 
       setWeekStart(sunday);
       setWeekEnd(saturday);
-      setSelectedDay('Sun');
+      setSelectedDay('Mon');
       setDailyReports([
-        { day: 'Sun', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
         { day: 'Mon', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
         { day: 'Tue', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
         { day: 'Wed', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
         { day: 'Thu', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
         { day: 'Fri', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
-        { day: 'Sat', toilet: '', food_intake: '', friends_interaction: '', studies_mood: '' },
       ]);
     }
   }, [visible]);
@@ -219,6 +215,9 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
           <View className="mb-4">
             <Text className="mb-2 font-medium" style={{ color: colors.textPrimary }}>
               Week Period (Sunday to Saturday)
+            </Text>
+            <Text className="mb-2 text-xs" style={{ color: colors.textSecondary }}>
+              Daily activities are recorded for Monday to Friday only
             </Text>
 
             <View className="flex-row">
