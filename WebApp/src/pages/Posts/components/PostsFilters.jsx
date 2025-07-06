@@ -35,15 +35,8 @@ export default function PostsFilters({ filters, onFilterChange }) {
             filterOption={(input, option) =>
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-          >
-            {teachers && teachers.length > 0 ? teachers.map((teacher) => (
-              <Option key={teacher._id} value={teacher._id}>
-                {teacher.name}
-              </Option>
-            )) : (
-              <Option disabled value="">No teachers available</Option>
-            )}
-          </Select>
+            options={teachers}
+          />
         </Col>
         <Col span={6}>
           <Select
@@ -56,15 +49,8 @@ export default function PostsFilters({ filters, onFilterChange }) {
             filterOption={(input, option) =>
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-          >
-            {classes && classes.length > 0 ? classes.map((cls) => (
-              <Option key={cls._id} value={cls._id}>
-                {cls.name}
-              </Option>
-            )) : (
-              <Option disabled value="">No classes available</Option>
-            )}
-          </Select>
+            options={classes}
+          />
         </Col>
         <Col span={6}>
           <Select
@@ -77,15 +63,8 @@ export default function PostsFilters({ filters, onFilterChange }) {
             filterOption={(input, option) =>
               option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-          >
-            {students && students.length > 0 ? students.map((student) => (
-              <Option key={student._id} value={student._id}>
-                {student.fullName}
-              </Option>
-            )) : (
-              <Option disabled value="">No students available</Option>
-            )}
-          </Select>
+            options={students}
+          />
         </Col>
       </Row>
     </Card>
