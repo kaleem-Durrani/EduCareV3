@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../../contexts';
+import { useAuth, useTheme } from '../../../contexts';
 
 interface Props {
   navigation: any;
@@ -9,6 +9,8 @@ interface Props {
 
 const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { colors, toggleTheme, isDark } = useTheme();
+
+  const { logout } = useAuth();
 
   const handleContact = () => {
     // WhatsApp to director's number as per guidelines
@@ -127,7 +129,7 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
             ACCOUNT
           </Text>
 
-          <SettingItem icon="🚪" title="Logout" onPress={() => console.log('Logout')} />
+          <SettingItem icon="🚪" title="Logout" onPress={() => logout()} />
         </View>
       </ScrollView>
     </SafeAreaView>

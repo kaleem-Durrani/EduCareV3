@@ -4,7 +4,9 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "seed": "node src/scripts/seedData.js",
+    "seed:dev": "nodemon src/scripts/seedData.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

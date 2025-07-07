@@ -20,6 +20,7 @@ import {
   updateStudentActiveStatus,
   generateEnrollmentNumber,
 } from "../controllers/student.controller.js";
+import { getMonthlyPlanForParent } from "../controllers/plan.controller.js";
 import {
   createStudentValidation,
   updateStudentValidation,
@@ -271,5 +272,19 @@ router.delete(
  * @access  Private (Parent)
  */
 router.get("/parent/students", authenticate, requireParent, getParentStudents);
+
+/**
+ * @route   GET /api/parent/monthly-plan/:student_id
+ * @desc    Get monthly plan for parent's child
+ * @access  Private (Parent)
+ */
+router.get(
+  "/parent/monthly-plan/:student_id",
+  authenticate,
+  requireParent,
+  studentIdValidation,
+  handleValidationErrors,
+  getMonthlyPlanForParent
+);
 
 export default router;

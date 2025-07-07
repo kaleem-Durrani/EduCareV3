@@ -56,6 +56,8 @@ export const createWeeklyReport = asyncHandler(async (req, res) => {
 
     // Validate that start date is Sunday (0) and end date is Saturday (6)
     if (startDate.getDay() !== 0) {
+      console.log(startDate.getDay());
+      console.log(endDate.getDay());
       throwBadRequest("Week must start on Sunday");
     }
     if (endDate.getDay() !== 6) {
@@ -71,8 +73,8 @@ export const createWeeklyReport = asyncHandler(async (req, res) => {
         // New week ends during existing week
         { weekStart: { $lte: endDate }, weekEnd: { $gte: endDate } },
         // New week completely contains existing week
-        { weekStart: { $gte: startDate }, weekEnd: { $lte: endDate } }
-      ]
+        { weekStart: { $gte: startDate }, weekEnd: { $lte: endDate } },
+      ],
     }).session(session);
 
     if (overlappingReport) {
@@ -81,13 +83,55 @@ export const createWeeklyReport = asyncHandler(async (req, res) => {
 
     // Initialize daily reports structure if not provided (Sunday to Saturday)
     const defaultDailyReports = dailyReports || [
-      { day: "Sun", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Mon", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Tue", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Wed", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Thu", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Fri", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
-      { day: "Sat", toilet: "", food_intake: "", friends_interaction: "", studies_mood: "" },
+      {
+        day: "Sun",
+        toilet: "",
+        food_intake: "",
+        friends_interaction: "",
+        studies_mood: "",
+      },
+      {
+        day: "Mon",
+        toilet: "",
+        food_intake: "",
+        friends_interaction: "",
+        studies_mood: "",
+      },
+      {
+        day: "Tue",
+        toilet: "",
+        food_intake: "",
+        friends_interaction: "",
+        studies_mood: "",
+      },
+      {
+        day: "Wed",
+        toilet: "",
+        food_intake: "",
+        friends_interaction: "",
+        studies_mood: "",
+      },
+      {
+        day: "Thu",
+        toilet: "",
+        food_intake: "",
+        friends_interaction: "",
+        studies_mood: "",
+      },
+      {
+        day: "Fri",
+        toilet: "",
+        food_intake: "",
+        friends_interaction: "",
+        studies_mood: "",
+      },
+      {
+        day: "Sat",
+        toilet: "",
+        food_intake: "",
+        friends_interaction: "",
+        studies_mood: "",
+      },
     ];
 
     const newReport = new WeeklyReport({
@@ -249,7 +293,7 @@ export const updateWeeklyReport = asyncHandler(async (req, res) => {
     if (dailyReports !== undefined) {
       // Validate daily reports structure
       const validDays = ["M", "T", "W", "Th", "F"];
-      const validatedDailyReports = dailyReports.filter(report =>
+      const validatedDailyReports = dailyReports.filter((report) =>
         validDays.includes(report.day)
       );
       updateData.dailyReports = validatedDailyReports;
