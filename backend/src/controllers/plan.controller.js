@@ -1,5 +1,7 @@
 import MonthlyPlan from "../models/monthlyPlan.model.js";
 import Class from "../models/class.model.js";
+import Student from "../models/student.model.js";
+import ParentStudentRelation from "../models/parentStudentRelation.model.js";
 import { sendSuccess } from "../utils/response.utils.js";
 import { deleteUploadedFile } from "../utils/file.utils.js";
 import { normalizePath } from "../middleware/upload.middleware.js";
@@ -236,4 +238,56 @@ export const listMonthlyPlans = asyncHandler(async (req, res) => {
     .sort({ year: -1, month: -1 });
 
   return sendSuccess(res, plans, "Monthly plans retrieved successfully");
+});
+
+/**
+ * Get monthly plan for parent's child
+ * GET /api/parent/monthly-plan/:student_id
+ * Query params: month, year
+ * Parent access only
+ */
+export const getMonthlyPlanForParent = asyncHandler(async (req, res) => {
+  const { student_id } = req.params;
+  const { month, year } = req.query;
+  const parentId = req.user.id;
+
+  if (!month || !year) {
+    throwBadRequest("Month and year query parameters are required");
+  }
+
+  // Check if parent has access to this student
+  const relation = await ParentStudentRelation.findOne({
+    parent_id: parentId,
+    student_id,
+    active: true,
+  });
+
+  if (!relation) {
+    throwForbidden("You don't have access to this student");
+  }
+
+  // Get student to find their class
+  const student = await Student.findById(student_id).populate("current_class");
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  if (!student.current_class) {
+    throwNotFound("Student is not assigned to any class");
+  }
+
+  const plan = await MonthlyPlan.findOne({
+    class_id: student.current_class._id,
+    month: parseInt(month),
+    year: parseInt(year),
+  })
+    .populate("class_id", "name")
+    .populate("createdBy", "name email")
+    .populate("updatedBy", "name email");
+
+  if (!plan) {
+    throwNotFound("Monthly plan");
+  }
+
+  return sendSuccess(res, plan, "Monthly plan retrieved successfully");
 });

@@ -32,14 +32,28 @@ export interface MonthlyPlan {
  */
 export const monthlyPlanService = {
   /**
-   * Get monthly plan for a class (mobile app)
+   * Get monthly plan for a class (mobile app - teacher/admin use)
    * Uses existing endpoint: GET /api/plans/monthly/:class_id?month=X&year=Y
    */
   getMonthlyPlan: async (
-    classId: string, 
-    month: number, 
+    classId: string,
+    month: number,
     year: number
   ): Promise<ApiResponse<MonthlyPlan>> => {
     return ApiService.get<MonthlyPlan>(`/plans/monthly/${classId}?month=${month}&year=${year}`);
+  },
+
+  /**
+   * Get monthly plan for parent's child (mobile app - parent use)
+   * Uses new endpoint: GET /api/parent/monthly-plan/:student_id?month=X&year=Y
+   */
+  getMonthlyPlanForParent: async (
+    studentId: string,
+    month: number,
+    year: number
+  ): Promise<ApiResponse<MonthlyPlan>> => {
+    return ApiService.get<MonthlyPlan>(
+      `/parent/monthly-plan/${studentId}?month=${month}&year=${year}`
+    );
   },
 };
