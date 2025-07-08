@@ -13,3 +13,7 @@ export * from './activityService';
 export * from './noteService';
 export * from './postService';
 export * from './reportService';
+export * from './driverService';
+export * from './lostItemService';
+export * from './healthService';
+export * from './feeService';

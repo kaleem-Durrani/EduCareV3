@@ -133,3 +133,24 @@ COMPLETED GET /api/fees/<student_id>
 COMPLETED POST /api/fees (Admin/Teacher)
 COMPLETED PUT /api/fees/<fee_id>/status
 COMPLETED GET /api/fees/summary/<student_id>
+
+
+Driver/Transportation Management
+
+COMPLETED GET /api/drivers (Admin/Teacher - Get all drivers with pagination and filters)
+COMPLETED GET /api/drivers/<driver_id> (Admin/Teacher - Get driver by ID)
+COMPLETED POST /api/drivers (Admin - Create new driver)
+COMPLETED PUT /api/drivers/<driver_id> (Admin - Update driver)
+COMPLETED DELETE /api/drivers/<driver_id> (Admin - Delete driver)
+COMPLETED POST /api/drivers/<driver_id>/assign-student (Admin - Assign student to driver)
+COMPLETED DELETE /api/drivers/<driver_id>/students/<student_id> (Admin - Remove student from driver)
+COMPLETED GET /api/drivers/statistics (Admin/Teacher - Get driver statistics)
+COMPLETED GET /api/drivers/parent/<student_id> (Parent - Get driver info for child)
+
+
+Parent-Specific Endpoints
+
+COMPLETED GET /api/activities/parent/<student_id> (Parent - Get activities for child)
+COMPLETED GET /api/notes/parent/<student_id> (Parent - Get notes for child)
+COMPLETED GET /api/posts/parent/<student_id> (Parent - Get posts for child)
+COMPLETED GET /api/drivers/parent/<student_id> (Parent - Get driver info for child)

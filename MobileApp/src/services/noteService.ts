@@ -103,7 +103,10 @@ export const noteService = {
   /**
    * Update an existing note
    */
-  updateNote: async (noteId: string, data: UpdateNoteData): Promise<ApiResponse<{ note: Note }>> => {
+  updateNote: async (
+    noteId: string,
+    data: UpdateNoteData
+  ): Promise<ApiResponse<{ note: Note }>> => {
     return ApiService.put(`/notes/${noteId}`, data);
   },
 
@@ -112,5 +115,28 @@ export const noteService = {
    */
   deleteNote: async (noteId: string): Promise<ApiResponse<null>> => {
     return ApiService.delete(`/notes/${noteId}`);
+  },
+
+  /**
+   * Get notes for parent's child
+   * Uses parent-specific endpoint: GET /api/notes/parent/:student_id
+   */
+  getStudentNotesForParent: async (
+    studentId: string,
+    filters: NotesFilters = {}
+  ): Promise<ApiResponse<StudentNotesResponse>> => {
+    const params = new URLSearchParams();
+
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params.append('dateTo', filters.dateTo);
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+    const queryString = params.toString();
+    const url = `/notes/parent/${studentId}${queryString ? `?${queryString}` : ''}`;
+
+    return ApiService.get(url);
   },
 };

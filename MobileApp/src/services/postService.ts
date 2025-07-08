@@ -119,13 +119,19 @@ export const postService = {
    * Get posts for parent by student ID (for parent app - not implemented yet)
    * Uses endpoint: GET /api/posts/parent/:studentId
    */
-  getPostsForParent: async (studentId: string, page?: number, limit?: number): Promise<ApiResponse<PaginatedPostsResponse>> => {
+  getPostsForParent: async (
+    studentId: string,
+    page?: number,
+    limit?: number
+  ): Promise<ApiResponse<PaginatedPostsResponse>> => {
     const params = new URLSearchParams();
     if (page) params.append('page', page.toString());
     if (limit) params.append('limit', limit.toString());
 
     const queryString = params.toString();
-    const url = queryString ? `/posts/parent/${studentId}?${queryString}` : `/posts/parent/${studentId}`;
+    const url = queryString
+      ? `/posts/parent/${studentId}?${queryString}`
+      : `/posts/parent/${studentId}`;
 
     return ApiService.get<PaginatedPostsResponse>(url);
   },
@@ -144,7 +150,7 @@ export const postService = {
    */
   createPost: async (postData: CreatePostData, mediaFiles?: File[]): Promise<ApiResponse<Post>> => {
     const formData = new FormData();
-    
+
     formData.append('title', postData.title);
     formData.append('content', postData.content);
     formData.append('audience', JSON.stringify(postData.audience));
@@ -171,12 +177,17 @@ export const postService = {
    * Update post (mobile app)
    * Uses existing endpoint: PUT /api/posts/:post_id
    */
-  updatePost: async (postId: string, postData: UpdatePostData, mediaFiles?: File[]): Promise<ApiResponse<Post>> => {
+  updatePost: async (
+    postId: string,
+    postData: UpdatePostData,
+    mediaFiles?: File[]
+  ): Promise<ApiResponse<Post>> => {
     const formData = new FormData();
-    
+
     if (postData.title !== undefined) formData.append('title', postData.title);
     if (postData.content !== undefined) formData.append('content', postData.content);
-    if (postData.audience !== undefined) formData.append('audience', JSON.stringify(postData.audience));
+    if (postData.audience !== undefined)
+      formData.append('audience', JSON.stringify(postData.audience));
 
     // Add media files
     if (mediaFiles && mediaFiles.length > 0) {
@@ -202,6 +213,24 @@ export const postService = {
    */
   deletePost: async (postId: string): Promise<ApiResponse<void>> => {
     return ApiService.delete<void>(`/posts/${postId}`);
+  },
+
+  /**
+   * Get posts for parent's child (mobile app)
+   * Uses parent-specific endpoint: GET /api/posts/parent/:studentId
+   */
+  getPostsForParent: async (studentId: string): Promise<ApiResponse<Post[]>> => {
+    return ApiService.get<Post[]>(`/posts/parent/${studentId}`);
+  },
+
+  /**
+   * Get paginated posts (alias for getPosts)
+   * Uses existing endpoint: GET /api/posts/paginated
+   */
+  getPaginatedPosts: async (
+    filters?: PostFilters
+  ): Promise<ApiResponse<PaginatedPostsResponse>> => {
+    return postService.getPosts(filters);
   },
 
   // Note: Statistics API removed - only needed for admin web app
