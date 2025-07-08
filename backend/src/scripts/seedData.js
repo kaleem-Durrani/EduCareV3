@@ -6,6 +6,20 @@ import Class from "../models/class.model.js";
 import Student from "../models/student.model.js";
 import ParentStudentRelation from "../models/parentStudentRelation.model.js";
 import WeeklyMenu from "../models/weeklyMenu.model.js";
+import WeeklyReport from "../models/weeklyReport.model.js";
+import MonthlyPlan from "../models/monthlyPlan.model.js";
+import BoxItem from "../models/boxItem.model.js";
+import StudentBoxStatus from "../models/studentBoxStatus.model.js";
+import DocumentType from "../models/documentType.model.js";
+import StudentDocument from "../models/studentDocument.model.js";
+import Activity from "../models/activity.model.js";
+import Post from "../models/post.model.js";
+import Note from "../models/note.model.js";
+import LostItem from "../models/lostItem.model.js";
+import HealthInfo from "../models/healthInfo.model.js";
+import HealthMetric from "../models/healthMetric.model.js";
+import Fee from "../models/fee.model.js";
+import FeeTransaction from "../models/feeTransaction.model.js";
 import { connectDB, disconnectDB } from "../db/connection.js";
 
 config();
@@ -194,6 +208,165 @@ const menuData = [
         items: ["Hamburger", "Baked Beans", "Coleslaw", "Fruit Smoothie"],
       },
     ],
+  },
+];
+
+// Box Items Data (My Box)
+const boxItemsData = [
+  {
+    name: "Diapers",
+    description: "Clean diapers for daily use",
+    defaultInStock: true,
+  },
+  {
+    name: "Wipes",
+    description: "Baby wipes for cleaning",
+    defaultInStock: true,
+  },
+  {
+    name: "Extra Clothes",
+    description: "Change of clothes",
+    defaultInStock: false,
+  },
+  {
+    name: "Blanket",
+    description: "Comfort blanket for nap time",
+    defaultInStock: false,
+  },
+  {
+    name: "Pacifier",
+    description: "Pacifier for comfort",
+    defaultInStock: false,
+  },
+  { name: "Bottle", description: "Water or milk bottle", defaultInStock: true },
+  { name: "Snacks", description: "Healthy snacks", defaultInStock: false },
+  {
+    name: "Toys",
+    description: "Personal toys from home",
+    defaultInStock: false,
+  },
+  {
+    name: "Sunscreen",
+    description: "Sun protection cream",
+    defaultInStock: false,
+  },
+  {
+    name: "Hat",
+    description: "Sun hat for outdoor activities",
+    defaultInStock: false,
+  },
+];
+
+// Document Types Data (My Documents)
+const documentTypesData = [
+  {
+    name: "Birth Certificate",
+    description: "Official birth certificate",
+    required: true,
+  },
+  {
+    name: "Medical Records",
+    description: "Complete medical history",
+    required: true,
+  },
+  {
+    name: "Vaccination Card",
+    description: "Immunization records",
+    required: true,
+  },
+  {
+    name: "Emergency Contact Form",
+    description: "Emergency contact information",
+    required: true,
+  },
+  {
+    name: "Photo Authorization",
+    description: "Permission for photos/videos",
+    required: false,
+  },
+  {
+    name: "Allergy Information",
+    description: "Detailed allergy information",
+    required: false,
+  },
+  {
+    name: "Insurance Card",
+    description: "Health insurance information",
+    required: false,
+  },
+  {
+    name: "Parent ID Copy",
+    description: "Copy of parent identification",
+    required: true,
+  },
+];
+
+// Activities Data
+const activitiesData = [
+  {
+    title: "Art & Craft Day",
+    description: "Creative art activities with painting and crafts",
+    date: new Date("2024-02-15"),
+    color: "#FF6B6B",
+  },
+  {
+    title: "Music & Movement",
+    description: "Musical activities and dance for motor skills",
+    date: new Date("2024-02-20"),
+    color: "#4ECDC4",
+  },
+  {
+    title: "Story Time",
+    description: "Interactive storytelling session",
+    date: new Date("2024-02-22"),
+    color: "#45B7D1",
+  },
+  {
+    title: "Outdoor Play",
+    description: "Garden activities and outdoor exploration",
+    date: new Date("2024-02-25"),
+    color: "#96CEB4",
+  },
+  {
+    title: "Science Discovery",
+    description: "Simple science experiments for kids",
+    date: new Date("2024-02-28"),
+    color: "#FFEAA7",
+  },
+  {
+    title: "Cooking Class",
+    description: "Simple cooking activities with healthy foods",
+    date: new Date("2024-03-05"),
+    color: "#DDA0DD",
+  },
+];
+
+// Lost Items Data
+const lostItemsData = [
+  {
+    title: "Blue Water Bottle",
+    description: "Small blue water bottle with cartoon characters",
+    dateFound: new Date("2024-01-15"),
+    status: "unclaimed",
+  },
+  {
+    title: "Red Sweater",
+    description: "Red knitted sweater, size 3T",
+    dateFound: new Date("2024-01-18"),
+    status: "unclaimed",
+  },
+  {
+    title: "Teddy Bear",
+    description: "Brown teddy bear with blue ribbon",
+    dateFound: new Date("2024-01-20"),
+    status: "claimed",
+    claimedDate: new Date("2024-01-22"),
+  },
+  {
+    title: "Lunch Box",
+    description: "Green lunch box with superhero design",
+    dateFound: new Date("2024-01-25"),
+    status: "unclaimed",
   },
 ];
 
@@ -567,6 +740,608 @@ async function createMenus(menuData, adminUser) {
   return menus;
 }
 
+// Create Box Items
+async function createBoxItems(boxItemsData, adminUser) {
+  const boxItems = [];
+
+  for (const item of boxItemsData) {
+    const existingItem = await BoxItem.findOne({ name: item.name });
+
+    if (existingItem) {
+      console.log(`⚠️  Box item "${item.name}" already exists, skipping...`);
+      boxItems.push(existingItem);
+      continue;
+    }
+
+    const newItem = new BoxItem({
+      name: item.name,
+      description: item.description,
+      defaultInStock: item.defaultInStock,
+      createdBy: adminUser._id,
+    });
+
+    await newItem.save();
+    boxItems.push(newItem);
+    console.log(`✅ Created box item: ${item.name}`);
+  }
+
+  return boxItems;
+}
+
+// Create Document Types
+async function createDocumentTypes(documentTypesData, adminUser) {
+  const documentTypes = [];
+
+  for (const docType of documentTypesData) {
+    const existingDocType = await DocumentType.findOne({ name: docType.name });
+
+    if (existingDocType) {
+      console.log(
+        `⚠️  Document type "${docType.name}" already exists, skipping...`
+      );
+      documentTypes.push(existingDocType);
+      continue;
+    }
+
+    const newDocType = new DocumentType({
+      name: docType.name,
+      description: docType.description,
+      required: docType.required,
+      createdBy: adminUser._id,
+    });
+
+    await newDocType.save();
+    documentTypes.push(newDocType);
+    console.log(`✅ Created document type: ${docType.name}`);
+  }
+
+  return documentTypes;
+}
+
+// Create Activities
+async function createActivities(activitiesData, adminUser) {
+  const activities = [];
+
+  for (const activity of activitiesData) {
+    const existingActivity = await Activity.findOne({
+      title: activity.title,
+      date: activity.date,
+    });
+
+    if (existingActivity) {
+      console.log(
+        `⚠️  Activity "${
+          activity.title
+        }" on ${activity.date.toDateString()} already exists, skipping...`
+      );
+      activities.push(existingActivity);
+      continue;
+    }
+
+    const newActivity = new Activity({
+      title: activity.title,
+      description: activity.description,
+      date: activity.date,
+      color: activity.color,
+      createdBy: adminUser._id,
+    });
+
+    await newActivity.save();
+    activities.push(newActivity);
+    console.log(
+      `✅ Created activity: ${
+        activity.title
+      } on ${activity.date.toDateString()}`
+    );
+  }
+
+  return activities;
+}
+
+// Create Lost Items
+async function createLostItems(lostItemsData) {
+  const lostItems = [];
+
+  for (const item of lostItemsData) {
+    const existingItem = await LostItem.findOne({
+      title: item.title,
+      dateFound: item.dateFound,
+    });
+
+    if (existingItem) {
+      console.log(
+        `⚠️  Lost item "${
+          item.title
+        }" found on ${item.dateFound.toDateString()} already exists, skipping...`
+      );
+      lostItems.push(existingItem);
+      continue;
+    }
+
+    const newItem = new LostItem({
+      title: item.title,
+      description: item.description,
+      dateFound: item.dateFound,
+      status: item.status,
+      claimedDate: item.claimedDate,
+    });
+
+    await newItem.save();
+    lostItems.push(newItem);
+    console.log(`✅ Created lost item: ${item.title}`);
+  }
+
+  return lostItems;
+}
+
+// Create Weekly Reports
+async function createWeeklyReports(students, teachers) {
+  const weeklyReports = [];
+
+  // Create sample weekly reports for the first few students
+  const sampleStudents = students.slice(0, 3);
+  const teacher = teachers[0]; // Use first teacher
+
+  for (const student of sampleStudents) {
+    // Create a report for last week
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 4); // Friday
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const existingReport = await WeeklyReport.findOne({
+      student_id: student._id,
+      weekStart: weekStart,
+    });
+
+    if (existingReport) {
+      console.log(
+        `⚠️  Weekly report for ${student.fullName} already exists, skipping...`
+      );
+      weeklyReports.push(existingReport);
+      continue;
+    }
+
+    const dailyReports = [
+      {
+        day: "M",
+        toilet: "Good",
+        food_intake: "Excellent",
+        friends_interaction: "Very social",
+        studies_mood: "Happy",
+      },
+      {
+        day: "T",
+        toilet: "Good",
+        food_intake: "Good",
+        friends_interaction: "Played well",
+        studies_mood: "Focused",
+      },
+      {
+        day: "W",
+        toilet: "Excellent",
+        food_intake: "Excellent",
+        friends_interaction: "Helpful",
+        studies_mood: "Excited",
+      },
+      {
+        day: "Th",
+        toilet: "Good",
+        food_intake: "Fair",
+        friends_interaction: "Shy today",
+        studies_mood: "Calm",
+      },
+      {
+        day: "F",
+        toilet: "Excellent",
+        food_intake: "Good",
+        friends_interaction: "Very active",
+        studies_mood: "Joyful",
+      },
+    ];
+
+    const newReport = new WeeklyReport({
+      student_id: student._id,
+      weekStart: weekStart,
+      weekEnd: weekEnd,
+      dailyReports: dailyReports,
+      createdBy: teacher._id,
+      updatedBy: teacher._id,
+    });
+
+    await newReport.save();
+    weeklyReports.push(newReport);
+    console.log(`✅ Created weekly report for: ${student.fullName}`);
+  }
+
+  return weeklyReports;
+}
+
+// Create Monthly Plans
+async function createMonthlyPlans(classes, teachers) {
+  const monthlyPlans = [];
+
+  for (const classObj of classes) {
+    const teacher = teachers[0]; // Use first teacher
+
+    // Create plan for current month
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+
+    const existingPlan = await MonthlyPlan.findOne({
+      month: month,
+      year: year,
+      class_id: classObj._id,
+    });
+
+    if (existingPlan) {
+      console.log(
+        `⚠️  Monthly plan for ${classObj.name} (${month}/${year}) already exists, skipping...`
+      );
+      monthlyPlans.push(existingPlan);
+      continue;
+    }
+
+    const description = `This month we will focus on developing creativity, social skills, and basic learning concepts. Activities include art projects, music sessions, outdoor play, and interactive storytelling. We aim to create a nurturing environment where children can explore, learn, and grow together.`;
+
+    const newPlan = new MonthlyPlan({
+      month: month,
+      year: year,
+      class_id: classObj._id,
+      description: description,
+      createdBy: teacher._id,
+      updatedBy: teacher._id,
+    });
+
+    await newPlan.save();
+    monthlyPlans.push(newPlan);
+    console.log(
+      `✅ Created monthly plan for: ${classObj.name} (${month}/${year})`
+    );
+  }
+
+  return monthlyPlans;
+}
+
+// Create Wall Posts
+async function createWallPosts(teachers, classes) {
+  const posts = [];
+
+  const samplePosts = [
+    {
+      title: "Welcome to Our Classroom!",
+      content:
+        "We're excited to start this new journey with your children. Our classroom is ready with fun activities and learning opportunities!",
+    },
+    {
+      title: "Art Day Success!",
+      content:
+        "Today the children created beautiful paintings! They showed amazing creativity and had so much fun expressing themselves through art.",
+    },
+    {
+      title: "Outdoor Play Time",
+      content:
+        "Beautiful weather today! The children enjoyed playing in the garden, running around, and exploring nature. Fresh air and exercise are so important for their development.",
+    },
+  ];
+
+  for (let i = 0; i < samplePosts.length; i++) {
+    const postData = samplePosts[i];
+    const teacher = teachers[i % teachers.length];
+
+    const existingPost = await Post.findOne({
+      title: postData.title,
+      teacherId: teacher._id,
+    });
+
+    if (existingPost) {
+      console.log(`⚠️  Post "${postData.title}" already exists, skipping...`);
+      posts.push(existingPost);
+      continue;
+    }
+
+    const newPost = new Post({
+      title: postData.title,
+      content: postData.content,
+      media: [],
+      teacherId: teacher._id,
+      audience: {
+        type: "all",
+        class_ids: classes.map((c) => c._id),
+        student_ids: [],
+      },
+      createdBy: teacher._id,
+    });
+
+    await newPost.save();
+    posts.push(newPost);
+    console.log(`✅ Created wall post: ${postData.title}`);
+  }
+
+  return posts;
+}
+
+// Create Notes
+async function createNotes(students, teachers) {
+  const notes = [];
+
+  const sampleNotes = [
+    "Great progress in art activities today! Shows excellent creativity.",
+    "Very social child, plays well with others during group activities.",
+    "Needs encouragement with sharing toys, but improving daily.",
+    "Excellent appetite at lunch time, tried new foods today.",
+    "Loves story time and asks thoughtful questions about the books.",
+  ];
+
+  // Create notes for first few students
+  const sampleStudents = students.slice(0, 3);
+
+  for (const student of sampleStudents) {
+    const teacher = teachers[0];
+    const noteContent =
+      sampleNotes[Math.floor(Math.random() * sampleNotes.length)];
+
+    const existingNote = await Note.findOne({
+      student_id: student._id,
+      content: noteContent,
+    });
+
+    if (existingNote) {
+      console.log(
+        `⚠️  Note for ${student.fullName} already exists, skipping...`
+      );
+      notes.push(existingNote);
+      continue;
+    }
+
+    const newNote = new Note({
+      student_id: student._id,
+      content: noteContent,
+      createdBy: teacher._id,
+      updatedBy: teacher._id,
+    });
+
+    await newNote.save();
+    notes.push(newNote);
+    console.log(`✅ Created note for: ${student.fullName}`);
+  }
+
+  return notes;
+}
+
+// Create Health Info and Metrics
+async function createHealthData(students, adminUser) {
+  const healthInfos = [];
+  const healthMetrics = [];
+
+  const bloodGroups = ["A+", "B+", "O+", "AB+", "A-", "B-", "O-", "AB-"];
+
+  // Create health info for first few students
+  const sampleStudents = students.slice(0, 3);
+
+  for (const student of sampleStudents) {
+    // Create health info
+    const existingHealthInfo = await HealthInfo.findOne({
+      student_id: student._id,
+    });
+
+    if (!existingHealthInfo) {
+      const newHealthInfo = new HealthInfo({
+        student_id: student._id,
+        blood_group:
+          bloodGroups[Math.floor(Math.random() * bloodGroups.length)],
+        allergy: student.allergies.join(", ") || "None",
+        eye_condition: "Normal",
+        heart_rate: "Normal (80-120 bpm)",
+        ear_condition: "Normal",
+        updatedBy: adminUser._id,
+      });
+
+      await newHealthInfo.save();
+      healthInfos.push(newHealthInfo);
+      console.log(`✅ Created health info for: ${student.fullName}`);
+    }
+
+    // Create health metrics (height and weight)
+    const existingHeightMetric = await HealthMetric.findOne({
+      student_id: student._id,
+      type: "height",
+    });
+
+    if (!existingHeightMetric) {
+      const heightMetric = new HealthMetric({
+        student_id: student._id,
+        type: "height",
+        value: Math.floor(Math.random() * 20) + 80, // 80-100 cm
+        label: "Current",
+        date: new Date(),
+        notes: "Regular growth check",
+        recordedBy: adminUser._id,
+      });
+
+      await heightMetric.save();
+      healthMetrics.push(heightMetric);
+    }
+
+    const existingWeightMetric = await HealthMetric.findOne({
+      student_id: student._id,
+      type: "weight",
+    });
+
+    if (!existingWeightMetric) {
+      const weightMetric = new HealthMetric({
+        student_id: student._id,
+        type: "weight",
+        value: Math.floor(Math.random() * 5) + 12, // 12-17 kg
+        label: "Current",
+        date: new Date(),
+        notes: "Regular growth check",
+        recordedBy: adminUser._id,
+      });
+
+      await weightMetric.save();
+      healthMetrics.push(weightMetric);
+    }
+  }
+
+  return { healthInfos, healthMetrics };
+}
+
+// Create Fees and Payments
+async function createPaymentData(students, adminUser) {
+  const fees = [];
+  const transactions = [];
+
+  const feeTypes = [
+    { title: "Monthly Tuition", amount: 500 },
+    { title: "Activity Fee", amount: 100 },
+    { title: "Lunch Program", amount: 200 },
+    { title: "Transportation", amount: 150 },
+  ];
+
+  // Create fees for first few students
+  const sampleStudents = students.slice(0, 3);
+
+  for (const student of sampleStudents) {
+    for (const feeType of feeTypes) {
+      const deadline = new Date();
+      deadline.setDate(deadline.getDate() + 30); // Due in 30 days
+
+      const existingFee = await Fee.findOne({
+        student_id: student._id,
+        title: feeType.title,
+      });
+
+      if (existingFee) {
+        console.log(
+          `⚠️  Fee "${feeType.title}" for ${student.fullName} already exists, skipping...`
+        );
+        fees.push(existingFee);
+        continue;
+      }
+
+      const newFee = new Fee({
+        student_id: student._id,
+        title: feeType.title,
+        amount: feeType.amount,
+        deadline: deadline,
+        status: Math.random() > 0.5 ? "paid" : "pending", // Random status
+        createdBy: adminUser._id,
+        updatedBy: adminUser._id,
+      });
+
+      await newFee.save();
+      fees.push(newFee);
+      console.log(`✅ Created fee: ${feeType.title} for ${student.fullName}`);
+
+      // Create transaction if fee is paid
+      if (newFee.status === "paid") {
+        const transaction = new FeeTransaction({
+          fee_id: newFee._id,
+          student_id: student._id,
+          amount: newFee.amount,
+          transactionDate: new Date(),
+          paymentMethod: "Cash",
+          processedBy: adminUser._id,
+        });
+
+        await transaction.save();
+        transactions.push(transaction);
+        console.log(`✅ Created payment transaction for: ${feeType.title}`);
+      }
+    }
+  }
+
+  return { fees, transactions };
+}
+
+// Create Student Box Status
+async function createStudentBoxStatus(students, boxItems, adminUser) {
+  const studentBoxStatuses = [];
+
+  // Create box status for first few students
+  const sampleStudents = students.slice(0, 3);
+
+  for (const student of sampleStudents) {
+    const existingBoxStatus = await StudentBoxStatus.findOne({
+      student_id: student._id,
+    });
+
+    if (existingBoxStatus) {
+      console.log(
+        `⚠️  Box status for ${student.fullName} already exists, skipping...`
+      );
+      studentBoxStatuses.push(existingBoxStatus);
+      continue;
+    }
+
+    // Create random status for each box item
+    const items = boxItems.map((item) => ({
+      item_id: item._id,
+      has_item: Math.random() > 0.5, // Random true/false
+      notes: Math.random() > 0.7 ? "Needs refill" : "",
+    }));
+
+    const newBoxStatus = new StudentBoxStatus({
+      student_id: student._id,
+      items: items,
+      updatedBy: adminUser._id,
+    });
+
+    await newBoxStatus.save();
+    studentBoxStatuses.push(newBoxStatus);
+    console.log(`✅ Created box status for: ${student.fullName}`);
+  }
+
+  return studentBoxStatuses;
+}
+
+// Create Student Documents
+async function createStudentDocuments(students, documentTypes, adminUser) {
+  const studentDocuments = [];
+
+  // Create document status for first few students
+  const sampleStudents = students.slice(0, 3);
+
+  for (const student of sampleStudents) {
+    const existingDocuments = await StudentDocument.findOne({
+      student_id: student._id,
+    });
+
+    if (existingDocuments) {
+      console.log(
+        `⚠️  Documents for ${student.fullName} already exist, skipping...`
+      );
+      studentDocuments.push(existingDocuments);
+      continue;
+    }
+
+    // Create random submission status for each document type
+    const documents = documentTypes.map((docType) => ({
+      document_type_id: docType._id,
+      submitted: Math.random() > 0.3, // 70% chance of being submitted
+      submission_date: Math.random() > 0.3 ? new Date() : null,
+      notes: Math.random() > 0.8 ? "Pending review" : "",
+    }));
+
+    const newStudentDocuments = new StudentDocument({
+      student_id: student._id,
+      documents: documents,
+      updatedBy: adminUser._id,
+    });
+
+    await newStudentDocuments.save();
+    studentDocuments.push(newStudentDocuments);
+    console.log(`✅ Created document status for: ${student.fullName}`);
+  }
+
+  return studentDocuments;
+}
+
 async function seedDatabase() {
   try {
     console.log("🌱 Starting database seeding...");
@@ -622,6 +1397,68 @@ async function seedDatabase() {
     console.log("\n🍽️ Creating weekly menus...");
     const menus = await createMenus(menuData, adminUser);
 
+    // Create box items (My Box)
+    console.log("\n📦 Creating box items...");
+    const boxItems = await createBoxItems(boxItemsData, adminUser);
+
+    // Create document types (My Documents)
+    console.log("\n📄 Creating document types...");
+    const documentTypes = await createDocumentTypes(
+      documentTypesData,
+      adminUser
+    );
+
+    // Create activities
+    console.log("\n🎨 Creating activities...");
+    const activities = await createActivities(activitiesData, adminUser);
+
+    // Create lost items
+    console.log("\n🧸 Creating lost items...");
+    const lostItems = await createLostItems(lostItemsData);
+
+    // Create weekly reports
+    console.log("\n📊 Creating weekly reports...");
+    const weeklyReports = await createWeeklyReports(students, teachers);
+
+    // Create monthly plans
+    console.log("\n📅 Creating monthly plans...");
+    const monthlyPlans = await createMonthlyPlans(classes, teachers);
+
+    // Create wall posts
+    console.log("\n📝 Creating wall posts...");
+    const wallPosts = await createWallPosts(teachers, classes);
+
+    // Create notes
+    console.log("\n📝 Creating notes...");
+    const notes = await createNotes(students, teachers);
+
+    // Create health data
+    console.log("\n🏥 Creating health data...");
+    const { healthInfos, healthMetrics } = await createHealthData(
+      students,
+      adminUser
+    );
+
+    // Create payment data
+    console.log("\n💰 Creating payment data...");
+    const { fees, transactions } = await createPaymentData(students, adminUser);
+
+    // Create student box status
+    console.log("\n📦 Creating student box status...");
+    const studentBoxStatuses = await createStudentBoxStatus(
+      students,
+      boxItems,
+      adminUser
+    );
+
+    // Create student documents
+    console.log("\n📄 Creating student documents...");
+    const studentDocuments = await createStudentDocuments(
+      students,
+      documentTypes,
+      adminUser
+    );
+
     console.log("\n🎉 Database seeding completed successfully!");
     console.log("\n📋 Summary:");
     console.log(`   • ${teachers.length} teachers created`);
@@ -629,6 +1466,24 @@ async function seedDatabase() {
     console.log(`   • ${classes.length} classes created`);
     console.log(`   • ${students.length} students created/found`);
     console.log(`   • ${menus.length} weekly menus created`);
+    console.log(`   • ${boxItems.length} box items created`);
+    console.log(`   • ${documentTypes.length} document types created`);
+    console.log(`   • ${activities.length} activities created`);
+    console.log(`   • ${lostItems.length} lost items created`);
+    console.log(`   • ${weeklyReports.length} weekly reports created`);
+    console.log(`   • ${monthlyPlans.length} monthly plans created`);
+    console.log(`   • ${wallPosts.length} wall posts created`);
+    console.log(`   • ${notes.length} notes created`);
+    console.log(`   • ${healthInfos.length} health info records created`);
+    console.log(`   • ${healthMetrics.length} health metrics created`);
+    console.log(`   • ${fees.length} fees created`);
+    console.log(`   • ${transactions.length} payment transactions created`);
+    console.log(
+      `   • ${studentBoxStatuses.length} student box statuses created`
+    );
+    console.log(
+      `   • ${studentDocuments.length} student document records created`
+    );
     console.log(`   • Students assigned to classes`);
     console.log(`   • Parent-student relationships created`);
 

@@ -5,10 +5,12 @@ import {
   createActivity,
   updateActivity,
   deleteActivity,
+  getActivitiesForParent,
 } from "../controllers/activity.controller.js";
 import {
   authenticate,
   requireAdminOrTeacher,
+  requireParent,
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -61,6 +63,18 @@ router.delete(
   authenticate,
   requireAdminOrTeacher,
   deleteActivity
+);
+
+/**
+ * @route   GET /api/activities/parent/:student_id
+ * @desc    Get activities for parent's child
+ * @access  Private (Parent)
+ */
+router.get(
+  "/activities/parent/:student_id",
+  authenticate,
+  requireParent,
+  getActivitiesForParent
 );
 
 export default router;

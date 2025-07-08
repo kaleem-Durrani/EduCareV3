@@ -4,10 +4,12 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  getStudentNotesForParent,
 } from "../controllers/note.controller.js";
 import {
   authenticate,
   requireAdminOrTeacher,
+  requireParent,
 } from "../middleware/auth.middleware.js";
 import { handleValidationErrors } from "../middleware/validation.middleware.js";
 import {
@@ -73,6 +75,20 @@ router.delete(
   getNoteValidation,
   handleValidationErrors,
   deleteNote
+);
+
+/**
+ * @route   GET /api/notes/parent/:student_id
+ * @desc    Get notes for parent's child
+ * @access  Private (Parent)
+ */
+router.get(
+  "/notes/parent/:student_id",
+  authenticate,
+  requireParent,
+  getStudentNotesValidation,
+  handleValidationErrors,
+  getStudentNotesForParent
 );
 
 export default router;

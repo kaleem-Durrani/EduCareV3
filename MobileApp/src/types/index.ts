@@ -65,43 +65,43 @@ export interface ThemeColors {
   background: string;
   surface: string;
   card: string;
-  
+
   // Primary colors
   primary: string;
   primaryLight: string;
   primaryDark: string;
-  
+
   // Secondary colors
   secondary: string;
   secondaryLight: string;
   secondaryDark: string;
-  
+
   // Text colors
   textPrimary: string;
   textSecondary: string;
   textMuted: string;
   textOnPrimary: string;
   textOnSecondary: string;
-  
+
   // Border colors
   border: string;
   borderLight: string;
-  
+
   // Status colors
   success: string;
   warning: string;
   error: string;
   info: string;
-  
+
   // Header colors
   headerBackground: string;
   headerText: string;
-  
+
   // Tab colors
   tabBackground: string;
   tabActive: string;
   tabInactive: string;
-  
+
   // Shadow colors
   shadow: string;
 }
@@ -128,14 +128,14 @@ export type ParentStackParamList = {
   MonthlyPlan: { studentId: string };
   MyBox: { studentId: string };
   MyDocuments: { studentId: string };
-  Activities: undefined;
+  Activities: { studentId?: string };
   ActivityDetail: { activityId: string };
-  Wall: undefined;
+  Wall: { studentId?: string };
   Notes: { studentId: string };
   LostItems: undefined;
   Health: { studentId: string };
   Payment: { studentId: string };
-  Driver: undefined; // Needs clarification
+  Driver: { studentId: string };
   Notifications: undefined;
   Settings: undefined;
 };

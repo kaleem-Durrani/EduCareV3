@@ -1,6 +1,7 @@
 import Activity from "../models/activity.model.js";
 import Class from "../models/class.model.js";
 import Student from "../models/student.model.js";
+import ParentStudentRelation from "../models/parentStudentRelation.model.js";
 import { sendSuccess } from "../utils/response.utils.js";
 import {
   withTransaction,
@@ -24,7 +25,7 @@ export const getActivities = asyncHandler(async (req, res) => {
     audienceType,
     timeFilter,
     page = 1,
-    limit = 10
+    limit = 10,
   } = req.query;
 
   const userId = req.user.id;
@@ -38,18 +39,30 @@ export const getActivities = asyncHandler(async (req, res) => {
 
   // Time-based filtering (past, today, upcoming, all)
   const today = new Date();
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+  const endOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
 
   if (timeFilter) {
     switch (timeFilter) {
-      case 'past':
+      case "past":
         query.date = { $lt: startOfToday };
         break;
-      case 'today':
+      case "today":
         query.date = { $gte: startOfToday, $lte: endOfToday };
         break;
-      case 'upcoming':
+      case "upcoming":
         query.date = { $gt: endOfToday };
         break;
       // 'all' or any other value - no date filter
@@ -67,12 +80,20 @@ export const getActivities = asyncHandler(async (req, res) => {
   if (userRole === "teacher") {
     // Teachers can only see activities for their classes or all students
     const teacherClasses = await Class.find({ teachers: userId }).select("_id");
-    const teacherClassIds = teacherClasses.map(c => c._id);
+    const teacherClassIds = teacherClasses.map((c) => c._id);
 
     query.$or = [
       { "audience.type": "all" },
-      { "audience.type": "class", "audience.class_id": { $in: teacherClassIds } },
-      { "audience.type": "student", "audience.student_id": { $in: await getStudentsInTeacherClasses(teacherClassIds) } }
+      {
+        "audience.type": "class",
+        "audience.class_id": { $in: teacherClassIds },
+      },
+      {
+        "audience.type": "student",
+        "audience.student_id": {
+          $in: await getStudentsInTeacherClasses(teacherClassIds),
+        },
+      },
     ];
   }
 
@@ -97,7 +118,7 @@ export const getActivities = asyncHandler(async (req, res) => {
     .populate("audience.student_id", "fullName rollNum")
     .populate("createdBy", "name email")
     .populate("updatedBy", "name email")
-    .sort({ date: timeFilter === 'past' ? -1 : 1 }) // Past activities: newest first, others: oldest first
+    .sort({ date: timeFilter === "past" ? -1 : 1 }) // Past activities: newest first, others: oldest first
     .skip(skip)
     .limit(limitNum);
 
@@ -109,8 +130,8 @@ export const getActivities = asyncHandler(async (req, res) => {
       totalActivities,
       hasNextPage: pageNum < totalPages,
       hasPrevPage: pageNum > 1,
-      limit: limitNum
-    }
+      limit: limitNum,
+    },
   };
 
   return sendSuccess(res, result, "Activities retrieved successfully");
@@ -118,8 +139,10 @@ export const getActivities = asyncHandler(async (req, res) => {
 
 // Helper function to get students in teacher's classes
 async function getStudentsInTeacherClasses(classIds) {
-  const students = await Student.find({ current_class: { $in: classIds } }).select("_id");
-  return students.map(s => s._id);
+  const students = await Student.find({
+    current_class: { $in: classIds },
+  }).select("_id");
+  return students.map((s) => s._id);
 }
 
 /**
@@ -161,8 +184,14 @@ async function checkTeacherActivityAccess(teacherId, activity) {
   }
 
   if (activity.audience.type === "student") {
-    const student = await Student.findById(activity.audience.student_id).populate("current_class");
-    return student && student.current_class && student.current_class.teachers.includes(teacherId);
+    const student = await Student.findById(
+      activity.audience.student_id
+    ).populate("current_class");
+    return (
+      student &&
+      student.current_class &&
+      student.current_class.teachers.includes(teacherId)
+    );
   }
 
   return false;
@@ -178,7 +207,9 @@ export const createActivity = asyncHandler(async (req, res) => {
 
   // Validate required fields
   if (!title || !description || !date || !audience || !audience.type) {
-    throwBadRequest("Missing required fields: title, description, date, audience.type");
+    throwBadRequest(
+      "Missing required fields: title, description, date, audience.type"
+    );
   }
 
   const result = await withTransaction(async (session) => {
@@ -192,22 +223,32 @@ export const createActivity = asyncHandler(async (req, res) => {
         throwNotFound("Class");
       }
       // Check if teacher has access to this class
-      if (req.user.role === "teacher" && !classDoc.teachers.includes(req.user.id)) {
+      if (
+        req.user.role === "teacher" &&
+        !classDoc.teachers.includes(req.user.id)
+      ) {
         throwForbidden("You don't have access to this class");
       }
     }
 
     if (audience.type === "student") {
       if (!audience.student_id) {
-        throwBadRequest("student_id is required when audience type is 'student'");
+        throwBadRequest(
+          "student_id is required when audience type is 'student'"
+        );
       }
-      const student = await Student.findById(audience.student_id).populate("current_class").session(session);
+      const student = await Student.findById(audience.student_id)
+        .populate("current_class")
+        .session(session);
       if (!student) {
         throwNotFound("Student");
       }
       // Check if teacher has access to this student's class
-      if (req.user.role === "teacher" &&
-          (!student.current_class || !student.current_class.teachers.includes(req.user.id))) {
+      if (
+        req.user.role === "teacher" &&
+        (!student.current_class ||
+          !student.current_class.teachers.includes(req.user.id))
+      ) {
         throwForbidden("You don't have access to this student");
       }
     }
@@ -255,7 +296,10 @@ export const updateActivity = asyncHandler(async (req, res) => {
     }
 
     // Check permissions - only creator or admin can update
-    if (req.user.role === "teacher" && activity.createdBy.toString() !== req.user.id) {
+    if (
+      req.user.role === "teacher" &&
+      activity.createdBy.toString() !== req.user.id
+    ) {
       throwForbidden("You can only update activities you created");
     }
 
@@ -273,27 +317,39 @@ export const updateActivity = asyncHandler(async (req, res) => {
         if (!audience.class_id) {
           throwBadRequest("class_id is required when audience type is 'class'");
         }
-        const classDoc = await Class.findById(audience.class_id).session(session);
+        const classDoc = await Class.findById(audience.class_id).session(
+          session
+        );
         if (!classDoc) {
           throwNotFound("Class");
         }
         // Check if teacher has access to this class
-        if (req.user.role === "teacher" && !classDoc.teachers.includes(req.user.id)) {
+        if (
+          req.user.role === "teacher" &&
+          !classDoc.teachers.includes(req.user.id)
+        ) {
           throwForbidden("You don't have access to this class");
         }
       }
 
       if (audience.type === "student") {
         if (!audience.student_id) {
-          throwBadRequest("student_id is required when audience type is 'student'");
+          throwBadRequest(
+            "student_id is required when audience type is 'student'"
+          );
         }
-        const student = await Student.findById(audience.student_id).populate("current_class").session(session);
+        const student = await Student.findById(audience.student_id)
+          .populate("current_class")
+          .session(session);
         if (!student) {
           throwNotFound("Student");
         }
         // Check if teacher has access to this student's class
-        if (req.user.role === "teacher" &&
-            (!student.current_class || !student.current_class.teachers.includes(req.user.id))) {
+        if (
+          req.user.role === "teacher" &&
+          (!student.current_class ||
+            !student.current_class.teachers.includes(req.user.id))
+        ) {
           throwForbidden("You don't have access to this student");
         }
       }
@@ -335,11 +391,129 @@ export const deleteActivity = asyncHandler(async (req, res) => {
   }
 
   // Check permissions - only creator or admin can delete
-  if (req.user.role === "teacher" && activity.createdBy.toString() !== req.user.id) {
+  if (
+    req.user.role === "teacher" &&
+    activity.createdBy.toString() !== req.user.id
+  ) {
     throwForbidden("You can only delete activities you created");
   }
 
   await Activity.findByIdAndDelete(activity_id);
 
   return sendSuccess(res, null, "Activity deleted successfully");
+});
+
+/**
+ * Get activities for parent's child
+ * GET /api/activities/parent/:student_id
+ * Parent access only
+ */
+export const getActivitiesForParent = asyncHandler(async (req, res) => {
+  const { student_id } = req.params;
+  const { startDate, endDate, timeFilter, page = 1, limit = 10 } = req.query;
+
+  const parentId = req.user.id;
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Verify parent-student relationship
+  const relationship = await ParentStudentRelation.findOne({
+    parent_id: parentId,
+    student_id: student_id,
+    active: true,
+  });
+
+  if (!relationship) {
+    throwForbidden("You don't have access to this student's activities");
+  }
+
+  // Get student details
+  const student = await Student.findById(student_id).populate("current_class");
+  if (!student) {
+    throwNotFound("Student");
+  }
+
+  // Build query for activities relevant to this student
+  let query = {
+    $or: [
+      { "audience.type": "all" },
+      {
+        "audience.type": "class",
+        "audience.class_id": student.current_class._id,
+      },
+      { "audience.type": "student", "audience.student_id": student_id },
+    ],
+  };
+
+  // Time-based filtering
+  const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+  const endOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
+
+  if (timeFilter) {
+    switch (timeFilter) {
+      case "past":
+        query.date = { $lt: startOfToday };
+        break;
+      case "today":
+        query.date = { $gte: startOfToday, $lte: endOfToday };
+        break;
+      case "upcoming":
+        query.date = { $gt: endOfToday };
+        break;
+    }
+  }
+
+  // Custom date range filtering
+  if (startDate || endDate) {
+    query.date = {};
+    if (startDate) query.date.$gte = new Date(startDate);
+    if (endDate) query.date.$lte = new Date(endDate);
+  }
+
+  // Get total count for pagination
+  const totalActivities = await Activity.countDocuments(query);
+  const totalPages = Math.ceil(totalActivities / limitNum);
+
+  // Get paginated activities
+  const activities = await Activity.find(query)
+    .populate("audience.class_id", "name")
+    .populate("audience.student_id", "fullName rollNum")
+    .populate("createdBy", "name email")
+    .sort({ date: timeFilter === "past" ? -1 : 1 })
+    .skip(skip)
+    .limit(limitNum);
+
+  const result = {
+    activities,
+    student: {
+      _id: student._id,
+      fullName: student.fullName,
+      rollNum: student.rollNum,
+      class: student.current_class,
+    },
+    pagination: {
+      currentPage: pageNum,
+      totalPages,
+      totalActivities,
+      hasNextPage: pageNum < totalPages,
+      hasPrevPage: pageNum > 1,
+      limit: limitNum,
+    },
+  };
+
+  return sendSuccess(res, result, "Activities retrieved successfully");
 });

@@ -1,5 +1,6 @@
 import { ApiService } from './api';
 import { ApiResponse } from '../types';
+import { StudentBoxStatus } from './boxService';
 
 // Parent-specific types
 export interface ParentStudent {
@@ -70,5 +71,14 @@ export const parentService = {
    */
   getStudentBasicInfo: async (studentId: string): Promise<ApiResponse<StudentBasicInfo>> => {
     return ApiService.get<StudentBasicInfo>(`/student/${studentId}/basic-info`);
+  },
+
+  /**
+   * Get child's box status for parent
+   * Uses existing endpoint: GET /api/box/student/:student_id
+   * Backend handles parent authentication and access control
+   */
+  getChildBoxStatus: async (studentId: string): Promise<ApiResponse<StudentBoxStatus>> => {
+    return ApiService.get<StudentBoxStatus>(`/box/student/${studentId}`);
   },
 };

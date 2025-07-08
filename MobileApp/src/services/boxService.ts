@@ -57,7 +57,7 @@ export interface UpdateBoxStatusData {
  */
 export const boxService = {
   /**
-   * Get student's box status (mobile app)
+   * Get student's box status (mobile app - teacher use)
    * Uses existing endpoint: GET /api/box/student/:student_id
    */
   getStudentBoxStatus: async (studentId: string): Promise<ApiResponse<StudentBoxStatus>> => {
@@ -65,13 +65,22 @@ export const boxService = {
   },
 
   /**
-   * Update student's box status (mobile app)
+   * Update student's box status (mobile app - teacher use)
    * Uses existing endpoint: PUT /api/box/student/:student_id
    */
   updateStudentBoxStatus: async (
-    studentId: string, 
+    studentId: string,
     statusData: UpdateBoxStatusData
   ): Promise<ApiResponse<StudentBoxStatus>> => {
     return ApiService.put<StudentBoxStatus>(`/box/student/${studentId}`, statusData);
+  },
+
+  /**
+   * Get child's box status for parent (mobile app - parent use)
+   * Uses existing endpoint: GET /api/box/student/:student_id
+   * Backend already handles parent authentication and access control
+   */
+  getChildBoxStatusForParent: async (studentId: string): Promise<ApiResponse<StudentBoxStatus>> => {
+    return ApiService.get<StudentBoxStatus>(`/box/student/${studentId}`);
   },
 };

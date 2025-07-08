@@ -85,6 +85,20 @@ export interface PaginatedActivitiesResponse {
   pagination: ActivityPagination;
 }
 
+export interface ParentActivitiesResponse {
+  activities: Activity[];
+  student: {
+    _id: string;
+    fullName: string;
+    rollNum: number;
+    class: {
+      _id: string;
+      name: string;
+    };
+  };
+  pagination: ActivityPagination;
+}
+
 /**
  * Activity service for handling all activity-related API calls in mobile app
  * Uses existing backend endpoints - marked for mobile app use
@@ -94,7 +108,9 @@ export const activityService = {
    * Get activities with filtering and pagination (mobile app)
    * Uses existing endpoint: GET /api/activities
    */
-  getActivities: async (filters?: ActivityFilters): Promise<ApiResponse<PaginatedActivitiesResponse>> => {
+  getActivities: async (
+    filters?: ActivityFilters
+  ): Promise<ApiResponse<PaginatedActivitiesResponse>> => {
     const params = new URLSearchParams();
 
     if (filters?.startDate) params.append('startDate', filters.startDate);
@@ -133,7 +149,7 @@ export const activityService = {
    * Uses existing endpoint: PUT /api/activities/:activity_id
    */
   updateActivity: async (
-    activityId: string, 
+    activityId: string,
     activityData: UpdateActivityData
   ): Promise<ApiResponse<Activity>> => {
     return ApiService.put<Activity>(`/activities/${activityId}`, activityData);
@@ -145,5 +161,29 @@ export const activityService = {
    */
   deleteActivity: async (activityId: string): Promise<ApiResponse<null>> => {
     return ApiService.delete<null>(`/activities/${activityId}`);
+  },
+
+  /**
+   * Get activities for parent's child (mobile app)
+   * Uses parent-specific endpoint: GET /api/activities/parent/:student_id
+   */
+  getActivitiesForParent: async (
+    studentId: string,
+    filters?: Omit<ActivityFilters, 'classId' | 'studentId' | 'audienceType'>
+  ): Promise<ApiResponse<ParentActivitiesResponse>> => {
+    const params = new URLSearchParams();
+
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.timeFilter) params.append('timeFilter', filters.timeFilter);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const queryString = params.toString();
+    const url = queryString
+      ? `/activities/parent/${studentId}?${queryString}`
+      : `/activities/parent/${studentId}`;
+
+    return ApiService.get<ParentActivitiesResponse>(url);
   },
 };
