@@ -6,11 +6,15 @@ import { documentService } from '../../../services';
 import { ParentStackParamList } from '../../../types';
 
 interface DocumentStatus {
-  _id: string;
-  name: string;
-  description: string;
-  required: boolean;
-  status: 'submitted' | 'pending' | 'not_submitted';
+  document_type_id: {
+    _id: string;
+    name: string;
+    description: string;
+    required: boolean;
+  };
+  submitted: boolean;
+  submission_date?: string;
+  notes: string;
 }
 
 interface Props {
@@ -26,7 +30,7 @@ const MyDocumentsScreen: React.FC<Props> = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { studentId } = route.params;
 
-  const [documents, setDocuments] = useState<DocumentStatus[]>([]);
+  const [documents, setDocuments] = useState<DocumentStatus[] | undefined>([]);
   const [loading, setLoading] = useState(true);
   const [studentInfo, setStudentInfo] = useState<any>(null);
 
@@ -40,8 +44,8 @@ const MyDocumentsScreen: React.FC<Props> = ({ navigation, route }) => {
       const response = await documentService.getStudentDocuments(studentId);
 
       if (response.success) {
-        setDocuments(response.data.documents || []);
-        setStudentInfo(response.data.student);
+        setDocuments(response.data?.documents);
+        setStudentInfo(response.data?.student_id);
       } else {
         Alert.alert('Error', response.message || 'Failed to fetch documents');
       }
@@ -84,23 +88,23 @@ const MyDocumentsScreen: React.FC<Props> = ({ navigation, route }) => {
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-base font-semibold" style={{ color: colors.textPrimary }}>
-            {item.name}
+            {item.document_type_id.name}
           </Text>
-          {item.description && (
+          {item.document_type_id.description && (
             <Text className="mt-1 text-sm" style={{ color: colors.textSecondary }}>
-              {item.description}
+              {item.document_type_id.description}
             </Text>
           )}
-          {item.required && (
+          {item.document_type_id.required && (
             <Text className="mt-1 text-xs font-medium" style={{ color: '#EF4444' }}>
               Required
             </Text>
           )}
         </View>
         <View className="ml-4">
-          <Text className="text-base font-bold" style={{ color: getStatusColor(item.status) }}>
+          {/* <Text className="text-base font-bold" style={{ color: getStatusColor(item.status) }}>
             {getStatusText(item.status)}
-          </Text>
+          </Text> */}
         </View>
       </View>
     </View>
@@ -139,7 +143,7 @@ const MyDocumentsScreen: React.FC<Props> = ({ navigation, route }) => {
             Loading documents...
           </Text>
         </View>
-      ) : documents.length === 0 ? (
+      ) : documents?.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
             No Documents Found
@@ -150,9 +154,9 @@ const MyDocumentsScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       ) : (
         <FlatList
-          data={documents}
+          data={documents || []}
           renderItem={renderDocumentItem}
-          keyExtractor={(item, index) => item._id || `doc-${index}`}
+          keyExtractor={(item, index) => item.document_type_id._id || `doc-${index}`}
           contentContainerStyle={{ paddingVertical: 8 }}
           showsVerticalScrollIndicator={false}
         />
