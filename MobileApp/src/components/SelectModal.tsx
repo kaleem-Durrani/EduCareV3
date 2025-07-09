@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, Image } from 'react-native';
 import { useTheme } from '../contexts';
+import { buildMediaUrl } from '../config';
 
 // Generic interface for selectable items
 export interface SelectableItem {
   value: string;
   label: string;
   secondaryLabel?: string;
+  photoUrl?: string; // Optional photo URL for displaying images
   [key: string]: any; // Allow additional properties
 }
 
@@ -74,16 +76,34 @@ const SelectModal: React.FC<SelectModalProps> = ({
 
   const renderItem = ({ item }: { item: SelectableItem }) => (
     <TouchableOpacity
-      className="border-b p-4"
+      className="flex-row items-center border-b p-4"
       style={{ borderBottomColor: colors.border }}
       onPress={() => handleItemSelect(item)}>
-      <Text className="text-lg font-medium" style={{ color: colors.textPrimary }}>
-        {item.label}
-      </Text>
-      {item.secondaryLabel && (
-        <Text className="mt-1 text-sm" style={{ color: colors.textSecondary }}>
-          {item.secondaryLabel}
+      <View className="flex-1">
+        <Text className="text-lg font-medium" style={{ color: colors.textPrimary }}>
+          {item.label}
         </Text>
+        {item.secondaryLabel && (
+          <Text className="mt-1 text-sm" style={{ color: colors.textSecondary }}>
+            {item.secondaryLabel}
+          </Text>
+        )}
+      </View>
+
+      {/* Photo on the right */}
+      {item.photoUrl && (
+        <View className="ml-3">
+          <View className="h-12 w-12 overflow-hidden rounded-full">
+            <Image
+              source={{ uri: buildMediaUrl(item.photoUrl) }}
+              className="h-full w-full"
+              resizeMode="cover"
+              onError={() => {
+                console.log('Failed to load image for item:', item.label);
+              }}
+            />
+          </View>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -102,16 +122,34 @@ const SelectModal: React.FC<SelectModalProps> = ({
         }}
         onPress={() => !disabled && setIsModalVisible(true)}
         disabled={disabled}>
-        <View className="flex-1">
+        <View className="flex-1 flex-row items-center">
           {selectedItem ? (
             <>
-              <Text className="text-base font-medium" style={{ color: colors.textPrimary }}>
-                {selectedItem.label}
-              </Text>
-              {selectedItem.secondaryLabel && (
-                <Text className="mt-1 text-sm" style={{ color: colors.textSecondary }}>
-                  {selectedItem.secondaryLabel}
+              <View className="flex-1">
+                <Text className="text-base font-medium" style={{ color: colors.textPrimary }}>
+                  {selectedItem.label}
                 </Text>
+                {selectedItem.secondaryLabel && (
+                  <Text className="mt-1 text-sm" style={{ color: colors.textSecondary }}>
+                    {selectedItem.secondaryLabel}
+                  </Text>
+                )}
+              </View>
+
+              {/* Photo on the right */}
+              {selectedItem.photoUrl && (
+                <View className="ml-3">
+                  <View className="h-10 w-10 overflow-hidden rounded-full">
+                    <Image
+                      source={{ uri: buildMediaUrl(selectedItem.photoUrl) }}
+                      className="h-full w-full"
+                      resizeMode="cover"
+                      onError={() => {
+                        console.log('Failed to load selected item image:', selectedItem.label);
+                      }}
+                    />
+                  </View>
+                </View>
               )}
             </>
           ) : (
@@ -124,7 +162,7 @@ const SelectModal: React.FC<SelectModalProps> = ({
             </Text>
           )}
         </View>
-        <Text className="text-xl" style={{ color: colors.textSecondary }}>
+        <Text className="ml-2 text-xl" style={{ color: colors.textSecondary }}>
           ▼
         </Text>
       </TouchableOpacity>

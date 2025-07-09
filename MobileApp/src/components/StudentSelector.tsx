@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../contexts';
 import { useTeacherClasses } from '../contexts/TeacherClassesContext';
 import { ClassStudent, EnrolledClass } from '../services';
 import { SelectModal, SelectableItem } from '.';
+import { buildMediaUrl } from '../config';
 
 interface StudentSelectorProps {
   selectedStudent: ClassStudent | null;
@@ -57,6 +58,7 @@ export const StudentSelector: React.FC<StudentSelectorProps> = ({
       value: student._id,
       label: student.fullName,
       secondaryLabel: `Enrollment #${student.rollNum}`,
+      photoUrl: student.photoUrl, // Pass the photo URL
       originalData: student,
     }));
   };
@@ -123,9 +125,31 @@ export const StudentSelector: React.FC<StudentSelectorProps> = ({
                   borderColor: colors.primary,
                   borderWidth: 1,
                 }}>
+                {/* Student Photo or Emoji */}
+                <View className="mr-3">
+                  <View className="h-10 w-10 overflow-hidden rounded-full">
+                    {selectedStudent.photoUrl ? (
+                      <Image
+                        source={{ uri: buildMediaUrl(selectedStudent.photoUrl) }}
+                        className="h-full w-full"
+                        resizeMode="cover"
+                        onError={() => {
+                          console.log('Failed to load student image:', selectedStudent.fullName);
+                        }}
+                      />
+                    ) : (
+                      <View
+                        className="h-full w-full items-center justify-center"
+                        style={{ backgroundColor: colors.primary }}>
+                        <Text className="text-lg text-white">👶</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
                 <View className="flex-1">
                   <Text className="font-medium" style={{ color: colors.primary }}>
-                    👶 {selectedStudent.fullName}
+                    {selectedStudent.fullName}
                   </Text>
                   <Text className="text-sm" style={{ color: colors.textSecondary }}>
                     {getStudentClass(selectedStudent)} • Roll #{selectedStudent.rollNum}
