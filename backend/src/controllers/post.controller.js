@@ -40,7 +40,7 @@ export const getPaginatedPosts = asyncHandler(async (req, res) => {
       // If teacher is specified, include 'all' posts from that teacher
       query.$or = [
         { "audience.class_ids": classId },
-        { teacherId: teacherId, "audience.type": "all" }
+        { teacherId: teacherId, "audience.type": "all" },
       ];
     } else {
       query["audience.class_ids"] = classId;
@@ -49,14 +49,14 @@ export const getPaginatedPosts = asyncHandler(async (req, res) => {
 
   // Filter by student - posts where student is in student_ids or student's class is in class_ids or audience type is 'all'
   if (studentId) {
-    const student = await Student.findById(studentId).populate('current_class');
+    const student = await Student.findById(studentId).populate("current_class");
     if (student) {
       const studentClassId = student.current_class?._id;
 
       query.$or = [
         { "audience.student_ids": studentId },
         ...(studentClassId ? [{ "audience.class_ids": studentClassId }] : []),
-        { "audience.type": "all" }
+        { "audience.type": "all" },
       ];
     }
   }
@@ -108,10 +108,12 @@ export const getPostsForParent = asyncHandler(async (req, res) => {
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
 
+  console.log(studentId);
+
   // Get student and their class
-  const student = await Student.findById(studentId).populate('current_class');
+  const student = await Student.findById(studentId).populate("current_class");
   if (!student) {
-    return sendError(res, "Student not found", 404);
+    throwNotFound("Student");
   }
 
   const studentClassId = student.current_class?._id;
@@ -121,8 +123,8 @@ export const getPostsForParent = asyncHandler(async (req, res) => {
     $or: [
       { "audience.student_ids": studentId }, // Direct student targeting
       ...(studentClassId ? [{ "audience.class_ids": studentClassId }] : []), // Class targeting
-      { "audience.type": "all" } // All posts
-    ]
+      { "audience.type": "all" }, // All posts
+    ],
   };
 
   // Get total count for pagination
@@ -283,9 +285,9 @@ export const createPost = asyncHandler(async (req, res) => {
       if (req.files.images) {
         for (const file of req.files.images) {
           media.push({
-            type: 'image',
+            type: "image",
             url: normalizePath(file.path),
-            filename: file.originalname
+            filename: file.originalname,
           });
         }
       }
@@ -293,9 +295,9 @@ export const createPost = asyncHandler(async (req, res) => {
       if (req.files.videos) {
         for (const file of req.files.videos) {
           media.push({
-            type: 'video',
+            type: "video",
             url: normalizePath(file.path),
-            filename: file.originalname
+            filename: file.originalname,
           });
         }
       }
@@ -303,17 +305,17 @@ export const createPost = asyncHandler(async (req, res) => {
       // Handle files from .any() format (req.files as array)
       if (Array.isArray(req.files)) {
         for (const file of req.files) {
-          if (file.fieldname === 'images') {
+          if (file.fieldname === "images") {
             media.push({
-              type: 'image',
+              type: "image",
               url: normalizePath(file.path),
-              filename: file.originalname
+              filename: file.originalname,
             });
-          } else if (file.fieldname === 'videos') {
+          } else if (file.fieldname === "videos") {
             media.push({
-              type: 'video',
+              type: "video",
               url: normalizePath(file.path),
-              filename: file.originalname
+              filename: file.originalname,
             });
           }
         }
@@ -326,10 +328,12 @@ export const createPost = asyncHandler(async (req, res) => {
     // If audience type is "all", get all classes for this teacher
     if (processedAudience.type === "all") {
       const teacherClasses = await Class.find({
-        teachers: teacherId || req.user.id
-      }).select("_id").session(session);
+        teachers: teacherId || req.user.id,
+      })
+        .select("_id")
+        .session(session);
 
-      processedAudience.class_ids = teacherClasses.map(cls => cls._id);
+      processedAudience.class_ids = teacherClasses.map((cls) => cls._id);
       processedAudience.student_ids = []; // Clear any student_ids for "all" type
     }
 
@@ -385,7 +389,11 @@ export const updatePost = asyncHandler(async (req, res) => {
     if (title !== undefined) updateData.title = title;
     if (content !== undefined) updateData.content = content;
     // Only update teacherId if it's provided and not empty (admins shouldn't change the original teacher)
-    if (teacherId !== undefined && teacherId !== null && teacherId.trim() !== "") {
+    if (
+      teacherId !== undefined &&
+      teacherId !== null &&
+      teacherId.trim() !== ""
+    ) {
       updateData.teacherId = teacherId;
     }
 
@@ -396,10 +404,12 @@ export const updatePost = asyncHandler(async (req, res) => {
       // If audience type is "all", get all classes for this teacher
       if (processedAudience.type === "all") {
         const teacherClasses = await Class.find({
-          teachers: teacherId || post.teacherId
-        }).select("_id").session(session);
+          teachers: teacherId || post.teacherId,
+        })
+          .select("_id")
+          .session(session);
 
-        processedAudience.class_ids = teacherClasses.map(cls => cls._id);
+        processedAudience.class_ids = teacherClasses.map((cls) => cls._id);
         processedAudience.student_ids = []; // Clear any student_ids for "all" type
       }
 
@@ -420,17 +430,26 @@ export const updatePost = asyncHandler(async (req, res) => {
     }
 
     // Add preserved existing media
-    existingMedia.forEach(media => {
+    existingMedia.forEach((media) => {
       newMedia.push(media);
     });
 
     // Handle new file uploads
-    if (req.files && (Array.isArray(req.files) ? req.files.length > 0 : Object.keys(req.files).length > 0)) {
+    if (
+      req.files &&
+      (Array.isArray(req.files)
+        ? req.files.length > 0
+        : Object.keys(req.files).length > 0)
+    ) {
       // Clean up old media files that are not being preserved
       if (post.media && post.media.length > 0) {
-        const preservedUrls = existingMedia.map(media => media.url);
+        const preservedUrls = existingMedia.map((media) => media.url);
         for (const mediaItem of post.media) {
-          if (mediaItem.url && !preservedUrls.includes(mediaItem.url) && fs.existsSync(mediaItem.url)) {
+          if (
+            mediaItem.url &&
+            !preservedUrls.includes(mediaItem.url) &&
+            fs.existsSync(mediaItem.url)
+          ) {
             fs.unlink(mediaItem.url, (err) => {
               if (err) console.error("Error deleting old media:", err);
             });
@@ -442,9 +461,9 @@ export const updatePost = asyncHandler(async (req, res) => {
       if (req.files.images) {
         for (const file of req.files.images) {
           newMedia.push({
-            type: 'image',
+            type: "image",
             url: normalizePath(file.path),
-            filename: file.originalname
+            filename: file.originalname,
           });
         }
       }
@@ -452,9 +471,9 @@ export const updatePost = asyncHandler(async (req, res) => {
       if (req.files.videos) {
         for (const file of req.files.videos) {
           newMedia.push({
-            type: 'video',
+            type: "video",
             url: normalizePath(file.path),
-            filename: file.originalname
+            filename: file.originalname,
           });
         }
       }
@@ -462,17 +481,17 @@ export const updatePost = asyncHandler(async (req, res) => {
       // Handle files from .any() format (req.files as array)
       if (Array.isArray(req.files)) {
         for (const file of req.files) {
-          if (file.fieldname === 'images') {
+          if (file.fieldname === "images") {
             newMedia.push({
-              type: 'image',
+              type: "image",
               url: normalizePath(file.path),
-              filename: file.originalname
+              filename: file.originalname,
             });
-          } else if (file.fieldname === 'videos') {
+          } else if (file.fieldname === "videos") {
             newMedia.push({
-              type: 'video',
+              type: "video",
               url: normalizePath(file.path),
-              filename: file.originalname
+              filename: file.originalname,
             });
           }
         }
