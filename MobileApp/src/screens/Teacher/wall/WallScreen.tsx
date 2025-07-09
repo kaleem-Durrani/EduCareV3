@@ -265,62 +265,65 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
         </View>
       )}
 
-      {/* Posts List */}
-      {postsError ? (
-        <View className="flex-1 items-center justify-center px-4">
-          <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
-            Failed to load posts
-          </Text>
-          <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
-            {postsError}
-          </Text>
-          <TouchableOpacity
-            className="rounded-lg bg-blue-500 px-6 py-3"
-            onPress={() => loadPosts()}>
-            <Text className="font-medium text-white">Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : posts.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-4">
-          <Text className="text-lg" style={{ color: colors.textSecondary }}>
-            📝 No posts yet
-          </Text>
-          <Text className="mt-2 text-center" style={{ color: colors.textSecondary }}>
-            Create your first post to share with parents and students
-          </Text>
-        </View>
-      ) : (
-        <View className="flex-1 px-4">
-          <FlatList
-            data={posts}
-            renderItem={renderPostItem}
-            keyExtractor={(item) => item._id}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                colors={[colors.primary]}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 16 }}
-            ListFooterComponent={
-              pagination && (
-                <PaginationControls
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  totalItems={pagination.totalPosts}
-                  pageSize={pageSize}
-                  onPageChange={handlePageChange}
-                  onPageSizeChange={handlePageSizeChange}
-                  isLoading={isLoadingPosts}
-                  itemName="posts"
+      {/* Main Content */}
+      <View className="flex-1">
+        {/* Posts List */}
+        {postsError ? (
+          <View className="flex-1 items-center justify-center px-4">
+            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
+              Failed to load posts
+            </Text>
+            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
+              {postsError}
+            </Text>
+            <TouchableOpacity
+              className="rounded-lg bg-blue-500 px-6 py-3"
+              onPress={() => loadPosts()}>
+              <Text className="font-medium text-white">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : posts.length === 0 ? (
+          <View className="flex-1 items-center justify-center px-4">
+            <Text className="text-lg" style={{ color: colors.textSecondary }}>
+              📝 No posts yet
+            </Text>
+            <Text className="mt-2 text-center" style={{ color: colors.textSecondary }}>
+              Create your first post to share with parents and students
+            </Text>
+          </View>
+        ) : (
+          <View className="flex-1 px-4">
+            <FlatList
+              data={posts}
+              renderItem={renderPostItem}
+              keyExtractor={(item) => item._id}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  colors={[colors.primary]}
                 />
-              )
-            }
+              }
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 16 }}
+            />
+          </View>
+        )}
+
+        {/* Fixed Pagination at Bottom */}
+        {pagination && (
+          <PaginationControls
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalPosts}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            isLoading={isLoadingPosts}
+            itemName="posts"
           />
-        </View>
-      )}
+        )}
+      </View>
 
       {/* Create Post Modal */}
       <CreatePostModal

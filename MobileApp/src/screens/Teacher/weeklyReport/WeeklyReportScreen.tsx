@@ -173,84 +173,89 @@ const WeeklyReportScreen: React.FC<{ navigation: any; route?: any }> = ({ naviga
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        className="flex-1 px-4"
-        refreshControl={
-          <RefreshControl
-            refreshing={loadingReports}
-            onRefresh={loadReports}
-            colors={[colors.primary]}
+      {/* Main Content */}
+      <View className="flex-1">
+        <ScrollView
+          className="flex-1 px-4"
+          refreshControl={
+            <RefreshControl
+              refreshing={loadingReports}
+              onRefresh={loadReports}
+              colors={[colors.primary]}
+            />
+          }>
+          {/* Student Selector */}
+          <StudentSelector
+            selectedStudent={selectedStudent}
+            onStudentSelect={handleStudentSelect}
+            onResetSelection={handleStudentReset}
+            placeholder="Select a student to view reports"
+            showAsTag={true}
           />
-        }>
-        {/* Student Selector */}
-        <StudentSelector
-          selectedStudent={selectedStudent}
-          onStudentSelect={handleStudentSelect}
-          onResetSelection={handleStudentReset}
-          placeholder="Select a student to view reports"
-          showAsTag={true}
-        />
 
+          {selectedStudent && (
+            <>
+              {/* Date Range Filter */}
+              <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+
+              {/* Create Report Button */}
+              <TouchableOpacity
+                className="mb-4 rounded-lg py-3"
+                style={{ backgroundColor: colors.primary }}
+                onPress={handleCreateReport}>
+                <Text className="text-center font-semibold text-white">Create New Report</Text>
+              </TouchableOpacity>
+
+              {/* Reports List */}
+              {reportsError ? (
+                <View className="items-center py-8">
+                  <Text className="text-center" style={{ color: '#EF4444' }}>
+                    Error loading reports: {reportsError}
+                  </Text>
+                  <TouchableOpacity
+                    className="mt-2 rounded-lg px-4 py-2"
+                    style={{ backgroundColor: colors.primary }}
+                    onPress={loadReports}>
+                    <Text className="text-white">Retry</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : reports.length > 0 ? (
+                <>
+                  {reports.map((report) => (
+                    <ReportCard
+                      key={report._id}
+                      report={report}
+                      onEdit={handleEditReport}
+                      onDelete={handleDeleteReport}
+                      onView={handleViewReport}
+                    />
+                  ))}
+                </>
+              ) : (
+                <View className="items-center py-8">
+                  <Text className="text-center" style={{ color: colors.textSecondary }}>
+                    {loadingReports ? 'Loading reports...' : 'No reports found for this student'}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+        </ScrollView>
+
+        {/* Fixed Pagination at Bottom */}
         {selectedStudent && (
-          <>
-            {/* Date Range Filter */}
-            <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
-
-            {/* Create Report Button */}
-            <TouchableOpacity
-              className="mb-4 rounded-lg py-3"
-              style={{ backgroundColor: colors.primary }}
-              onPress={handleCreateReport}>
-              <Text className="text-center font-semibold text-white">Create New Report</Text>
-            </TouchableOpacity>
-
-            {/* Reports List */}
-            {reportsError ? (
-              <View className="items-center py-8">
-                <Text className="text-center" style={{ color: '#EF4444' }}>
-                  Error loading reports: {reportsError}
-                </Text>
-                <TouchableOpacity
-                  className="mt-2 rounded-lg px-4 py-2"
-                  style={{ backgroundColor: colors.primary }}
-                  onPress={loadReports}>
-                  <Text className="text-white">Retry</Text>
-                </TouchableOpacity>
-              </View>
-            ) : reports.length > 0 ? (
-              <>
-                {reports.map((report) => (
-                  <ReportCard
-                    key={report._id}
-                    report={report}
-                    onEdit={handleEditReport}
-                    onDelete={handleDeleteReport}
-                    onView={handleViewReport}
-                  />
-                ))}
-
-                {/* Pagination */}
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalItems}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
-                  isLoading={loadingReports}
-                  itemName="reports"
-                />
-              </>
-            ) : (
-              <View className="items-center py-8">
-                <Text className="text-center" style={{ color: colors.textSecondary }}>
-                  {loadingReports ? 'Loading reports...' : 'No reports found for this student'}
-                </Text>
-              </View>
-            )}
-          </>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            isLoading={loadingReports}
+            itemName="reports"
+          />
         )}
-      </ScrollView>
+      </View>
 
       {/* Modals */}
       <CreateReportModal
