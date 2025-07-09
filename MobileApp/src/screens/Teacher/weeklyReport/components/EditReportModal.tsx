@@ -89,7 +89,7 @@ export const EditReportModal: React.FC<EditReportModalProps> = ({
       Alert.alert('Success', 'Weekly report updated successfully!');
       onSuccess();
     }
-  }, [updateSuccess, onSuccess]);
+  }, [updateSuccess]);
 
   useEffect(() => {
     if (updateError) {

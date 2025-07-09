@@ -155,7 +155,7 @@ export const CreateReportModal: React.FC<CreateReportModalProps> = ({
       Alert.alert('Success', 'Weekly report created successfully!');
       onSuccess();
     }
-  }, [createSuccess, onSuccess]);
+  }, [createSuccess]);
 
   useEffect(() => {
     if (createError) {
