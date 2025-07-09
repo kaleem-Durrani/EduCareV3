@@ -9,7 +9,7 @@ import {
   ActivityFilters as ActivityFiltersType,
   PaginatedActivitiesResponse,
 } from '../../../services';
-import { LoadingScreen } from '../../../components';
+import { LoadingScreen, ScreenHeader } from '../../../components';
 import ActivityFilters from './components/ActivityFilters';
 import ActivityList from './components/ActivityList';
 import CreateActivityModal from './components/CreateActivityModal';
@@ -106,22 +106,10 @@ const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
 
-      {/* Navigation Header */}
-      <View className="flex-row items-center justify-between px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Activities
-          </Text>
-        </TouchableOpacity>
+      <ScreenHeader navigation={navigation} title={'Activities'} />
 
+      <View className="flex-row justify-end px-4 py-2">
         {/* Create Activity Button */}
         <TouchableOpacity
           className="rounded-lg px-4 py-2"

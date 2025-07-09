@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useTeacherClasses } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import { boxService, StudentBoxStatus, ClassStudent } from '../../../services';
-import { LoadingScreen, StudentSelector } from '../../../components';
+import { LoadingScreen, ScreenHeader, StudentSelector } from '../../../components';
 import BoxStatusContent from './components/BoxStatusContent';
 
 const MyBoxScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
@@ -56,22 +56,8 @@ const MyBoxScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
 
-      {/* Navigation Header */}
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            My Box
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader navigation={navigation} title={'Child Box'} />
 
       {/* Content */}
       <ScrollView className="flex-1 px-4">

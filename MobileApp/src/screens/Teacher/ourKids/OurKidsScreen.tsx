@@ -6,6 +6,8 @@ import { EnrolledClass } from '../../../services';
 import LoadingScreen from '../../../components/LoadingScreen';
 import ClassSelector from './components/ClassSelector';
 import StudentList from './components/StudentList';
+import Entypo from 'react-native-vector-icons/Entypo';
+import { ScreenHeader } from '~/components';
 
 const OurKidsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -16,7 +18,7 @@ const OurKidsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
     classes,
     isLoading: isLoadingClasses,
     error: classesError,
-    refreshClasses
+    refreshClasses,
   } = useTeacherClasses();
 
   const handleStudentPress = (studentId: string) => {
@@ -34,38 +36,21 @@ const OurKidsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
 
-      {/* Navigation Header */}
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Our Kids
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader navigation={navigation} title={'Our Kids'} />
 
       {/* Content */}
-      <ScrollView className="flex-1 px-4">
+      <ScrollView className=" flex-1 px-4">
         {classesError ? (
           <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-center text-lg mb-2" style={{ color: colors.textPrimary }}>
+            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
               Failed to load classes
             </Text>
-            <Text className="text-center text-sm mb-4" style={{ color: colors.textSecondary }}>
+            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
               {classesError}
             </Text>
-            <TouchableOpacity
-              className="bg-blue-500 px-6 py-3 rounded-lg"
-              onPress={refreshClasses}
-            >
-              <Text className="text-white font-medium">Retry</Text>
+            <TouchableOpacity className="rounded-lg bg-blue-500 px-6 py-3" onPress={refreshClasses}>
+              <Text className="font-medium text-white">Retry</Text>
             </TouchableOpacity>
           </View>
         ) : !classes || classes.length === 0 ? (
@@ -88,10 +73,7 @@ const OurKidsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
 
             {/* Student List */}
             {selectedClass && (
-              <StudentList
-                classData={selectedClass}
-                onStudentPress={handleStudentPress}
-              />
+              <StudentList classData={selectedClass} onStudentPress={handleStudentPress} />
             )}
           </>
         )}

@@ -12,7 +12,7 @@ import {
   ClassStudent,
 } from '../../../services';
 import { NotesList, CreateNoteModal, EditNoteModal, NoteDetailModal } from './components';
-import { StudentSelector } from '../../../components';
+import { ScreenHeader, StudentSelector } from '../../../components';
 
 const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -196,22 +196,13 @@ const NotesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation })
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
 
-      {/* Compact Header with Navigation */}
-      <View className="flex-row items-center justify-between px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Notes
-          </Text>
-        </TouchableOpacity>
+      <ScreenHeader navigation={navigation} title={'Notes'} />
 
+      {/* Content */}
+      <View
+        className="mx-4 flex-row items-center justify-end px-4 py-2 "
+        style={{ backgroundColor: colors.card, elevation: 0 }}>
         {selectedStudent && (
           <View className="flex-row items-center">
             <Text className="mr-3 text-sm" style={{ color: colors.textSecondary }}>

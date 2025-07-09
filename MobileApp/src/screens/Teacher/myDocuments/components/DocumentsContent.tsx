@@ -185,12 +185,12 @@ const DocumentsContent: React.FC<DocumentsContentProps> = ({
 
   return (
     <View className="mb-6">
-      <Text className="mb-4 text-lg font-bold" style={{ color: colors.textPrimary }}>
+      {/* <Text className="mb-4 text-lg font-bold" style={{ color: colors.textPrimary }}>
         📄 Documents - {selectedStudent?.fullName}
-      </Text>
+      </Text> */}
 
       {/* Student Header */}
-      <View
+      {/* <View
         className="mb-4 rounded-lg p-4"
         style={{
           backgroundColor: colors.card,
@@ -198,7 +198,6 @@ const DocumentsContent: React.FC<DocumentsContentProps> = ({
           borderWidth: 1,
         }}>
         <View className="flex-row items-center">
-          {/* Student Photo */}
           <View className="mr-4 h-12 w-12 overflow-hidden rounded-full">
             {selectedStudent?.photoUrl ? (
               <Image
@@ -218,7 +217,6 @@ const DocumentsContent: React.FC<DocumentsContentProps> = ({
             )}
           </View>
 
-          {/* Student Info */}
           <View className="flex-1">
             <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
               {studentDocuments.student_id.fullName}
@@ -228,7 +226,7 @@ const DocumentsContent: React.FC<DocumentsContentProps> = ({
             </Text>
           </View>
         </View>
-      </View>
+      </View> */}
 
       {/* Statistics */}
       <View

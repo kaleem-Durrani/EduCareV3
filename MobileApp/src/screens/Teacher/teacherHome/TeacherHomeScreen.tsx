@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
 import { useViewMode } from '../../../hooks';
@@ -38,8 +38,8 @@ const TeacherHomeScreen: React.FC<Props> = ({ navigation }) => {
     { id: '4', title: 'Weekly Menu', icon: '🍽️', route: 'WeeklyMenu' },
     { id: '5', title: 'Weekly Report', icon: '📊', route: 'WeeklyReport', hasEditRights: true },
     { id: '6', title: 'Monthly Plan', icon: '📅', route: 'MonthlyPlan' },
-    { id: '7', title: 'My Box', icon: '📦', route: 'MyBox', hasEditRights: true },
-    { id: '8', title: 'My Documents', icon: '📄', route: 'MyDocuments' },
+    { id: '7', title: 'Child Box', icon: '📦', route: 'MyBox', hasEditRights: true },
+    { id: '8', title: 'Documents', icon: '📄', route: 'MyDocuments' },
     { id: '9', title: 'Activities', icon: '🎯', route: 'Activities', hasEditRights: true },
     { id: '10', title: 'Wall', icon: '📝', route: 'Wall', hasEditRights: true },
     { id: '11', title: 'Notes', icon: '📋', route: 'Notes', hasEditRights: true },
@@ -120,11 +120,13 @@ const TeacherHomeScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header with Logo and View Toggle */}
-      <View className="pb-4 pt-4">
+      <View className="rounded-lg pb-4 pt-1" style={{ backgroundColor: colors.card, elevation: 3 }}>
         <View className="mb-2 flex-row items-center justify-between px-4">
-          <Text className="flex-1 text-center text-xl font-bold" style={{ color: colors.primary }}>
-            Centro Infantil EDUCARE
-          </Text>
+          <Image
+            source={require('../../../../assets/EducareLogo.png')}
+            className="h-24 w-24 flex-1"
+            resizeMode="contain"
+          />
           {/* View Mode Toggle */}
           <View className="flex-row">
             <TouchableOpacity
@@ -161,9 +163,9 @@ const TeacherHomeScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
-        {/* Black line under logo */}
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
       </View>
+      {/* Black line under logo */}
+      <View className="mb-4 mt-2 h-px w-full" style={{ backgroundColor: '#000000' }} />
 
       <ScrollView className="flex-1 px-4">
         {/* Teacher Summary Section */}

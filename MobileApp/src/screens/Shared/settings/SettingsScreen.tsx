@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth, useTheme } from '../../../contexts';
+import { ScreenHeader } from '~/components';
 
 interface Props {
   navigation: any;
@@ -52,24 +53,8 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
 
-      {/* Back Button and Title */}
-      <View className="border-b px-4 py-2" style={{ borderBottomColor: colors.border }}>
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Settings
-          </Text>
-        </TouchableOpacity>
-        {/* Vertical bar under title */}
-        <View className="mt-2 h-6 w-1" style={{ backgroundColor: colors.primary }} />
-      </View>
+      <ScreenHeader navigation={navigation} title={'Settings'} />
 
       <ScrollView className="flex-1">
         {/* App Settings */}
@@ -94,13 +79,13 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
             }
           />
 
-          <SettingItem
+          {/* <SettingItem
             icon="🔔"
             title="Notifications"
             onPress={() => console.log('Notification settings')}
-          />
+          /> */}
 
-          <SettingItem icon="🔒" title="Privacy" onPress={() => console.log('Privacy settings')} />
+          {/* <SettingItem icon="🔒" title="Privacy" onPress={() => console.log('Privacy settings')} /> */}
 
           <SettingItem
             icon="📱"

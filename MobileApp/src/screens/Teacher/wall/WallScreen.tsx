@@ -13,7 +13,7 @@ import {
   ClassStudent,
 } from '../../../services';
 import { PostItem, CreatePostModal } from './components';
-import { PaginationControls, StudentSelector } from '../../../components';
+import { PaginationControls, ScreenHeader, StudentSelector } from '../../../components';
 
 const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -158,33 +158,28 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
+
+      <ScreenHeader navigation={navigation} title={'Wall'} />
+
       <View
-        className="flex-row items-center justify-between px-4 py-3"
-        style={{ backgroundColor: colors.card }}>
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Wall Posts
+        className="mx-4 flex-row items-center justify-end px-3 py-3"
+        style={{ backgroundColor: colors.card, elevation: 1 }}>
+        <TouchableOpacity
+          className="mr-2 rounded-lg px-3 py-2"
+          style={{ backgroundColor: showFilters ? colors.primary : colors.border }}
+          onPress={() => setShowFilters(!showFilters)}>
+          <Text
+            className={`text-sm ${showFilters ? 'text-white' : ''}`}
+            style={{ color: showFilters ? 'white' : colors.textPrimary }}>
+            🔍 Filters
           </Text>
         </TouchableOpacity>
-        <View className="flex-row">
-          <TouchableOpacity
-            className="mr-2 rounded-lg px-3 py-2"
-            style={{ backgroundColor: showFilters ? colors.primary : colors.border }}
-            onPress={() => setShowFilters(!showFilters)}>
-            <Text
-              className={`text-sm ${showFilters ? 'text-white' : ''}`}
-              style={{ color: showFilters ? 'white' : colors.textPrimary }}>
-              🔍 Filters
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="rounded-lg px-4 py-2"
-            style={{ backgroundColor: colors.primary }}
-            onPress={() => setIsCreateModalVisible(true)}>
-            <Text className="font-medium text-white">+ Create</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          className="rounded-lg px-4 py-2"
+          style={{ backgroundColor: colors.primary }}
+          onPress={() => setIsCreateModalVisible(true)}>
+          <Text className="font-medium text-white">+ Create</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filters */}

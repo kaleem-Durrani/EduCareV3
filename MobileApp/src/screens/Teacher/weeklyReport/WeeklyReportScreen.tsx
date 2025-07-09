@@ -9,7 +9,7 @@ import {
   WeeklyReportsResponse,
   ClassStudent,
 } from '../../../services';
-import { StudentSelector, PaginationControls } from '../../../components';
+import { StudentSelector, PaginationControls, ScreenHeader } from '../../../components';
 import {
   ReportCard,
   CreateReportModal,
@@ -156,22 +156,8 @@ const WeeklyReportScreen: React.FC<{ navigation: any; route?: any }> = ({ naviga
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
 
-      {/* Navigation */}
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Weekly Reports
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader navigation={navigation} title={'Weekly Reports'} />
 
       {/* Main Content */}
       <View className="flex-1">

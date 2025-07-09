@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Linking, Image, ScrollView } from 'react-native'; // Removed Animated
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useAuth } from '../../../contexts';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../../types';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Toast from 'react-native-toast-message';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -16,11 +18,26 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'parent' | 'teacher'>('parent');
+  const [role, setRole] = useState<'parent' | 'teacher' | null>(null); // Default to null
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const handleRoleSelect = (selectedRole: 'parent' | 'teacher') => {
+    setRole(selectedRole);
+  };
+
   const handleLogin = async () => {
+    if (!role) {
+      Toast.show({
+        type: 'error',
+        text1: 'Role Selection Required',
+        text2: 'Please select whether you are a Parent or a Teacher.',
+        visibilityTime: 3000,
+        autoHide: true,
+      });
+      return;
+    }
+
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
@@ -52,48 +69,73 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header with Logo */}
-      <View className="items-center pb-4 pt-8">
-        {/* TODO: Replace with actual EDUCARE logo */}
-        <Text className="mb-2 text-2xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        {/* Black line under logo */}
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
+      <View className="mb-2 flex-row items-center justify-between px-4">
+        <Image
+          source={require('../../../../assets/EducareLogo.png')}
+          className="h-24 w-24 flex-1"
+          resizeMode="contain"
+        />
       </View>
+      <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
 
-      <View className="flex-1 justify-center px-6">
+      <ScrollView className="flex-1 px-6">
         {/* Login Form */}
         <View className="space-y-4">
           {/* Role Selection */}
           <View>
-            <Text className="mb-2 text-sm font-medium" style={{ color: colors.textPrimary }}>
+            <Text
+              className="mb-6 mt-6 text-center text-2xl font-medium"
+              style={{ color: colors.textPrimary }}>
               I am a
             </Text>
-            <View className="flex-row space-x-4">
+            <View className="mb-8 flex-row items-center justify-around">
+              {/* Parent Role Selection */}
               <TouchableOpacity
-                className="flex-1 rounded-lg border p-4"
+                className={`items-center justify-center rounded-full border px-6 py-3 transition-all duration-200 ${
+                  role === 'parent'
+                    ? 'border-primary bg-primary scale-125'
+                    : 'border-border bg-surface scale-100'
+                }`}
                 style={{
                   backgroundColor: role === 'parent' ? colors.primary : colors.surface,
                   borderColor: role === 'parent' ? colors.primary : colors.border,
                 }}
-                onPress={() => setRole('parent')}>
+                onPress={() => handleRoleSelect('parent')}>
+                <Icon
+                  name="account-child" // Icon for Parent (group of people)
+                  size={40}
+                  color={role === 'parent' ? colors.textOnPrimary : colors.textPrimary}
+                  className={`transition-transform duration-200 ${role === 'parent' ? 'scale-150' : 'scale-100'}`}
+                />
                 <Text
-                  className="text-center font-medium"
+                  className="mt-2 text-center font-medium"
                   style={{
                     color: role === 'parent' ? colors.textOnPrimary : colors.textPrimary,
                   }}>
                   Parent
                 </Text>
               </TouchableOpacity>
+
+              {/* Teacher Role Selection */}
               <TouchableOpacity
-                className="flex-1 rounded-lg border p-4"
+                className={`items-center justify-center rounded-full border px-6 py-3 transition-all duration-200 ${
+                  role === 'teacher'
+                    ? 'border-primary bg-primary scale-125'
+                    : 'border-border bg-surface scale-100'
+                }`}
                 style={{
                   backgroundColor: role === 'teacher' ? colors.primary : colors.surface,
                   borderColor: role === 'teacher' ? colors.primary : colors.border,
                 }}
-                onPress={() => setRole('teacher')}>
+                onPress={() => handleRoleSelect('teacher')}>
+                <Icon
+                  name="school" // Icon for Teacher (school/education related)
+                  size={40}
+                  color={role === 'teacher' ? colors.textOnPrimary : colors.textPrimary}
+                  className={`transition-transform duration-200 ${role === 'teacher' ? 'scale-150' : 'scale-100'}`}
+                />
                 <Text
-                  className="text-center font-medium"
+                  className="mt-2 text-center font-medium"
                   style={{
                     color: role === 'teacher' ? colors.textOnPrimary : colors.textPrimary,
                   }}>
@@ -161,24 +203,18 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Login Button */}
           <TouchableOpacity
-            className="mt-6 w-full rounded-lg py-4"
+            className="mb-8 mt-6 w-full rounded-lg py-4"
             style={{
-              backgroundColor: isLoading || !email || !password ? colors.textMuted : colors.primary,
-              opacity: isLoading || !email || !password ? 0.6 : 1,
+              backgroundColor:
+                isLoading || !email || !password || !role ? colors.textMuted : colors.primary,
+              opacity: isLoading || !email || !password || !role ? 0.6 : 1,
             }}
             onPress={handleLogin}
-            disabled={isLoading || !email || !password}>
+            disabled={isLoading || !email || !password || !role}>
             <Text
               className="text-center text-lg font-semibold"
               style={{ color: colors.textOnPrimary }}>
               {isLoading ? 'Signing In...' : 'Sign In'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Forgot Password Link */}
-          <TouchableOpacity className="mt-4" onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text className="text-center" style={{ color: colors.primary }}>
-              Forgot Password?
             </Text>
           </TouchableOpacity>
         </View>
@@ -197,7 +233,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             .
           </Text>
         </View>
-      </View>
+      </ScrollView>
+      <Toast />
     </SafeAreaView>
   );
 };
