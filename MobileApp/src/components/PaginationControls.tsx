@@ -31,11 +31,14 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
 
   const handleJumpToPage = () => {
     const page = parseInt(jumpToPage);
-    if (isNaN(page) || page < 1 || page > totalPages) {
-      Alert.alert('Invalid Page', `Please enter a page number between 1 and ${totalPages}`);
+    const maxPages = Math.max(1, totalPages);
+    if (isNaN(page) || page < 1 || page > maxPages) {
+      Alert.alert('Invalid Page', `Please enter a page number between 1 and ${maxPages}`);
       return;
     }
-    onPageChange(page);
+    if (totalPages > 1) {
+      onPageChange(page);
+    }
     setJumpToPage('');
   };
 
@@ -48,20 +51,31 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
 
-    if (totalPages <= 5) {
+    // Always show at least page 1, even if totalPages is 0 or 1
+    const effectiveTotalPages = Math.max(1, totalPages);
+
+    if (effectiveTotalPages <= 5) {
       // Show all pages if 5 or fewer
-      for (let i = 1; i <= totalPages; i++) {
+      for (let i = 1; i <= effectiveTotalPages; i++) {
         pages.push(i);
       }
     } else if (currentPage <= 2) {
       // Near the beginning: 1, 2, 3, ..., last
-      pages.push(1, 2, 3, '...', totalPages);
-    } else if (currentPage >= totalPages - 1) {
+      pages.push(1, 2, 3, '...', effectiveTotalPages);
+    } else if (currentPage >= effectiveTotalPages - 1) {
       // Near the end: 1, ..., last-2, last-1, last
-      pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
+      pages.push(1, '...', effectiveTotalPages - 2, effectiveTotalPages - 1, effectiveTotalPages);
     } else {
       // In the middle: 1, ..., current-1, current, current+1, ..., last
-      pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      pages.push(
+        1,
+        '...',
+        currentPage - 1,
+        currentPage,
+        currentPage + 1,
+        '...',
+        effectiveTotalPages
+      );
     }
 
     // Remove duplicates and ensure no consecutive ellipsis
@@ -89,9 +103,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   const { start, end } = getPageRange();
   const pageNumbers = getPageNumbers();
 
-  if (totalPages <= 1) {
-    return null; // Don't show pagination for single page
-  }
+  // Always show pagination controls, but disable navigation when there's only one page
 
   return (
     <View className="border-t p-3" style={{ borderTopColor: colors.border }}>
@@ -101,15 +113,15 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
         <TouchableOpacity
           className="rounded px-3 py-1.5"
           style={{
-            backgroundColor: currentPage > 1 ? colors.primary : colors.border,
+            backgroundColor: currentPage > 1 && totalPages > 1 ? colors.primary : colors.border,
             opacity: isLoading ? 0.6 : 1,
           }}
           onPress={() => onPageChange(currentPage - 1)}
-          disabled={currentPage <= 1 || isLoading}>
+          disabled={currentPage <= 1 || totalPages <= 1 || isLoading}>
           <Text
             className="text-sm font-medium"
             style={{
-              color: currentPage > 1 ? 'white' : colors.textSecondary,
+              color: currentPage > 1 && totalPages > 1 ? 'white' : colors.textSecondary,
             }}>
             Prev
           </Text>
@@ -141,7 +153,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                   borderWidth: 1,
                 }}
                 onPress={() => onPageChange(pageNum)}
-                disabled={isCurrentPage || isLoading}>
+                disabled={isCurrentPage || totalPages <= 1 || isLoading}>
                 <Text
                   className="text-sm"
                   style={{
@@ -175,15 +187,16 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
           <TouchableOpacity
             className="rounded px-3 py-1.5"
             style={{
-              backgroundColor: currentPage < totalPages ? colors.primary : colors.border,
+              backgroundColor:
+                currentPage < totalPages && totalPages > 1 ? colors.primary : colors.border,
               opacity: isLoading ? 0.6 : 1,
             }}
             onPress={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages || isLoading}>
+            disabled={currentPage >= totalPages || totalPages <= 1 || isLoading}>
             <Text
               className="text-sm font-medium"
               style={{
-                color: currentPage < totalPages ? 'white' : colors.textSecondary,
+                color: currentPage < totalPages && totalPages > 1 ? 'white' : colors.textSecondary,
               }}>
               Next
             </Text>
@@ -218,6 +231,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                   borderColor: colors.border,
                   color: colors.textPrimary,
                   width: 60,
+                  opacity: totalPages <= 1 ? 0.5 : 1,
                 }}
                 placeholder="Page"
                 placeholderTextColor={colors.textSecondary}
@@ -225,12 +239,16 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 onChangeText={setJumpToPage}
                 keyboardType="numeric"
                 maxLength={3}
+                editable={totalPages > 1}
               />
               <TouchableOpacity
                 className="ml-2 rounded px-3 py-1"
-                style={{ backgroundColor: colors.secondary }}
+                style={{
+                  backgroundColor: colors.secondary,
+                  opacity: totalPages <= 1 ? 0.5 : 1,
+                }}
                 onPress={handleJumpToPage}
-                disabled={!jumpToPage.trim() || isLoading}>
+                disabled={!jumpToPage.trim() || isLoading || totalPages <= 1}>
                 <Text className="text-sm font-medium text-white">Go</Text>
               </TouchableOpacity>
             </View>
