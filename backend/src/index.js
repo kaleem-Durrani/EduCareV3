@@ -47,7 +47,7 @@ app.use("/uploads", express.static("uploads"));
 connectDB(MONGO_URI);
 
 // Routes
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.send("EduCare App Backend is Live!");
 });
 
