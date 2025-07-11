@@ -34,6 +34,7 @@ const createApiInstance = (): AxiosInstance => {
           log('API Request:', {
             method: config.method?.toUpperCase(),
             url: config.url,
+            fullUrl: `${ENV.API_BASE_URL}${config.url}`,
             data: config.data,
           });
         }
