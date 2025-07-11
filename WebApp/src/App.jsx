@@ -59,7 +59,7 @@ export default function App() {
           <TeachersProvider>
             <ClassesProvider>
               <ParentsProvider>
-                <Router>
+                <Router basename="/educare/webapp/">
                   <Routes>
                     {/* Public Routes */}
                     <Route path={PUBLIC_ROUTES.HOME} element={<Home />} />
