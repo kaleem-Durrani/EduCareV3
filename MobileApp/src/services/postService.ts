@@ -216,14 +216,6 @@ export const postService = {
   },
 
   /**
-   * Get posts for parent's child (mobile app)
-   * Uses parent-specific endpoint: GET /api/posts/parent/:studentId
-   */
-  getPostsForParent: async (studentId: string): Promise<ApiResponse<Post[]>> => {
-    return ApiService.get<Post[]>(`/posts/parent/${studentId}`);
-  },
-
-  /**
    * Get paginated posts (alias for getPosts)
    * Uses existing endpoint: GET /api/posts/paginated
    */

@@ -41,24 +41,36 @@ const WeeklyMenuScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
       {/* Content */}
       <ScrollView className="flex-1 px-4">
         {error ? (
-          <View className="flex-1 items-center justify-center py-8">
-            <Text className="mb-2 text-center text-lg" style={{ color: colors.textPrimary }}>
+          <View className="flex-1 items-center justify-center py-12">
+            <Text className="text-6xl mb-4">⚠️</Text>
+            <Text className="text-xl font-bold mb-2" style={{ color: colors.error }}>
               Failed to load menu
             </Text>
-            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
-              {error}
+            <Text className="mb-6 text-center text-base leading-6 px-8" style={{ color: colors.textSecondary }}>
+              {error || 'Something went wrong while loading the menu. Please try again.'}
             </Text>
-            <TouchableOpacity className="rounded-lg bg-blue-500 px-6 py-3" onPress={loadMenu}>
-              <Text className="font-medium text-white">Retry</Text>
+            <TouchableOpacity
+              className="rounded-xl px-8 py-4"
+              style={{
+                backgroundColor: colors.primary,
+                shadowColor: colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+              onPress={loadMenu}>
+              <Text className="font-semibold text-white text-base">Retry</Text>
             </TouchableOpacity>
           </View>
         ) : !menu ? (
-          <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
+          <View className="flex-1 items-center justify-center py-12">
+            <Text className="text-6xl mb-4">🍽️</Text>
+            <Text className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
               No active menu found
             </Text>
-            <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-              There is currently no active weekly menu available.
+            <Text className="text-center text-base leading-6 px-8" style={{ color: colors.textSecondary }}>
+              There is currently no active weekly menu available. Please contact the administration.
             </Text>
           </View>
         ) : (
