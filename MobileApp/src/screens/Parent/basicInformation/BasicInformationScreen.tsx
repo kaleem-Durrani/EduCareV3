@@ -22,18 +22,18 @@ const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ na
     refreshChildren,
   } = useParentChildren();
 
-  // API hook for fetching student details
+  // API hook for fetching student details (parent-specific)
   const {
     request: fetchStudentDetails,
     isLoading: isLoadingStudent,
     error: studentError,
     data: studentDetails,
-  } = useApi<StudentDetails>(studentService.getStudentById);
+  } = useApi<StudentDetails>(studentService.getStudentBasicInfoForParent);
 
   const handleChildSelect = async (child: ParentStudent) => {
     setSelectedChild(child);
     setHasSearched(true);
-    const response = await studentService.getStudentById(child._id);
+    const response = await studentService.getStudentBasicInfoForParent(child._id);
 
     if (response.success) {
       await fetchStudentDetails(child._id);

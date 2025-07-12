@@ -47,8 +47,18 @@ export const studentService = {
   /**
    * Get student by ID (detailed view) (mobile app)
    * Uses existing endpoint: GET /api/students/:student_id
+   * For teachers and admins only
    */
   getStudentById: async (studentId: string): Promise<ApiResponse<StudentDetails>> => {
     return ApiService.get<StudentDetails>(`/students/${studentId}`);
+  },
+
+  /**
+   * Get student basic info for parent (mobile app)
+   * Uses existing endpoint: GET /api/student/:student_id/basic-info
+   * For parents only - includes all necessary information for basic info screen
+   */
+  getStudentBasicInfoForParent: async (studentId: string): Promise<ApiResponse<StudentDetails>> => {
+    return ApiService.get<StudentDetails>(`/student/${studentId}/basic-info`);
   },
 };

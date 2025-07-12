@@ -534,37 +534,18 @@ export const getStudentBasicInfoForParent = asyncHandler(async (req, res) => {
   }
 
   const student = await Student.findById(student_id)
-    .populate("current_class", "name")
+    .populate("current_class", "name grade section")
     .select(
-      "fullName rollNum class birthdate photoUrl schedule allergies likes"
+      "fullName rollNum birthdate photoUrl schedule allergies likes additionalInfo authorizedPhotos contacts current_class active createdAt updatedAt"
     );
 
   if (!student) {
     throwNotFound("Student");
   }
 
-  // Calculate age
-  const today = new Date();
-  const birthDate = new Date(student.birthdate);
-  const age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  let ageString = `${age} years`;
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    ageString = `${age - 1} years`;
-  }
-
-  const studentInfo = {
-    ...student.toObject(),
-    age: ageString,
-  };
-
   return sendSuccess(
     res,
-    studentInfo,
+    student,
     "Student basic info retrieved successfully"
   );
 });
