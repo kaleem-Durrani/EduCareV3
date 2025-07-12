@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import { menuService, WeeklyMenu } from '../../../services';
+import { ScreenHeader } from '../../../components';
 import LoadingScreen from '../../../components/LoadingScreen';
 import MenuHeader from './components/MenuHeader';
 import MenuContent from './components/MenuContent';
@@ -37,21 +38,11 @@ const WeeklyMenuScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
-
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Weekly Menu
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Weekly Menu"
+        navigation={navigation}
+        showBackButton={true}
+      />
 
       <ScrollView
         className="flex-1 px-4"
@@ -64,18 +55,26 @@ const WeeklyMenuScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
           />
         }>
         {error ? (
-          <View className="items-center justify-center py-8">
-            <Text className="mb-2 text-lg" style={{ color: colors.error }}>
+          <View className="items-center justify-center py-12">
+            <Text className="text-6xl mb-4">⚠️</Text>
+            <Text className="text-xl font-bold mb-2" style={{ color: colors.error }}>
               Error Loading Menu
             </Text>
-            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
-              {error}
+            <Text className="mb-6 text-center text-base leading-6 px-8" style={{ color: colors.textSecondary }}>
+              {error || 'Something went wrong while loading the menu. Please try again.'}
             </Text>
             <TouchableOpacity
-              className="rounded-lg px-6 py-3"
-              style={{ backgroundColor: colors.primary }}
+              className="rounded-xl px-8 py-4"
+              style={{
+                backgroundColor: colors.primary,
+                shadowColor: colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
               onPress={handleRefresh}>
-              <Text className="font-medium text-white">Try Again</Text>
+              <Text className="font-semibold text-white text-base">Try Again</Text>
             </TouchableOpacity>
           </View>
         ) : menu ? (
@@ -84,18 +83,26 @@ const WeeklyMenuScreen: React.FC<{ navigation: any; route?: any }> = ({ navigati
             <MenuContent menu={menu} />
           </>
         ) : (
-          <View className="items-center justify-center py-8">
-            <Text className="mb-2 text-lg" style={{ color: colors.textPrimary }}>
+          <View className="items-center justify-center py-12">
+            <Text className="text-6xl mb-4">🍽️</Text>
+            <Text className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
               No Menu Available
             </Text>
-            <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
-              There is no weekly menu available at the moment. Please check back later.
+            <Text className="mb-6 text-center text-base leading-6 px-8" style={{ color: colors.textSecondary }}>
+              There is no weekly menu available at the moment. Please check back later or contact the school.
             </Text>
             <TouchableOpacity
-              className="rounded-lg px-6 py-3"
-              style={{ backgroundColor: colors.primary }}
+              className="rounded-xl px-8 py-4"
+              style={{
+                backgroundColor: colors.primary,
+                shadowColor: colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
               onPress={handleRefresh}>
-              <Text className="font-medium text-white">Refresh</Text>
+              <Text className="font-semibold text-white text-base">Refresh Menu</Text>
             </TouchableOpacity>
           </View>
         )}

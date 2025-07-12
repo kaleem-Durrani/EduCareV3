@@ -47,66 +47,105 @@ const MenuHeader: React.FC<MenuHeaderProps> = ({ menu }) => {
 
   return (
     <View
-      className="mb-6 rounded-lg p-6"
-      style={{ 
-        backgroundColor: colors.card, 
-        borderColor: colors.border, 
-        borderWidth: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+      className="mb-6 rounded-xl p-6"
+      style={{
+        backgroundColor: colors.card,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
       }}
     >
-      {/* Menu Title */}
-      <Text className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-        {menu.title}
-      </Text>
+      {/* Header with Icon */}
+      <View className="flex-row items-center mb-4">
+        <View
+          className="mr-4 h-12 w-12 items-center justify-center rounded-full"
+          style={{ backgroundColor: colors.primary + '20' }}>
+          <Text className="text-2xl">🍽️</Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+            {menu.title}
+          </Text>
+          <Text className="text-sm font-medium" style={{ color: colors.primary }}>
+            Weekly Menu Plan
+          </Text>
+        </View>
+      </View>
 
       {/* Menu Description */}
       {menu.description && (
-        <Text className="text-base mb-4" style={{ color: colors.textSecondary }}>
-          {menu.description}
-        </Text>
+        <View
+          className="mb-4 rounded-lg p-3"
+          style={{ backgroundColor: colors.background }}>
+          <Text className="text-base leading-6" style={{ color: colors.textSecondary }}>
+            {menu.description}
+          </Text>
+        </View>
       )}
 
       {/* Menu Period */}
-      <View className="flex-row items-center mb-3">
-        <Text className="text-sm font-medium mr-2" style={{ color: colors.textSecondary }}>
-          📅 Period:
-        </Text>
-        <Text className="text-sm" style={{ color: colors.textPrimary }}>
+      <View
+        className="mb-4 rounded-lg p-4"
+        style={{
+          backgroundColor: colors.info + '10',
+          borderLeftWidth: 4,
+          borderLeftColor: colors.info,
+        }}>
+        <View className="flex-row items-center mb-2">
+          <Text className="text-xl mr-2">📅</Text>
+          <Text className="text-base font-semibold" style={{ color: colors.info }}>
+            Menu Period
+          </Text>
+        </View>
+        <Text className="text-base font-medium" style={{ color: colors.textPrimary }}>
           {formatDate(menu.startDate)} - {formatDate(menu.endDate)}
         </Text>
       </View>
 
       {/* Status and Total Items */}
-      <View className="flex-row justify-between items-center">
-        <View className="flex-row items-center">
-          <Text className="text-sm font-medium mr-2" style={{ color: colors.textSecondary }}>
-            Status:
-          </Text>
-          <View 
-            className="px-3 py-1 rounded-full"
-            style={{ backgroundColor: getStatusColor(menu.status) }}
-          >
-            <Text className="text-white text-sm font-medium">
+      <View className="flex-row space-x-3">
+        {/* Status Card */}
+        <View className="flex-1">
+          <View
+            className="rounded-lg p-4"
+            style={{
+              backgroundColor: getStatusColor(menu.status) + '20',
+              borderLeftWidth: 4,
+              borderLeftColor: getStatusColor(menu.status),
+            }}>
+            <View className="flex-row items-center mb-1">
+              <Text className="text-lg mr-2">
+                {menu.status === 'active' ? '✅' : menu.status === 'draft' ? '📝' : '📁'}
+              </Text>
+              <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                Status
+              </Text>
+            </View>
+            <Text className="text-base font-bold" style={{ color: getStatusColor(menu.status) }}>
               {getStatusText(menu.status)}
             </Text>
           </View>
         </View>
 
-        <View className="flex-row items-center">
-          <Text className="text-sm font-medium mr-2" style={{ color: colors.textSecondary }}>
-            Total Items:
-          </Text>
-          <View 
-            className="px-3 py-1 rounded-full"
-            style={{ backgroundColor: colors.primary }}
-          >
-            <Text className="text-white text-sm font-medium">
-              {menu.totalItems}
+        {/* Total Items Card */}
+        <View className="flex-1">
+          <View
+            className="rounded-lg p-4"
+            style={{
+              backgroundColor: colors.primary + '20',
+              borderLeftWidth: 4,
+              borderLeftColor: colors.primary,
+            }}>
+            <View className="flex-row items-center mb-1">
+              <Text className="text-lg mr-2">🍽️</Text>
+              <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                Total Items
+              </Text>
+            </View>
+            <Text className="text-base font-bold" style={{ color: colors.primary }}>
+              {menu.totalItems} Items
             </Text>
           </View>
         </View>
