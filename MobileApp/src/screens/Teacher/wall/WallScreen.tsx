@@ -8,12 +8,14 @@ import {
   Post,
   PaginatedPostsResponse,
   CreatePostData,
+  UpdatePostData,
   PostFilters,
   EnrolledClass,
   ClassStudent,
 } from '../../../services';
-import { PostItem, CreatePostModal } from './components';
+import { PostItem, CreatePostModal, EditPostModal } from './components';
 import { PaginationControls, ScreenHeader, StudentSelector } from '../../../components';
+import Toast from 'react-native-toast-message';
 
 const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -28,6 +30,9 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isUpdatingPost, setIsUpdatingPost] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   // Filter state
   const [selectedClass, setSelectedClass] = useState<EnrolledClass | null>(null);
@@ -99,9 +104,34 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
     }
   };
 
-  const handleEditPost = (_post: Post) => {
-    // TODO: Implement edit functionality
-    Alert.alert('Edit Post', 'Edit functionality will be implemented');
+  const handleEditPost = (post: Post) => {
+    setSelectedPost(post);
+    setIsEditModalVisible(true);
+  };
+
+  const handleUpdatePost = async (postId: string, postData: UpdatePostData, mediaFiles?: any[]) => {
+    setIsUpdatingPost(true);
+    const response = await postService.updatePost(postId, postData, mediaFiles);
+
+    if (response.success) {
+      setIsEditModalVisible(false);
+      setSelectedPost(null);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Post updated successfully!',
+        visibilityTime: 3000,
+      });
+      await loadPosts(pagination?.currentPage || 1); // Refresh current page
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: response.message || 'Failed to update post. Please try again.',
+        visibilityTime: 3000,
+      });
+    }
+    setIsUpdatingPost(false);
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -328,6 +358,20 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
         isCreating={isCreatingPost}
         classes={classes || []}
         students={students || []}
+      />
+
+      {/* Edit Post Modal */}
+      <EditPostModal
+        visible={isEditModalVisible}
+        onClose={() => {
+          setIsEditModalVisible(false);
+          setSelectedPost(null);
+        }}
+        onUpdate={handleUpdatePost}
+        isUpdating={isUpdatingPost}
+        classes={classes || []}
+        students={students || []}
+        post={selectedPost}
       />
 
       {/* Class Selection Modal */}
