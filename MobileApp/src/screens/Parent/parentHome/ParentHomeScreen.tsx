@@ -17,23 +17,11 @@ interface ModuleItem {
   title: string;
   icon: string; // TODO: Replace with actual icon component
   route: keyof ParentStackParamList;
-  params?: any;
 }
 
 const ParentHomeScreen: React.FC<Props> = ({ navigation }) => {
   const { colors } = useTheme();
   const { viewMode, toggleViewMode } = useViewMode();
-
-  // TODO: Replace with actual student data
-  const studentData = {
-    name: 'John Doe',
-    photo: null, // TODO: Add actual photo
-    class: 'Red Class',
-    age: 4,
-  };
-
-  // Use real student ID from test data
-  const STUDENT_ID = '686bf7982acc4588d3bcc0e1'; // John Doe's ID (updated for educare_db)
 
   const modules: ModuleItem[] = [
     {
@@ -41,63 +29,56 @@ const ParentHomeScreen: React.FC<Props> = ({ navigation }) => {
       title: 'Basic Information',
       icon: '👤',
       route: 'BasicInformation',
-      params: { studentId: STUDENT_ID },
     },
     {
       id: '2',
       title: 'Contacts',
       icon: '📞',
       route: 'Contacts',
-      params: { studentId: STUDENT_ID },
     },
     {
       id: '3',
       title: 'Weekly Menu',
       icon: '🍽️',
       route: 'WeeklyMenu',
-      params: { studentId: STUDENT_ID },
     },
     {
       id: '4',
       title: 'Weekly Report',
       icon: '📊',
       route: 'WeeklyReport',
-      params: { studentId: STUDENT_ID },
     },
     {
       id: '5',
       title: 'Monthly Plan',
       icon: '📅',
       route: 'MonthlyPlan',
-      params: { studentId: STUDENT_ID },
     },
-    { id: '6', title: 'My Box', icon: '📦', route: 'MyBox', params: { studentId: STUDENT_ID } },
+    { id: '6', title: 'My Box', icon: '📦', route: 'MyBox' },
     {
       id: '7',
       title: 'My Documents',
       icon: '📄',
       route: 'MyDocuments',
-      params: { studentId: STUDENT_ID },
     },
     {
       id: '8',
       title: 'Activities',
       icon: '🎯',
       route: 'Activities',
-      params: { studentId: STUDENT_ID },
     },
-    { id: '9', title: 'Wall', icon: '📝', route: 'Wall', params: { studentId: STUDENT_ID } },
-    { id: '10', title: 'Notes', icon: '📋', route: 'Notes', params: { studentId: STUDENT_ID } },
+    { id: '9', title: 'Wall', icon: '📝', route: 'Wall' },
+    { id: '10', title: 'Notes', icon: '📋', route: 'Notes' },
     { id: '11', title: 'Lost Items', icon: '🔍', route: 'LostItems' },
-    { id: '12', title: 'Health', icon: '🏥', route: 'Health', params: { studentId: STUDENT_ID } },
+    { id: '12', title: 'Health', icon: '🏥', route: 'Health' },
     {
       id: '13',
       title: 'Payment',
       icon: '💳',
       route: 'Payment',
-      params: { studentId: STUDENT_ID },
+     
     },
-    { id: '14', title: 'Driver', icon: '🚌', route: 'Driver', params: { studentId: STUDENT_ID } },
+    { id: '14', title: 'Driver', icon: '🚌', route: 'Driver' },
     { id: '15', title: 'Notifications', icon: '🔔', route: 'Notifications' },
     { id: '16', title: 'Settings', icon: '⚙️', route: 'Settings' },
     { id: '17', title: 'Contact', icon: '💬', route: 'Settings' }, // WhatsApp integration
@@ -105,11 +86,7 @@ const ParentHomeScreen: React.FC<Props> = ({ navigation }) => {
   ];
 
   const handleModulePress = (module: ModuleItem) => {
-    if (module.params) {
-      navigation.navigate(module.route as any, module.params);
-    } else {
       navigation.navigate(module.route as any);
-    }
   };
 
   const renderTileModule = (module: ModuleItem) => (
@@ -224,10 +201,8 @@ const ParentHomeScreen: React.FC<Props> = ({ navigation }) => {
           {/* Student Info */}
           <View className="flex-1">
             <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-              {studentData.name}
             </Text>
             <Text className="text-sm" style={{ color: colors.textSecondary }}>
-              {studentData.class} • Age {studentData.age}
             </Text>
           </View>
         </View>
