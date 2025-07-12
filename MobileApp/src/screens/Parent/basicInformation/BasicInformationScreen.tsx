@@ -1,129 +1,160 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native';
-import { ParentStackParamList } from '../../../types';
+import { useParentChildren } from '../../../contexts/ParentChildrenContext';
+import { useApi } from '../../../hooks';
+import { studentService, StudentDetails, ParentStudent } from '../../../services';
+import { ChildSelector, ScreenHeader } from '../../../components';
+import { StudentInfoCard, ContactCard, ScheduleCard, HealthInfoCard } from './components';
+import Toast from 'react-native-toast-message';
 
-type BasicInformationScreenNavigationProp = StackNavigationProp<
-  ParentStackParamList,
-  'BasicInformation'
->;
-type BasicInformationScreenRouteProp = RouteProp<ParentStackParamList, 'BasicInformation'>;
-
-interface Props {
-  navigation: BasicInformationScreenNavigationProp;
-  route: BasicInformationScreenRouteProp;
-}
-
-const BasicInformationScreen: React.FC<Props> = ({ navigation, route }) => {
+const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
-  const { studentId } = route.params;
+  const [selectedChild, setSelectedChild] = useState<ParentStudent | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  // TODO: Fetch actual student data
-  const studentData = {
-    photo: null,
-    fullName: 'John Alexander Doe',
-    firstName: 'John',
-    class: 'Red Class',
-    schedule: 'Morning (8:00 AM - 12:00 PM)',
-    age: 4,
-    dateOfBirth: '2020-03-15',
-    allergies: 'Peanuts, Dairy',
-    likes: 'Playing with blocks, Drawing',
-    dislikes: 'Loud noises',
-    additionalInfo: 'Very social child, loves to help others',
-    authorizedPhotos: true,
+  // Use parent children context
+  const {
+    children,
+    isLoading: isLoadingChildren,
+    error: childrenError,
+    refreshChildren,
+  } = useParentChildren();
+
+  // API hook for fetching student details
+  const {
+    request: fetchStudentDetails,
+    isLoading: isLoadingStudent,
+    error: studentError,
+    data: studentDetails,
+  } = useApi<StudentDetails>(studentService.getStudentById);
+
+  const handleChildSelect = async (child: ParentStudent) => {
+    setSelectedChild(child);
+    setHasSearched(true);
+    const response = await studentService.getStudentById(child._id);
+
+    if (response.success) {
+      await fetchStudentDetails(child._id);
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: response.message || 'Failed to load student details',
+        visibilityTime: 3000,
+      });
+    }
   };
 
-  const InfoRow = ({ label, value }: { label: string; value: string | boolean }) => (
-    <View className="mb-4">
-      <Text
-        className="mb-1 text-sm font-medium"
-        style={{ color: '#4169e1' }} // Specific color from guidelines
-      >
-        {label}
-      </Text>
-      <Text
-        className="text-base"
-        style={{ color: '#4169e1' }} // Specific color from guidelines
-      >
-        {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
-      </Text>
-    </View>
-  );
+  const handleResetSelection = () => {
+    setSelectedChild(null);
+    setHasSearched(false);
+  };
+
+  const handleRefresh = async () => {
+    await refreshChildren();
+    if (selectedChild) {
+      await fetchStudentDetails(selectedChild._id);
+    }
+  };
+
+  const isLoading = isLoadingChildren || isLoadingStudent;
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-      {/* Header */}
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
+      <ScreenHeader
+        title="Basic Information"
+        navigation={navigation}
+        showBackButton={true}
+      />
 
-      {/* Back Button */}
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Basic Information
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <ScrollView
+        className="flex-1 px-4"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }>
 
-      <ScrollView className="flex-1 px-4">
-        {/* Student Photo and Summary */}
-        <View
-          className="mb-6 items-center rounded-lg p-4"
-          style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
-          <View
-            className="mb-4 h-24 w-24 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.primary }}>
-            <Text className="text-4xl">👶</Text>
-          </View>
-          <Text className="text-center text-xl font-bold" style={{ color: colors.textPrimary }}>
-            {studentData.fullName}
-          </Text>
-          <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
-            {studentData.class}
-          </Text>
+        {/* Child Selector */}
+        <View className="mt-4">
+          <ChildSelector
+            selectedChild={selectedChild}
+            onChildSelect={handleChildSelect}
+            onResetSelection={handleResetSelection}
+            placeholder="Select a child to view their information"
+            disabled={isLoadingChildren}
+          />
         </View>
 
-        {/* Information Fields */}
-        <View
-          className="rounded-lg p-4"
-          style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
-          <InfoRow label="Full name" value={studentData.fullName} />
-          <InfoRow label="Class" value={studentData.class} />
-          <InfoRow label="Schedule" value={studentData.schedule} />
-          <InfoRow label="First name" value={studentData.firstName} />
-          <InfoRow
-            label="Age"
-            value={`${studentData.age} years (Born: ${studentData.dateOfBirth})`}
-          />
-          <InfoRow label="Allergies" value={studentData.allergies} />
-          <InfoRow
-            label="Likes/Dislikes"
-            value={`Likes: ${studentData.likes} | Dislikes: ${studentData.dislikes}`}
-          />
-          <InfoRow label="Additional information" value={studentData.additionalInfo} />
-          <InfoRow label="Authorized photos/videos" value={studentData.authorizedPhotos} />
-        </View>
-
-        {/* Edit Button (Only visible to administrators) */}
-        <View className="mb-6 mt-6">
-          <TouchableOpacity
-            className="rounded-lg px-6 py-3 opacity-50"
-            style={{ backgroundColor: colors.primary }}
-            disabled={true}>
-            <Text className="text-center font-semibold" style={{ color: colors.textOnPrimary }}>
-              Edit Info (Admin Only)
+        {/* Loading State */}
+        {isLoadingStudent && selectedChild && (
+          <View className="mt-8 items-center justify-center py-12">
+            <Text className="text-lg" style={{ color: colors.textSecondary }}>
+              Loading {selectedChild.fullName}'s information...
             </Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        )}
+
+        {/* Error State */}
+        {(childrenError || studentError) && (
+          <View className="mt-8 items-center justify-center py-12">
+            <Text className="text-lg" style={{ color: colors.error }}>
+              {childrenError || studentError || 'Something went wrong'}
+            </Text>
+          </View>
+        )}
+
+        {/* Student Details */}
+        {studentDetails && selectedChild && !isLoadingStudent && (
+          <View className="mt-4 pb-8">
+            {/* Student Info Card */}
+            <StudentInfoCard student={studentDetails} />
+
+            {/* Emergency Contacts */}
+            <ContactCard contacts={studentDetails.contacts} />
+
+            {/* Schedule */}
+            <ScheduleCard schedule={studentDetails.schedule} />
+
+            {/* Health & Preferences */}
+            <HealthInfoCard
+              allergies={studentDetails.allergies}
+              likes={studentDetails.likes}
+            />
+          </View>
+        )}
+
+        {/* Empty State */}
+        {!selectedChild && !isLoading && hasSearched && (
+          <View className="mt-8 items-center justify-center py-12">
+            <Text className="text-6xl mb-4">👶</Text>
+            <Text className="text-xl font-semibold mb-2" style={{ color: colors.textPrimary }}>
+              Select a Child
+            </Text>
+            <Text className="text-center" style={{ color: colors.textSecondary }}>
+              Choose one of your children to view their detailed information
+            </Text>
+          </View>
+        )}
+
+        {/* No Children State */}
+        {children.length === 0 && !isLoadingChildren && (
+          <View className="mt-8 items-center justify-center py-12">
+            <Text className="text-6xl mb-4">👨‍👩‍👧‍👦</Text>
+            <Text className="text-xl font-semibold mb-2" style={{ color: colors.textPrimary }}>
+              No Children Found
+            </Text>
+            <Text className="text-center" style={{ color: colors.textSecondary }}>
+              No children are associated with your account. Please contact the school administration.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
