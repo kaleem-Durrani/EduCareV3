@@ -534,18 +534,27 @@ export const getStudentBasicInfoForParent = asyncHandler(async (req, res) => {
   }
 
   const student = await Student.findById(student_id)
-    .populate("current_class", "name grade section")
-    .select(
-      "fullName rollNum birthdate photoUrl schedule allergies likes additionalInfo authorizedPhotos contacts current_class active createdAt updatedAt"
-    );
+    .populate("current_class", "name grade section");
 
   if (!student) {
     throwNotFound("Student");
   }
 
+  // Debug logging - remove after testing
+  console.log("Full student object keys:", Object.keys(student.toObject()));
+  console.log("Student contacts data:", student.contacts);
+  console.log("Student contacts length:", student.contacts?.length || 0);
+  console.log("Student contacts type:", typeof student.contacts);
+
+  // Ensure contacts is always an array
+  const studentData = student.toObject();
+  if (!studentData.contacts) {
+    studentData.contacts = [];
+  }
+
   return sendSuccess(
     res,
-    student,
+    studentData,
     "Student basic info retrieved successfully"
   );
 });

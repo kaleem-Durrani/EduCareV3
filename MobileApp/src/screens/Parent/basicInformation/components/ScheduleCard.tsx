@@ -22,15 +22,15 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
         elevation: 4,
       }}>
       {/* Header */}
-      <View className="flex-row items-center mb-6">
-        <Text className="text-2xl mr-3">⏰</Text>
+      <View className="mb-6 flex-row items-center">
+        <Text className="mr-3 text-2xl">⏰</Text>
         <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
           School Schedule
         </Text>
       </View>
 
       {/* Schedule Details */}
-      <View className="space-y-4">
+      <View className="mb-2 space-y-4">
         {/* Time */}
         <View
           className="rounded-lg p-4"
@@ -39,8 +39,8 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
             borderLeftWidth: 4,
             borderLeftColor: colors.info,
           }}>
-          <View className="flex-row items-center mb-2">
-            <Text className="text-xl mr-2">🕐</Text>
+          <View className="mb-2 flex-row items-center">
+            <Text className="mr-2 text-xl">🕐</Text>
             <Text className="text-base font-semibold" style={{ color: colors.textSecondary }}>
               School Hours
             </Text>
@@ -58,8 +58,8 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
             borderLeftWidth: 4,
             borderLeftColor: colors.success,
           }}>
-          <View className="flex-row items-center mb-2">
-            <Text className="text-xl mr-2">📅</Text>
+          <View className="mb-2 flex-row items-center">
+            <Text className="mr-2 text-xl">📅</Text>
             <Text className="text-base font-semibold" style={{ color: colors.textSecondary }}>
               School Days
             </Text>
@@ -70,10 +70,10 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
         </View>
 
         {/* Visual Schedule */}
-        <View
-          className="rounded-lg p-4"
-          style={{ backgroundColor: colors.primary + '10' }}>
-          <Text className="text-center text-base font-semibold mb-3" style={{ color: colors.primary }}>
+        <View className="rounded-lg p-4" style={{ backgroundColor: colors.primary + '10' }}>
+          <Text
+            className="mb-3 text-center text-base font-semibold"
+            style={{ color: colors.primary }}>
             Weekly Schedule
           </Text>
           <View className="flex-row justify-between">
@@ -82,9 +82,7 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
                 <View
                   className="mb-2 h-8 w-8 items-center justify-center rounded-full"
                   style={{ backgroundColor: colors.primary }}>
-                  <Text className="text-xs font-bold text-white">
-                    {day.charAt(0)}
-                  </Text>
+                  <Text className="text-xs font-bold text-white">{day.charAt(0)}</Text>
                 </View>
                 <Text className="text-xs font-medium" style={{ color: colors.primary }}>
                   {day}
@@ -98,9 +96,7 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
                 <View
                   className="mb-2 h-8 w-8 items-center justify-center rounded-full"
                   style={{ backgroundColor: colors.textMuted }}>
-                  <Text className="text-xs font-bold text-white">
-                    {day.charAt(0)}
-                  </Text>
+                  <Text className="text-xs font-bold text-white">{day.charAt(0)}</Text>
                 </View>
                 <Text className="text-xs font-medium" style={{ color: colors.textMuted }}>
                   {day}

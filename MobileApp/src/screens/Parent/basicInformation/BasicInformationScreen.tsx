@@ -63,11 +63,7 @@ const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ na
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <ScreenHeader
-        title="Basic Information"
-        navigation={navigation}
-        showBackButton={true}
-      />
+      <ScreenHeader title="Basic Information" navigation={navigation} showBackButton={true} />
 
       <ScrollView
         className="flex-1 px-4"
@@ -80,7 +76,6 @@ const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ na
             tintColor={colors.primary}
           />
         }>
-
         {/* Child Selector */}
         <View className="mt-4">
           <ChildSelector
@@ -113,6 +108,14 @@ const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ na
         {/* Student Details */}
         {studentDetails && selectedChild && !isLoadingStudent && (
           <View className="mt-4 pb-8">
+            {/* Debug info - remove after testing */}
+            <Text style={{ color: colors.textPrimary }}>
+              Debug: Contacts length: {studentDetails.contacts?.length || 0}
+            </Text>
+            <Text style={{ color: colors.textPrimary }}>
+              Debug: Contacts data: {JSON.stringify(studentDetails.contacts, null, 2)}
+            </Text>
+
             {/* Student Info Card */}
             <StudentInfoCard student={studentDetails} />
 
@@ -123,18 +126,15 @@ const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ na
             <ScheduleCard schedule={studentDetails.schedule} />
 
             {/* Health & Preferences */}
-            <HealthInfoCard
-              allergies={studentDetails.allergies}
-              likes={studentDetails.likes}
-            />
+            <HealthInfoCard allergies={studentDetails.allergies} likes={studentDetails.likes} />
           </View>
         )}
 
         {/* Empty State */}
         {!selectedChild && !isLoading && hasSearched && (
           <View className="mt-8 items-center justify-center py-12">
-            <Text className="text-6xl mb-4">👶</Text>
-            <Text className="text-xl font-semibold mb-2" style={{ color: colors.textPrimary }}>
+            <Text className="mb-4 text-6xl">👶</Text>
+            <Text className="mb-2 text-xl font-semibold" style={{ color: colors.textPrimary }}>
               Select a Child
             </Text>
             <Text className="text-center" style={{ color: colors.textSecondary }}>
@@ -146,12 +146,13 @@ const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ na
         {/* No Children State */}
         {children.length === 0 && !isLoadingChildren && (
           <View className="mt-8 items-center justify-center py-12">
-            <Text className="text-6xl mb-4">👨‍👩‍👧‍👦</Text>
-            <Text className="text-xl font-semibold mb-2" style={{ color: colors.textPrimary }}>
+            <Text className="mb-4 text-6xl">👨‍👩‍👧‍👦</Text>
+            <Text className="mb-2 text-xl font-semibold" style={{ color: colors.textPrimary }}>
               No Children Found
             </Text>
             <Text className="text-center" style={{ color: colors.textSecondary }}>
-              No children are associated with your account. Please contact the school administration.
+              No children are associated with your account. Please contact the school
+              administration.
             </Text>
           </View>
         )}
