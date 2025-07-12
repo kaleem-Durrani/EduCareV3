@@ -12,7 +12,6 @@ interface ChildSelectorProps {
   onResetSelection: () => void;
   placeholder?: string;
   showAsTag?: boolean;
-  compact?: boolean;
   disabled?: boolean;
 }
 
@@ -22,7 +21,6 @@ export const ChildSelector: React.FC<ChildSelectorProps> = ({
   onResetSelection,
   placeholder = 'Select a child',
   showAsTag = false,
-  compact = false,
   disabled = false,
 }) => {
   const { colors } = useTheme();
@@ -103,7 +101,7 @@ export const ChildSelector: React.FC<ChildSelectorProps> = ({
         Select Child
       </Text>
 
-      {selectedChild && (
+      {selectedChild ? (
         <View
           className="mb-2 rounded-lg border p-4"
           style={{
@@ -124,31 +122,49 @@ export const ChildSelector: React.FC<ChildSelectorProps> = ({
                   {selectedChild.fullName}
                 </Text>
                 <Text className="text-sm" style={{ color: colors.textSecondary }}>
-                  {selectedChild.current_class?.name || 'No Class'} • Enrollment #{selectedChild.rollNum}
+                  {selectedChild.current_class?.name || 'No Class'} • Enrollment #
+                  {selectedChild.rollNum}
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              className="rounded-lg px-3 py-2"
-              style={{ backgroundColor: colors.error + '20' }}
-              onPress={handleResetSelection}>
-              <Text className="text-sm" style={{ color: colors.error }}>
-                Clear
-              </Text>
-            </TouchableOpacity>
+            <View className="space-y-2">
+              <TouchableOpacity
+                className="rounded-lg px-3 py-2"
+                style={{ backgroundColor: colors.error + '20' }}
+                onPress={handleResetSelection}>
+                <Text className="text-sm" style={{ color: colors.error }}>
+                  Clear
+                </Text>
+              </TouchableOpacity>
+              <SelectModal
+                items={childItems}
+                selectedValue={selectedChildId}
+                placeholder="Change"
+                title="Select Child"
+                searchEnabled={true}
+                searchPlaceholder="Search children..."
+                onSelect={handleChildSelect}
+                containerStyle={{
+                  backgroundColor: colors.primary + '20',
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                }}
+              />
+            </View>
           </View>
         </View>
+      ) : (
+        <SelectModal
+          items={childItems}
+          selectedValue={selectedChildId}
+          placeholder={placeholder}
+          title="Select Child"
+          searchEnabled={true}
+          searchPlaceholder="Search children..."
+          onSelect={handleChildSelect}
+        />
       )}
-
-      <SelectModal
-        items={childItems}
-        selectedValue={selectedChildId}
-        placeholder={placeholder}
-        title="Select Child"
-        searchEnabled={true}
-        searchPlaceholder="Search children..."
-        onSelect={handleChildSelect}
-      />
     </View>
   );
 };
