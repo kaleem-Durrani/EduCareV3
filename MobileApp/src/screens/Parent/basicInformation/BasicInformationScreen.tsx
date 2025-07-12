@@ -108,14 +108,6 @@ const BasicInformationScreen: React.FC<{ navigation: any; route?: any }> = ({ na
         {/* Student Details */}
         {studentDetails && selectedChild && !isLoadingStudent && (
           <View className="mt-4 pb-8">
-            {/* Debug info - remove after testing */}
-            <Text style={{ color: colors.textPrimary }}>
-              Debug: Contacts length: {studentDetails.contacts?.length || 0}
-            </Text>
-            <Text style={{ color: colors.textPrimary }}>
-              Debug: Contacts data: {JSON.stringify(studentDetails.contacts, null, 2)}
-            </Text>
-
             {/* Student Info Card */}
             <StudentInfoCard student={studentDetails} />
 

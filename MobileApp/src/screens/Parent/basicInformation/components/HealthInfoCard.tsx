@@ -47,8 +47,8 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ allergies, likes
         elevation: 4,
       }}>
       {/* Header */}
-      <View className="flex-row items-center mb-6">
-        <Text className="text-2xl mr-3">🏥</Text>
+      <View className="mb-6 flex-row items-center">
+        <Text className="mr-3 text-2xl">🏥</Text>
         <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
           Health & Preferences
         </Text>
@@ -58,8 +58,8 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ allergies, likes
       <View className="space-y-6">
         {/* Allergies Section */}
         <View>
-          <View className="flex-row items-center mb-3">
-            <Text className="text-xl mr-2">⚠️</Text>
+          <View className="mb-3 flex-row items-center">
+            <Text className="mr-2 text-xl">⚠️</Text>
             <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
               Allergies
             </Text>
@@ -86,8 +86,8 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ allergies, likes
 
         {/* Likes Section */}
         <View>
-          <View className="flex-row items-center mb-3">
-            <Text className="text-xl mr-2">❤️</Text>
+          <View className="mb-3 flex-row items-center">
+            <Text className="mr-2 text-xl">❤️</Text>
             <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
               Likes & Interests
             </Text>
@@ -113,18 +113,16 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ allergies, likes
         </View>
 
         {/* Health Tips */}
-        <View
-          className="rounded-lg p-4"
-          style={{ backgroundColor: colors.info + '10' }}>
-          <View className="flex-row items-center mb-2">
-            <Text className="text-xl mr-2">💡</Text>
+        <View className="rounded-lg p-4" style={{ backgroundColor: colors.info + '10' }}>
+          <View className="mb-2 flex-row items-center">
+            <Text className="mr-2 text-xl">💡</Text>
             <Text className="text-base font-semibold" style={{ color: colors.info }}>
               Health Reminder
             </Text>
           </View>
           <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
-            Please ensure all allergy information is up to date and inform the school of any changes.
-            Emergency contacts should always be reachable during school hours.
+            Please ensure all allergy information is up to date and inform the school of any
+            changes. Emergency contacts should always be reachable during school hours.
           </Text>
         </View>
       </View>
