@@ -63,11 +63,20 @@ export const getHealthStatistics = asyncHandler(async (req, res) => {
 /**
  * Get health metrics for a student
  * GET /api/health/metrics/:student_id
- * Filter by type and period query params
+ * Filter by type, period, date range with pagination
  */
 export const getHealthMetrics = asyncHandler(async (req, res) => {
   const { student_id } = req.params;
-  const { type, period } = req.query;
+  const {
+    type,
+    period,
+    dateFrom,
+    dateTo,
+    page = 1,
+    limit = 10,
+    sortBy = 'date',
+    sortOrder = 'desc'
+  } = req.query;
 
   // Check if student exists
   const student = await Student.findById(student_id);
@@ -108,10 +117,15 @@ export const getHealthMetrics = asyncHandler(async (req, res) => {
   // Build query
   let query = { student_id };
 
+  // Type filter
   if (type) {
     query.type = type;
   }
 
+  // Date filtering
+  let dateQuery = {};
+
+  // Period filter (takes precedence over custom date range)
   if (period) {
     const now = new Date();
     let startDate;
@@ -123,6 +137,12 @@ export const getHealthMetrics = asyncHandler(async (req, res) => {
       case "month":
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
+      case "3months":
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case "6months":
+        startDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        break;
       case "year":
         startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
         break;
@@ -131,19 +151,69 @@ export const getHealthMetrics = asyncHandler(async (req, res) => {
     }
 
     if (startDate) {
-      query.date = { $gte: startDate };
+      dateQuery.$gte = startDate;
+    }
+  } else {
+    // Custom date range filter
+    if (dateFrom) {
+      dateQuery.$gte = new Date(dateFrom);
+    }
+    if (dateTo) {
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999); // End of day
+      dateQuery.$lte = endDate;
     }
   }
 
+  if (Object.keys(dateQuery).length > 0) {
+    query.date = dateQuery;
+  }
+
+  // Pagination
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Sort options
+  const sortOptions = {};
+  sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+  // Get total count for pagination
+  const totalItems = await HealthMetric.countDocuments(query);
+  const totalPages = Math.ceil(totalItems / limitNum);
+
+  // Get metrics with pagination
   const metrics = await HealthMetric.find(query)
     .populate("student_id", "fullName rollNum")
     .populate("recordedBy", "name email")
-    .sort({ date: -1 });
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(limitNum);
 
-  // Format data for charts if type is specified
-  let formattedData = metrics;
+  // Pagination info
+  const pagination = {
+    currentPage: pageNum,
+    totalPages,
+    totalItems,
+    itemsPerPage: limitNum,
+    hasNextPage: pageNum < totalPages,
+    hasPrevPage: pageNum > 1,
+  };
+
+  // Format response
+  const response = {
+    metrics,
+    pagination,
+    student: {
+      _id: student._id,
+      fullName: student.fullName,
+      rollNum: student.rollNum,
+    },
+  };
+
+  // Add chart data if type is specified and we have data
   if (type && metrics.length > 0) {
-    formattedData = {
+    response.chartData = {
       labels: metrics.map((m) => m.label || m.date.toLocaleDateString()),
       datasets: [
         {
@@ -151,17 +221,18 @@ export const getHealthMetrics = asyncHandler(async (req, res) => {
           color:
             type === "height"
               ? "(opacity = 1) => `rgba(0, 123, 255, ${opacity})`"
-              : "(opacity = 1) => `rgba(255, 99, 71, ${opacity})`",
+              : type === "weight"
+              ? "(opacity = 1) => `rgba(255, 99, 71, ${opacity})`"
+              : "(opacity = 1) => `rgba(34, 197, 94, ${opacity})`",
           strokeWidth: 2,
         },
       ],
-      rawData: metrics,
     };
   }
 
   return sendSuccess(
     res,
-    formattedData,
+    response,
     "Health metrics retrieved successfully"
   );
 });
