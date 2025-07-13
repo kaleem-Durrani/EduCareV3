@@ -21,6 +21,9 @@ export default function HealthScreen() {
   const [healthInfoMode, setHealthInfoMode] = useState("view"); // "view", "edit", "create"
   const [currentHealthInfo, setCurrentHealthInfo] = useState(null);
   const [currentMetrics, setCurrentMetrics] = useState([]);
+  const [metricsPagination, setMetricsPagination] = useState({});
+  const [metricsPage, setMetricsPage] = useState(1);
+  const [metricsPageSize, setMetricsPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [healthStatistics, setHealthStatistics] = useState(null);
   const pageSize = 10;
@@ -169,13 +172,20 @@ export default function HealthScreen() {
 
   const handleViewMetrics = async (student) => {
     setSelectedStudent(student);
+    setMetricsPage(1); // Reset to first page when opening modal
+    setMetricsPageSize(10); // Reset page size
 
     try {
-      const metrics = await getHealthMetricsRequest(student._id);
-      setCurrentMetrics(metrics || []);
+      const response = await getHealthMetricsRequest(student._id, {
+        page: 1,
+        limit: 10,
+      });
+      setCurrentMetrics(response?.metrics || []);
+      setMetricsPagination(response?.pagination || {});
       setIsMetricsModalVisible(true);
     } catch (error) {
       setCurrentMetrics([]);
+      setMetricsPagination({});
       setIsMetricsModalVisible(true);
     }
   };
@@ -203,9 +213,8 @@ export default function HealthScreen() {
         studentId: selectedStudent._id,
         metricData: values,
       });
-      // Refresh metrics
-      const updatedMetrics = await getHealthMetricsRequest(selectedStudent._id);
-      setCurrentMetrics(updatedMetrics || []);
+      // Refresh metrics with current pagination
+      await refreshMetrics();
       // Refresh statistics
       fetchHealthStatistics();
     } catch (error) {
@@ -220,9 +229,8 @@ export default function HealthScreen() {
         metricId: metricId,
         metricData: values,
       });
-      // Refresh metrics
-      const updatedMetrics = await getHealthMetricsRequest(selectedStudent._id);
-      setCurrentMetrics(updatedMetrics || []);
+      // Refresh metrics with current pagination
+      await refreshMetrics();
       // Refresh statistics
       fetchHealthStatistics();
     } catch (error) {
@@ -233,6 +241,39 @@ export default function HealthScreen() {
   const handleDeleteHealthMetric = async (metricId) => {
     // Note: Delete functionality would need to be added to the backend
     message.info("Delete functionality not implemented yet");
+  };
+
+  const refreshMetrics = async () => {
+    if (!selectedStudent) return;
+
+    try {
+      const response = await getHealthMetricsRequest(selectedStudent._id, {
+        page: metricsPage,
+        limit: metricsPageSize,
+      });
+      setCurrentMetrics(response?.metrics || []);
+      setMetricsPagination(response?.pagination || {});
+    } catch (error) {
+      console.log("Failed to refresh metrics");
+    }
+  };
+
+  const handleMetricsPageChange = async (page, pageSize) => {
+    setMetricsPage(page);
+    if (pageSize !== metricsPageSize) {
+      setMetricsPageSize(pageSize);
+    }
+
+    try {
+      const response = await getHealthMetricsRequest(selectedStudent._id, {
+        page,
+        limit: pageSize,
+      });
+      setCurrentMetrics(response?.metrics || []);
+      setMetricsPagination(response?.pagination || {});
+    } catch (error) {
+      console.log("Failed to load metrics page");
+    }
   };
 
   const handleCancelHealthInfo = () => {
@@ -248,7 +289,10 @@ export default function HealthScreen() {
   const handleCancelMetrics = () => {
     setIsMetricsModalVisible(false);
     setCurrentMetrics([]);
+    setMetricsPagination({});
     setSelectedStudent(null);
+    setMetricsPage(1);
+    setMetricsPageSize(10);
   };
 
   return (
@@ -300,6 +344,9 @@ export default function HealthScreen() {
           loading={creatingMetric || updatingMetric}
           selectedStudent={selectedStudent}
           metrics={currentMetrics}
+          pagination={metricsPagination}
+          onPageChange={handleMetricsPageChange}
+          onRefresh={refreshMetrics}
         />
       </Space>
     </AdminLayout>

@@ -26,6 +26,9 @@ export default function HealthMetricsModal({
   loading,
   selectedStudent,
   metrics = [],
+  pagination = {},
+  onPageChange,
+  onRefresh,
 }) {
   const [isAddingMetric, setIsAddingMetric] = useState(false);
   const [editingMetric, setEditingMetric] = useState(null);
@@ -113,6 +116,11 @@ export default function HealthMetricsModal({
       setIsAddingMetric(false);
       setEditingMetric(null);
       form.resetFields();
+
+      // Refresh the data to show updated metrics
+      if (onRefresh) {
+        onRefresh();
+      }
     } catch (error) {
       console.log("Metric operation error handled by useApi");
     }
@@ -122,6 +130,11 @@ export default function HealthMetricsModal({
     try {
       await onDelete(metricId);
       message.success("Metric deleted successfully!");
+
+      // Refresh the data to show updated metrics
+      if (onRefresh) {
+        onRefresh();
+      }
     } catch (error) {
       console.log("Delete metric error handled by useApi");
     }
@@ -393,8 +406,23 @@ export default function HealthMetricsModal({
         dataSource={metrics}
         rowKey="_id"
         pagination={{
-          pageSize: 10,
-          showSizeChanger: false,
+          current: pagination.currentPage || 1,
+          total: pagination.totalItems || 0,
+          pageSize: pagination.itemsPerPage || 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} of ${total} metrics`,
+          onChange: (page, pageSize) => {
+            if (onPageChange) {
+              onPageChange(page, pageSize);
+            }
+          },
+          onShowSizeChange: (current, size) => {
+            if (onPageChange) {
+              onPageChange(1, size); // Reset to first page when changing page size
+            }
+          },
         }}
         locale={{
           emptyText: "No health metrics recorded yet",
