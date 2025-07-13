@@ -107,7 +107,14 @@ export const getAllFees = asyncHandler(async (req, res) => {
  */
 export const getStudentFees = asyncHandler(async (req, res) => {
   const { student_id } = req.params;
-  const { status, year } = req.query;
+  const {
+    status,
+    year,
+    page = 1,
+    limit = 10,
+    sortBy = 'deadline',
+    sortOrder = 'asc'
+  } = req.query;
 
   // Check if student exists
   const student = await Student.findById(student_id);
@@ -155,20 +162,36 @@ export const getStudentFees = asyncHandler(async (req, res) => {
   if (year) {
     const startDate = new Date(`${year}-01-01`);
     const endDate = new Date(`${year}-12-31`);
-    query.created_at = { $gte: startDate, $lte: endDate };
+    query.createdAt = { $gte: startDate, $lte: endDate };
   }
 
+  // Pagination
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Sort options
+  const sortOptions = {};
+  sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+  // Get total count for pagination
+  const totalItems = await Fee.countDocuments(query);
+  const totalPages = Math.ceil(totalItems / limitNum);
+
+  // Get fees with pagination
   const fees = await Fee.find(query)
     .populate("student_id", "fullName rollNum")
     .populate("createdBy", "name email")
-    .sort({ deadline: 1 });
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(limitNum);
 
   // Format fees
   const formattedFees = fees.map((fee) => ({
     id: fee._id,
     title: fee.title,
     amount: fee.amount,
-    deadline: fee.deadline.toLocaleDateString("en-GB"), // DD/MM/YYYY format
+    deadline: fee.deadline,
     status: fee.status,
     student_id: fee.student_id,
     createdBy: fee.createdBy,
@@ -176,7 +199,28 @@ export const getStudentFees = asyncHandler(async (req, res) => {
     updated_at: fee.updatedAt,
   }));
 
-  return sendSuccess(res, formattedFees, "Student fees retrieved successfully");
+  // Pagination info
+  const pagination = {
+    currentPage: pageNum,
+    totalPages,
+    totalItems,
+    itemsPerPage: limitNum,
+    hasNextPage: pageNum < totalPages,
+    hasPrevPage: pageNum > 1,
+  };
+
+  // Response
+  const response = {
+    fees: formattedFees,
+    pagination,
+    student: {
+      _id: student._id,
+      fullName: student.fullName,
+      rollNum: student.rollNum,
+    },
+  };
+
+  return sendSuccess(res, response, "Student fees retrieved successfully");
 });
 
 /**
