@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
@@ -70,7 +71,20 @@ const ContactsScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation
   const handlePhonePress = (phone: string, contactName: string) => {
     if (!phone) return;
 
-    Linking.openURL(`tel:${phone}`);
+    Alert.alert('Contact Options', `Contact ${contactName}`, [
+      {
+        text: 'Call',
+        onPress: () => Linking.openURL(`tel:${phone}`),
+      },
+      {
+        text: 'WhatsApp',
+        onPress: () => Linking.openURL(`whatsapp://send?phone=${phone}`),
+      },
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+    ]);
   };
 
   const getRelationshipEmoji = (relationship: string) => {

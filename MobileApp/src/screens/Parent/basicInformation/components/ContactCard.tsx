@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, Image, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useTheme } from '../../../../contexts';
 import { StudentContact } from '../../../../services';
 import { buildMediaUrl } from '../../../../config';
@@ -11,10 +11,23 @@ interface ContactCardProps {
 export const ContactCard: React.FC<ContactCardProps> = ({ contacts }) => {
   const { colors } = useTheme();
 
-  const handlePhonePress = (phone: string) => {
-    if (phone) {
-      Linking.openURL(`tel:${phone}`);
-    }
+  const handlePhonePress = (phone: string, contactName: string) => {
+    if (!phone) return;
+
+    Alert.alert('Contact Options', `Contact ${contactName}`, [
+      {
+        text: 'Call',
+        onPress: () => Linking.openURL(`tel:${phone}`),
+      },
+      {
+        text: 'WhatsApp',
+        onPress: () => Linking.openURL(`whatsapp://send?phone=${phone}`),
+      },
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+    ]);
   };
 
   const getRelationshipEmoji = (relationship: string) => {
@@ -124,7 +137,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contacts }) => {
                 {contact.phone && (
                   <TouchableOpacity
                     className="mt-2 flex-row items-center"
-                    onPress={() => handlePhonePress(contact.phone!)}>
+                    onPress={() => handlePhonePress(contact.phone!, contact.name)}>
                     <Text className="mr-2 text-2xl">📞</Text>
                     <Text
                       className="text-base font-semibold underline"
