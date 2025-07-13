@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, Dimensions } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import ImageViewing from 'react-native-image-viewing';
 import { useTheme } from '../../../../contexts';
 import { Post } from '../../../../services';
@@ -17,6 +17,15 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
   const [showFullContent, setShowFullContent] = useState(false);
   const [imageViewingIndex, setImageViewingIndex] = useState(0);
   const [isImageViewingVisible, setIsImageViewingVisible] = useState(false);
+
+  // Create video players for each video
+  const videos = post.media.filter((item) => item.type === 'video');
+  const videoPlayers = videos.map((video) =>
+    useVideoPlayer(buildMediaUrl(video.url), (player: any) => {
+      player.loop = false;
+      player.muted = false;
+    })
+  );
 
   const screenWidth = Dimensions.get('window').width - 32; // Account for padding
 
@@ -106,18 +115,17 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
             </Text>
             {videos.map((video, index) => (
               <View key={`video_${index}`} className="mb-2">
-                <Video
-                  source={{ uri: buildMediaUrl(video.url) }}
+                <VideoView
+                  player={videoPlayers[index]}
                   style={{
                     width: screenWidth,
                     height: 200,
                     borderRadius: 8,
                   }}
-                  useNativeControls
-                  resizeMode={ResizeMode.CONTAIN}
-                  shouldPlay={false}
-                  isLooping={false}
-                  isMuted={false}
+                  nativeControls
+                  contentFit="contain"
+                  allowsFullscreen
+                  allowsPictureInPicture
                 />
                 <Text className="mt-1 text-xs" style={{ color: colors.textSecondary }}>
                   {video.filename || `Video ${index + 1}`}

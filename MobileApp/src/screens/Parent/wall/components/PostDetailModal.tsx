@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, Image, Dimensions } from 'react-native';
 import ImageView from 'react-native-image-viewing';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { useTheme } from '../../../../contexts';
 import { Post } from '../../../../services';
 import { buildMediaUrl } from '../../../../config';
@@ -19,6 +19,15 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
   const [isImageViewVisible, setIsImageViewVisible] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [playingVideoIndex, setPlayingVideoIndex] = useState<number | null>(null);
+
+  // Create video players for each video
+  const postVideos = post?.media.filter((item) => item.type === 'video') || [];
+  const videoPlayers = postVideos.map((video) =>
+    useVideoPlayer(buildMediaUrl(video.url), (player: any) => {
+      player.loop = false;
+      player.muted = false;
+    })
+  );
 
   if (!post) return null;
 
@@ -87,8 +96,14 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
   const handleVideoPress = (index: number) => {
     if (playingVideoIndex === index) {
       setPlayingVideoIndex(null); // Stop video
+      if (videoPlayers[index]) {
+        videoPlayers[index].pause();
+      }
     } else {
       setPlayingVideoIndex(index); // Play video
+      if (videoPlayers[index]) {
+        videoPlayers[index].play();
+      }
     }
   };
 
@@ -301,30 +316,16 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
                           alignItems: 'center',
                         }}>
                         {playingVideoIndex === index ? (
-                          <Video
-                            source={{ uri: buildMediaUrl(video.url) }}
+                          <VideoView
+                            player={videoPlayers[index]}
                             style={{
                               width: screenWidth - 40,
                               height: (screenWidth - 40) * (9 / 16),
                             }}
-                            useNativeControls
-                            resizeMode={ResizeMode.CONTAIN}
-                            isLooping={false}
-                            shouldPlay={true}
-                            isMuted={false}
-                            volume={1.0}
-                            rate={1.0}
-                            onPlaybackStatusUpdate={(status) => {
-                              if (status.isLoaded) {
-                                if (status.didJustFinish) {
-                                  setPlayingVideoIndex(null);
-                                }
-                              } else {
-                                // Handle error case when video is not loaded
-                                console.log('Video error:', status.error);
-                                setPlayingVideoIndex(null);
-                              }
-                            }}
+                            allowsFullscreen
+                            allowsPictureInPicture
+                            contentFit="contain"
+                            nativeControls
                           />
                         ) : (
                           <TouchableOpacity

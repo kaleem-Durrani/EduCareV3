@@ -27,7 +27,15 @@ export default {
     web: {
       favicon: './assets/favicon.png',
     },
-    plugins: [],
+    plugins: [
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ]
+    ],
     experiments: {
       tsconfigPaths: true,
     },
