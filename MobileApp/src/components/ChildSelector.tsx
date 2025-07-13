@@ -136,7 +136,7 @@ export const ChildSelector: React.FC<ChildSelectorProps> = ({
                   Clear
                 </Text>
               </TouchableOpacity>
-              <SelectModal
+              {/* <SelectModal
                 items={childItems}
                 selectedValue={selectedChildId}
                 placeholder="Change"
@@ -150,7 +150,7 @@ export const ChildSelector: React.FC<ChildSelectorProps> = ({
                   paddingHorizontal: 12,
                   paddingVertical: 8,
                 }}
-              />
+              /> */}
             </View>
           </View>
         </View>
