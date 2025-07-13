@@ -104,7 +104,6 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                 shadowRadius: 10,
                 elevation: 5,
               }}>
-              
               {/* Header */}
               <View className="mb-4 flex-row items-center">
                 <View
@@ -136,11 +135,9 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                     </Text>
                   </View>
                 </View>
-                
+
                 <View className="mb-3 w-1/2 pl-2">
-                  <View
-                    className="rounded-lg p-3"
-                    style={{ backgroundColor: '#10B981' + '10' }}>
+                  <View className="rounded-lg p-3" style={{ backgroundColor: '#10B981' + '10' }}>
                     <Text className="text-2xl font-bold" style={{ color: '#10B981' }}>
                       {feeSummaryData.fees.paid}
                     </Text>
@@ -151,9 +148,7 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                 </View>
 
                 <View className="mb-3 w-1/2 pr-2">
-                  <View
-                    className="rounded-lg p-3"
-                    style={{ backgroundColor: '#F59E0B' + '10' }}>
+                  <View className="rounded-lg p-3" style={{ backgroundColor: '#F59E0B' + '10' }}>
                     <Text className="text-2xl font-bold" style={{ color: '#F59E0B' }}>
                       {feeSummaryData.fees.pending}
                     </Text>
@@ -164,9 +159,7 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                 </View>
 
                 <View className="mb-3 w-1/2 pl-2">
-                  <View
-                    className="rounded-lg p-3"
-                    style={{ backgroundColor: '#EF4444' + '10' }}>
+                  <View className="rounded-lg p-3" style={{ backgroundColor: '#EF4444' + '10' }}>
                     <Text className="text-2xl font-bold" style={{ color: '#EF4444' }}>
                       {feeSummaryData.fees.overdue}
                     </Text>
@@ -185,11 +178,13 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                   borderWidth: 1,
                   borderColor: colors.border,
                 }}>
-                <Text className="mb-3 text-base font-semibold" style={{ color: colors.textPrimary }}>
+                <Text
+                  className="mb-3 text-base font-semibold"
+                  style={{ color: colors.textPrimary }}>
                   Amount Summary
                 </Text>
-                
-                <View className="flex-row items-center justify-between mb-2">
+
+                <View className="mb-2 flex-row items-center justify-between">
                   <Text className="text-sm" style={{ color: colors.textSecondary }}>
                     Total Amount
                   </Text>
@@ -197,8 +192,8 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                     {formatCurrency(feeSummaryData.amounts.total)}
                   </Text>
                 </View>
-                
-                <View className="flex-row items-center justify-between mb-2">
+
+                <View className="mb-2 flex-row items-center justify-between">
                   <Text className="text-sm" style={{ color: colors.textSecondary }}>
                     Paid Amount
                   </Text>
@@ -206,7 +201,7 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                     {formatCurrency(feeSummaryData.amounts.paid)}
                   </Text>
                 </View>
-                
+
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm" style={{ color: colors.textSecondary }}>
                     Pending Amount
@@ -227,9 +222,7 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
                     {getPaymentRate()}%
                   </Text>
                 </View>
-                <View
-                  className="h-3 rounded-full"
-                  style={{ backgroundColor: colors.border }}>
+                <View className="h-3 rounded-full" style={{ backgroundColor: colors.border }}>
                   <View
                     className="h-3 rounded-full"
                     style={{
@@ -260,7 +253,8 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
               <Text
                 className="px-8 text-center text-base leading-6"
                 style={{ color: colors.textSecondary }}>
-                No payment summary has been found for {selectedChild?.fullName || 'this student'} yet.
+                No payment summary has been found for {selectedChild?.fullName || 'this student'}{' '}
+                yet.
               </Text>
             </View>
           )}

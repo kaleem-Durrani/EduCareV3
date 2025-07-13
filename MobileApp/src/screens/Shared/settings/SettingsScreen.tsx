@@ -103,9 +103,9 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
 
           <SettingItem icon="💬" title="Contact Director" onPress={handleContact} />
 
-          <SettingItem icon="📢" title="Send Feedback" onPress={handleFeedback} />
+          {/* <SettingItem icon="📢" title="Send Feedback" onPress={handleFeedback} /> */}
 
-          <SettingItem icon="❓" title="Help & FAQ" onPress={() => console.log('Help')} />
+          {/* <SettingItem icon="❓" title="Help & FAQ" onPress={() => console.log('Help')} /> */}
         </View>
 
         {/* Account */}

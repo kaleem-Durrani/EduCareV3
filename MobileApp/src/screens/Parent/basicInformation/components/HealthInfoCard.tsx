@@ -58,7 +58,7 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ allergies, likes
       <View className="space-y-6">
         {/* Allergies Section */}
         <View>
-          <View className="mb-3 flex-row items-center">
+          <View className="mb-0 flex-row items-center">
             <Text className="mr-2 text-xl">⚠️</Text>
             <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
               Allergies
@@ -86,9 +86,9 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ allergies, likes
 
         {/* Likes Section */}
         <View>
-          <View className="mb-3 flex-row items-center">
-            <Text className="mr-2 text-xl">❤️</Text>
-            <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
+          <View className="mb-0 flex-row items-center">
+            <Text className="mr-2 mt-4 text-xl">❤️</Text>
+            <Text className="mt-4 text-lg font-semibold" style={{ color: colors.textPrimary }}>
               Likes & Interests
             </Text>
             {likes && likes.length > 0 && (
@@ -113,7 +113,7 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ allergies, likes
         </View>
 
         {/* Health Tips */}
-        <View className="rounded-lg p-4" style={{ backgroundColor: colors.info + '10' }}>
+        <View className="mt-8 rounded-lg p-4" style={{ backgroundColor: colors.info + '10' }}>
           <View className="mb-2 flex-row items-center">
             <Text className="mr-2 text-xl">💡</Text>
             <Text className="text-base font-semibold" style={{ color: colors.info }}>

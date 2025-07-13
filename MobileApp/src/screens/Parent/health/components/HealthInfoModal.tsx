@@ -67,13 +67,15 @@ export const HealthInfoModal: React.FC<HealthInfoModalProps> = ({
     }
   };
 
-  const healthFields = healthInfoData ? [
-    { key: 'blood_group', value: healthInfoData.blood_group },
-    { key: 'allergy', value: healthInfoData.allergy },
-    { key: 'eye_condition', value: healthInfoData.eye_condition },
-    { key: 'heart_rate', value: healthInfoData.heart_rate },
-    { key: 'ear_condition', value: healthInfoData.ear_condition },
-  ] : [];
+  const healthFields = healthInfoData
+    ? [
+        { key: 'blood_group', value: healthInfoData.blood_group },
+        { key: 'allergy', value: healthInfoData.allergy },
+        { key: 'eye_condition', value: healthInfoData.eye_condition },
+        { key: 'heart_rate', value: healthInfoData.heart_rate },
+        { key: 'ear_condition', value: healthInfoData.ear_condition },
+      ]
+    : [];
 
   return (
     <Modal
@@ -95,7 +97,9 @@ export const HealthInfoModal: React.FC<HealthInfoModalProps> = ({
               Health Information
             </Text>
             <Text className="text-sm" style={{ color: colors.textSecondary }}>
-              {selectedChild ? `${selectedChild.fullName}'s medical information` : 'Medical information'}
+              {selectedChild
+                ? `${selectedChild.fullName}'s medical information`
+                : 'Medical information'}
             </Text>
           </View>
           <TouchableOpacity
@@ -145,7 +149,6 @@ export const HealthInfoModal: React.FC<HealthInfoModalProps> = ({
                 shadowRadius: 10,
                 elevation: 5,
               }}>
-              
               {/* Header */}
               <View className="mb-4 flex-row items-center">
                 <View
@@ -168,7 +171,7 @@ export const HealthInfoModal: React.FC<HealthInfoModalProps> = ({
                 {healthFields.map((field, index) => (
                   <View
                     key={field.key}
-                    className="flex-row items-center rounded-lg p-3"
+                    className="mb-1 flex-row items-center rounded-lg p-3"
                     style={{
                       backgroundColor: colors.background,
                       borderWidth: 1,
@@ -190,7 +193,9 @@ export const HealthInfoModal: React.FC<HealthInfoModalProps> = ({
               </View>
 
               {/* Footer */}
-              <View className="mt-4 pt-3" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
+              <View
+                className="mt-4 pt-3"
+                style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs" style={{ color: colors.textSecondary }}>
                     Last updated: {formatDate(healthInfoData.updatedAt)}
@@ -215,7 +220,8 @@ export const HealthInfoModal: React.FC<HealthInfoModalProps> = ({
               <Text
                 className="px-8 text-center text-base leading-6"
                 style={{ color: colors.textSecondary }}>
-                No health information has been recorded for {selectedChild?.fullName || 'this student'} yet.
+                No health information has been recorded for{' '}
+                {selectedChild?.fullName || 'this student'} yet.
               </Text>
             </View>
           )}

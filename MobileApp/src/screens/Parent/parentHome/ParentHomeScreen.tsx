@@ -76,17 +76,16 @@ const ParentHomeScreen: React.FC<Props> = ({ navigation }) => {
       title: 'Payment',
       icon: '💳',
       route: 'Payment',
-     
     },
-    { id: '14', title: 'Driver', icon: '🚌', route: 'Driver' },
-    { id: '15', title: 'Notifications', icon: '🔔', route: 'Notifications' },
+    // { id: '14', title: 'Driver', icon: '🚌', route: 'Driver' },
+    // { id: '15', title: 'Notifications', icon: '🔔', route: 'Notifications' },
     { id: '16', title: 'Settings', icon: '⚙️', route: 'Settings' },
-    { id: '17', title: 'Contact', icon: '💬', route: 'Settings' }, // WhatsApp integration
-    { id: '18', title: 'Feedback', icon: '📢', route: 'Settings' }, // Feedback form
+    // { id: '17', title: 'Contact', icon: '💬', route: 'Settings' }, // WhatsApp integration
+    // { id: '18', title: 'Feedback', icon: '📢', route: 'Settings' }, // Feedback form
   ];
 
   const handleModulePress = (module: ModuleItem) => {
-      navigation.navigate(module.route as any);
+    navigation.navigate(module.route as any);
   };
 
   const renderTileModule = (module: ModuleItem) => (
@@ -200,10 +199,8 @@ const ParentHomeScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Student Info */}
           <View className="flex-1">
-            <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-            </Text>
-            <Text className="text-sm" style={{ color: colors.textSecondary }}>
-            </Text>
+            <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}></Text>
+            <Text className="text-sm" style={{ color: colors.textSecondary }}></Text>
           </View>
         </View>
 

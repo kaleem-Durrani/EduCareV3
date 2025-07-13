@@ -74,7 +74,6 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ healthInfo }) =>
         shadowRadius: 10,
         elevation: 5,
       }}>
-      
       {/* Header */}
       <View className="mb-4 flex-row items-center">
         <View
@@ -108,9 +107,7 @@ export const HealthInfoCard: React.FC<HealthInfoCardProps> = ({ healthInfo }) =>
               <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
                 {getFieldLabel(field.key)}
               </Text>
-              <Text
-                className="text-base font-semibold"
-                style={{ color: colors.textPrimary }}>
+              <Text className="text-base font-semibold" style={{ color: colors.textPrimary }}>
                 {field.value || 'Not specified'}
               </Text>
             </View>

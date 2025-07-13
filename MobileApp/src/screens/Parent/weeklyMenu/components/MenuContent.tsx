@@ -62,10 +62,9 @@ const MenuContent: React.FC<MenuContentProps> = ({ menu }) => {
         shadowOpacity: 0.12,
         shadowRadius: 10,
         elevation: 5,
-      }}
-    >
+      }}>
       {/* Day Header */}
-      <View className="flex-row items-center mb-4">
+      <View className="mb-4 flex-row items-center">
         <View
           className="mr-4 h-14 w-14 items-center justify-center rounded-full"
           style={{ backgroundColor: getDayColor(item.day) + '20' }}>
@@ -75,7 +74,7 @@ const MenuContent: React.FC<MenuContentProps> = ({ menu }) => {
           <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
             {item.day}
           </Text>
-          <View className="flex-row items-center mt-1">
+          <View className="mt-1 flex-row items-center">
             <View
               className="mr-2 rounded-full px-2 py-1"
               style={{ backgroundColor: getDayColor(item.day) + '20' }}>
@@ -93,19 +92,20 @@ const MenuContent: React.FC<MenuContentProps> = ({ menu }) => {
           {item.items.map((menuItem, index) => (
             <View
               key={index}
-              className="flex-row items-center p-4 rounded-xl"
+              className="mb-2 flex-row items-center rounded-xl p-4"
               style={{
                 backgroundColor: colors.background,
                 borderLeftWidth: 3,
                 borderLeftColor: getDayColor(item.day),
-              }}
-            >
+              }}>
               <View
                 className="mr-3 h-8 w-8 items-center justify-center rounded-full"
                 style={{ backgroundColor: getDayColor(item.day) + '20' }}>
                 <Text className="text-sm">🍽️</Text>
               </View>
-              <Text className="text-base flex-1 font-medium leading-6" style={{ color: colors.textPrimary }}>
+              <Text
+                className="flex-1 text-base font-medium leading-6"
+                style={{ color: colors.textPrimary }}>
                 {menuItem}
               </Text>
               <View
@@ -118,11 +118,11 @@ const MenuContent: React.FC<MenuContentProps> = ({ menu }) => {
         </View>
       ) : (
         <View className="items-center py-6">
-          <Text className="text-4xl mb-2">🍽️</Text>
+          <Text className="mb-2 text-4xl">🍽️</Text>
           <Text className="text-base font-medium" style={{ color: colors.textSecondary }}>
             No items planned for this day
           </Text>
-          <Text className="text-sm mt-1" style={{ color: colors.textMuted }}>
+          <Text className="mt-1 text-sm" style={{ color: colors.textMuted }}>
             Check back later for updates
           </Text>
         </View>
@@ -132,11 +132,13 @@ const MenuContent: React.FC<MenuContentProps> = ({ menu }) => {
 
   const renderEmptyMenu = () => (
     <View className="items-center py-12">
-      <Text className="text-6xl mb-4">📋</Text>
-      <Text className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+      <Text className="mb-4 text-6xl">📋</Text>
+      <Text className="mb-2 text-xl font-bold" style={{ color: colors.textPrimary }}>
         No menu data available
       </Text>
-      <Text className="text-base text-center leading-6 px-8" style={{ color: colors.textSecondary }}>
+      <Text
+        className="px-8 text-center text-base leading-6"
+        style={{ color: colors.textSecondary }}>
         The menu doesn't have any daily items configured yet. Please check back later.
       </Text>
     </View>
@@ -144,7 +146,7 @@ const MenuContent: React.FC<MenuContentProps> = ({ menu }) => {
 
   return (
     <View className="mb-6">
-      <View className="flex-row items-center mb-6">
+      <View className="mb-6 flex-row items-center">
         <View
           className="mr-3 h-10 w-10 items-center justify-center rounded-full"
           style={{ backgroundColor: colors.primary + '20' }}>

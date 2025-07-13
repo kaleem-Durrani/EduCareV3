@@ -33,7 +33,7 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
       <View className="mb-2 space-y-4">
         {/* Time */}
         <View
-          className="rounded-lg p-4"
+          className="mb-2 rounded-lg p-4"
           style={{
             backgroundColor: colors.background,
             borderLeftWidth: 4,
@@ -52,7 +52,7 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
 
         {/* Days */}
         <View
-          className="rounded-lg p-4"
+          className="mb-2 rounded-lg p-4"
           style={{
             backgroundColor: colors.background,
             borderLeftWidth: 4,

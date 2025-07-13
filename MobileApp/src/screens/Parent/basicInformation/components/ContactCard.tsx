@@ -42,8 +42,8 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contacts }) => {
           shadowRadius: 8,
           elevation: 4,
         }}>
-        <View className="flex-row items-center mb-4">
-          <Text className="text-2xl mr-3">👥</Text>
+        <View className="mb-4 flex-row items-center">
+          <Text className="mr-3 text-2xl">👥</Text>
           <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
             Emergency Contacts
           </Text>
@@ -67,9 +67,9 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contacts }) => {
         elevation: 4,
       }}>
       {/* Header */}
-      <View className="flex-row items-center mb-6">
-        <Text className="text-2xl mr-3">👥</Text>
-        <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+      <View className="mb-6 flex-row items-center">
+        <Text className="mr-3 text-2xl">👥</Text>
+        <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
           Emergency Contacts
         </Text>
         <View
@@ -86,7 +86,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contacts }) => {
         {contacts.map((contact, index) => (
           <View
             key={index}
-            className="rounded-lg p-4"
+            className="mb-2 rounded-lg p-4"
             style={{
               backgroundColor: colors.background,
               borderLeftWidth: 4,
@@ -108,9 +108,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contacts }) => {
                   <View
                     className="h-16 w-16 items-center justify-center rounded-full"
                     style={{ backgroundColor: colors.primary + '20' }}>
-                    <Text className="text-2xl">
-                      {getRelationshipEmoji(contact.relationship)}
-                    </Text>
+                    <Text className="text-2xl">{getRelationshipEmoji(contact.relationship)}</Text>
                   </View>
                 )}
               </View>
@@ -127,7 +125,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contacts }) => {
                   <TouchableOpacity
                     className="mt-2 flex-row items-center"
                     onPress={() => handlePhonePress(contact.phone!)}>
-                    <Text className="text-2xl mr-2">📞</Text>
+                    <Text className="mr-2 text-2xl">📞</Text>
                     <Text
                       className="text-base font-semibold underline"
                       style={{ color: colors.info }}>

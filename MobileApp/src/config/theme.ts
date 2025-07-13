@@ -47,7 +47,7 @@ const lightTheme: ThemeColors = {
   tabInactive: '#6b7280',
   
   // Shadow colors
-  shadow: '#00000010',      // Very light black with opacity
+  shadow: '#00000060',      // Very light black with opacity
 };
 
 // Dark theme colors - Easy on eyes for evening use
@@ -94,7 +94,7 @@ const darkTheme: ThemeColors = {
   tabInactive: '#94a3b8',
   
   // Shadow colors
-  shadow: '#00000030',      // Darker shadow for dark mode
+  shadow: '#000000',      // Darker shadow for dark mode
 };
 
 // Theme configuration object
