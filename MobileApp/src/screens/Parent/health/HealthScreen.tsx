@@ -297,10 +297,7 @@ const HealthScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }
             <>
               {/* Filters Section */}
               <View className="mb-4 mt-6">
-                <View className="mb-3 flex-row items-center justify-between">
-                  <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
-                    Health Metrics Filters
-                  </Text>
+                <View className="mb-3 flex-row items-center justify-end">
                   <View className="flex-row">
                     {/* Health Info Button */}
                     <TouchableOpacity
