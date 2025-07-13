@@ -1,211 +1,427 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
-import { activityService, Activity } from '../../../services';
+import { useParentChildren } from '../../../contexts/ParentChildrenContext';
+import { useApi } from '../../../hooks';
+import {
+  activityService,
+  ParentActivitiesResponse,
+  ActivityFilters,
+  ParentStudent,
+} from '../../../services';
+import { ChildSelector, PaginationControls, ScreenHeader } from '../../../components';
+import { ActivityCard, FilterModal } from './components';
+import Toast from 'react-native-toast-message';
 
-interface Props {
-  navigation: any;
-  route: {
-    params: {
-      studentId: string;
-    };
-  };
+interface FilterState {
+  startDate?: string;
+  endDate?: string;
+  timeFilter?: 'all' | 'past' | 'today' | 'upcoming';
 }
 
-const ActivitiesScreen: React.FC<Props> = ({ navigation, route }) => {
+const ActivitiesScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
-  const { studentId } = route.params;
 
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [studentInfo, setStudentInfo] = useState<any>(null);
-  const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'past' | 'today'>('upcoming');
+  // State
+  const [selectedChild, setSelectedChild] = useState<ParentStudent | null>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [filters, setFilters] = useState<FilterState>({
+    timeFilter: 'all',
+  });
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
+  // Use parent children context
+  const { children, isLoading: isLoadingChildren, refreshChildren } = useParentChildren();
+
+  // API hooks
+  const {
+    request: fetchActivities,
+    isLoading: loadingActivities,
+    error: activitiesError,
+    data: activitiesData,
+  } = useApi<ParentActivitiesResponse>((params: ActivityFilters & { studentId: string }) =>
+    activityService.getActivitiesForParent(params.studentId, {
+      page: params.page,
+      limit: params.limit,
+      startDate: params.startDate,
+      endDate: params.endDate,
+      timeFilter: params.timeFilter,
+    })
+  );
+
+  // Load activities when child or filters change
   useEffect(() => {
-    fetchActivities();
-  }, [studentId, timeFilter]);
+    if (selectedChild) {
+      loadActivities();
+    } else {
+      setActivities([]);
+      setTotalPages(1);
+      setTotalItems(0);
+    }
+  }, [selectedChild, currentPage, pageSize, filters]);
 
-  const fetchActivities = async () => {
-    try {
-      setLoading(true);
-      const response = await activityService.getActivitiesForParent(studentId, {
-        timeFilter,
-        limit: 50,
+  const loadActivities = async () => {
+    if (!selectedChild) return;
+
+    const response = await activityService.getActivitiesForParent(selectedChild._id, {
+      page: currentPage,
+      limit: pageSize,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      timeFilter: filters.timeFilter,
+    });
+
+    if (response.success) {
+      await fetchActivities({
+        studentId: selectedChild._id,
+        page: currentPage,
+        limit: pageSize,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        timeFilter: filters.timeFilter,
       });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: response.message || 'Failed to load activities',
+        visibilityTime: 3000,
+      });
+    }
+  };
 
-      if (response.success) {
-        setActivities(response.data.activities || []);
-        setStudentInfo(response.data.student);
-      } else {
-        Alert.alert('Error', response.message || 'Failed to fetch activities');
+  // Update activities when data changes
+  useEffect(() => {
+    if (activitiesData) {
+      setActivities(activitiesData.activities);
+      setTotalPages(activitiesData.pagination.totalPages);
+      setTotalItems(activitiesData.pagination.totalActivities);
+    }
+  }, [activitiesData]);
+
+  const handleChildSelect = (child: ParentStudent) => {
+    setSelectedChild(child);
+    setCurrentPage(1); // Reset to first page when changing child
+    setHasSearched(true);
+  };
+
+  const handleChildReset = () => {
+    setSelectedChild(null);
+    setActivities([]);
+    setCurrentPage(1);
+    setFilters({
+      timeFilter: 'all',
+    });
+    setHasSearched(false);
+  };
+
+  const handleRefresh = async () => {
+    await refreshChildren();
+    if (selectedChild) {
+      await loadActivities();
+    }
+  };
+
+  const handleFilterApply = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when applying filters
+    setIsFilterModalVisible(false);
+  };
+
+  const handleFilterClear = (filterKey: keyof FilterState) => {
+    const newFilters = { ...filters };
+    delete newFilters[filterKey];
+    setFilters(newFilters);
+    setCurrentPage(1);
+  };
+
+  const getActiveFiltersCount = () => {
+    return Object.keys(filters).filter((key) => {
+      const value = filters[key as keyof FilterState];
+      // Don't count default timeFilter as active filter
+      if (key === 'timeFilter' && value === 'all') return false;
+      return !!value;
+    }).length;
+  };
+
+  const formatFilterValue = (key: keyof FilterState, value: string) => {
+    if (key === 'startDate' || key === 'endDate') {
+      return new Date(value).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+    if (key === 'timeFilter') {
+      switch (value) {
+        case 'all':
+          return 'All Activities';
+        case 'past':
+          return 'Past Activities';
+        case 'today':
+          return "Today's Activities";
+        case 'upcoming':
+          return 'Upcoming Activities';
+        default:
+          return value;
       }
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-      Alert.alert('Error', 'Failed to fetch activities');
-    } finally {
-      setLoading(false);
     }
+    return value;
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchActivities();
-    setRefreshing(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getAudienceText = (activity: Activity) => {
-    switch (activity.audience.type) {
-      case 'all':
-        return 'All Students';
-      case 'class':
-        return `Class: ${activity.audience.class_id?.name || 'Unknown'}`;
-      case 'student':
-        return `Individual: ${activity.audience.student_id?.fullName || 'Unknown'}`;
+  const getFilterLabel = (key: keyof FilterState) => {
+    switch (key) {
+      case 'startDate':
+        return 'From';
+      case 'endDate':
+        return 'To';
+      case 'timeFilter':
+        return 'Time Filter';
       default:
-        return 'Unknown';
+        return key;
     }
   };
 
-  const renderFilterButton = (filter: typeof timeFilter, label: string) => (
-    <TouchableOpacity
-      className={`mr-2 rounded-full px-4 py-2 ${timeFilter === filter ? 'bg-blue-500' : 'bg-gray-200'}`}
-      onPress={() => setTimeFilter(filter)}>
-      <Text
-        className={`text-sm font-medium ${timeFilter === filter ? 'text-white' : 'text-gray-700'}`}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const renderActivityItem = ({ item }: { item: Activity }) => (
-    <TouchableOpacity
-      className="mx-4 mb-3 rounded-lg bg-white p-4 shadow-sm"
-      onPress={() => navigation.navigate('ActivityDetail', { activityId: item._id })}>
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1">
-          <Text className="text-base font-semibold" style={{ color: colors.textPrimary }}>
-            {item.title}
-          </Text>
-          <Text className="mt-1 text-sm" style={{ color: colors.textSecondary }}>
-            {item.description}
-          </Text>
-          <View className="mt-2 flex-row items-center">
-            <Text className="text-xs font-medium" style={{ color: colors.primary }}>
-              {formatDate(item.date)} at {formatTime(item.date)}
-            </Text>
-          </View>
-          <Text className="mt-1 text-xs" style={{ color: colors.textSecondary }}>
-            {getAudienceText(item)}
-          </Text>
-        </View>
-        {item.color && (
-          <View className="ml-2 h-4 w-4 rounded-full" style={{ backgroundColor: item.color }} />
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+  const isLoading = isLoadingChildren || loadingActivities;
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
+      <ScreenHeader title="Activities" navigation={navigation} showBackButton={true} />
 
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Activities
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {studentInfo && (
-        <View className="px-4 py-2">
-          <Text className="text-base font-medium" style={{ color: colors.textPrimary }}>
-            {studentInfo.fullName} - {studentInfo.class?.name || 'No Class'}
-          </Text>
-        </View>
-      )}
-
-      <View className="px-4 py-2">
-        <FlatList
-          horizontal
-          data={[
-            { filter: 'upcoming' as const, label: 'Upcoming' },
-            { filter: 'today' as const, label: 'Today' },
-            { filter: 'past' as const, label: 'Past' },
-            { filter: 'all' as const, label: 'All' },
-          ]}
-          renderItem={({ item }) => renderFilterButton(item.filter, item.label)}
-          keyExtractor={(item) => item.filter}
-          showsHorizontalScrollIndicator={false}
-        />
-      </View>
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text className="mt-2 text-base" style={{ color: colors.textSecondary }}>
-            Loading activities...
-          </Text>
-        </View>
-      ) : activities.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-            No Activities Found
-          </Text>
-          <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-            No {timeFilter === 'all' ? '' : timeFilter + ' '}activities found for this student.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={activities}
-          renderItem={renderActivityItem}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={{ paddingVertical: 8 }}
+      {/* Main Content */}
+      <View className="flex-1">
+        <ScrollView
+          className="flex-1 px-4"
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
+              refreshing={isLoading}
+              onRefresh={handleRefresh}
               colors={[colors.primary]}
+              tintColor={colors.primary}
             />
-          }
-        />
-      )}
+          }>
+          {/* Child Selector */}
+          <View className="mt-4">
+            <ChildSelector
+              selectedChild={selectedChild}
+              onChildSelect={handleChildSelect}
+              onResetSelection={handleChildReset}
+              placeholder="Select a child to view their activities"
+              disabled={isLoadingChildren}
+            />
+          </View>
+
+          {selectedChild && (
+            <>
+              {/* Filters Section */}
+              <View className="mb-4 mt-4">
+                <View className="mb-3 flex-row items-center justify-between">
+                  <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
+                    Filters
+                  </Text>
+                  <TouchableOpacity
+                    className="flex-row items-center rounded-lg px-4 py-2"
+                    style={{
+                      backgroundColor: isFilterModalVisible
+                        ? colors.primary
+                        : colors.primary + '20',
+                    }}
+                    onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}>
+                    <Text
+                      className="text-sm font-medium"
+                      style={{
+                        color: isFilterModalVisible ? 'white' : colors.primary,
+                      }}>
+                      {isFilterModalVisible ? 'Close Filters' : 'Open Filters'}
+                    </Text>
+                    {getActiveFiltersCount() > 0 && (
+                      <View
+                        className="ml-2 h-5 w-5 items-center justify-center rounded-full"
+                        style={{
+                          backgroundColor: isFilterModalVisible ? 'white' : colors.primary,
+                        }}>
+                        <Text
+                          className="text-xs font-bold"
+                          style={{
+                            color: isFilterModalVisible ? colors.primary : 'white',
+                          }}>
+                          {getActiveFiltersCount()}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Active Filters Tags */}
+                {getActiveFiltersCount() > 0 && (
+                  <View className="flex-row flex-wrap">
+                    {Object.entries(filters).map(([key, value]) => {
+                      if (!value) return null;
+                      // Don't show default timeFilter as tag
+                      if (key === 'timeFilter' && value === 'all') return null;
+
+                      return (
+                        <View
+                          key={key}
+                          className="mb-2 mr-2 flex-row items-center rounded-full px-3 py-1"
+                          style={{ backgroundColor: colors.primary + '20' }}>
+                          <Text className="text-sm font-medium" style={{ color: colors.primary }}>
+                            {getFilterLabel(key as keyof FilterState)}:{' '}
+                            {formatFilterValue(key as keyof FilterState, value)}
+                          </Text>
+                          <TouchableOpacity
+                            className="ml-2"
+                            onPress={() => handleFilterClear(key as keyof FilterState)}>
+                            <Text className="text-sm font-bold" style={{ color: colors.primary }}>
+                              ×
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+
+              {/* Loading State */}
+              {loadingActivities && (
+                <View className="mt-8 items-center justify-center py-12">
+                  <Text className="text-lg" style={{ color: colors.textSecondary }}>
+                    Loading {selectedChild.fullName}'s activities...
+                  </Text>
+                </View>
+              )}
+
+              {/* Error State */}
+              {activitiesError && (
+                <View className="mt-8 items-center justify-center py-12">
+                  <Text className="mb-4 text-6xl">⚠️</Text>
+                  <Text className="mb-2 text-xl font-bold" style={{ color: colors.error }}>
+                    Error Loading Activities
+                  </Text>
+                  <Text
+                    className="px-8 text-center text-base leading-6"
+                    style={{ color: colors.textSecondary }}>
+                    {activitiesError || 'Something went wrong'}
+                  </Text>
+                  <TouchableOpacity
+                    className="mt-4 rounded-lg px-6 py-3"
+                    style={{ backgroundColor: colors.primary }}
+                    onPress={loadActivities}>
+                    <Text className="font-semibold text-white">Try Again</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Activities List */}
+              {!loadingActivities && activities.length > 0 && (
+                <View className="pb-8">
+                  {/* Header */}
+                  <View className="mb-4 flex-row items-center">
+                    <View
+                      className="mr-3 h-12 w-12 items-center justify-center rounded-full"
+                      style={{ backgroundColor: colors.primary + '20' }}>
+                      <Text className="text-2xl">📅</Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                        Activities
+                      </Text>
+                      <Text className="text-sm" style={{ color: colors.textSecondary }}>
+                        {selectedChild.fullName}'s school activities and events
+                      </Text>
+                    </View>
+                    <View
+                      className="rounded-full px-3 py-1"
+                      style={{ backgroundColor: colors.primary + '20' }}>
+                      <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                        {totalItems} Activit{totalItems !== 1 ? 'ies' : 'y'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Activities */}
+                  {activities.map((activity) => (
+                    <ActivityCard key={activity._id} activity={activity} />
+                  ))}
+                </View>
+              )}
+
+              {/* No Activities State */}
+              {!loadingActivities && activities.length === 0 && selectedChild && (
+                <View className="mt-8 items-center justify-center py-12">
+                  <Text className="mb-4 text-6xl">📅</Text>
+                  <Text className="mb-2 text-xl font-bold" style={{ color: colors.textPrimary }}>
+                    No Activities Found
+                  </Text>
+                  <Text
+                    className="px-8 text-center text-base leading-6"
+                    style={{ color: colors.textSecondary }}>
+                    No activities have been scheduled for {selectedChild.fullName} yet.
+                    {getActiveFiltersCount() > 0 && ' Try adjusting your filters.'}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+
+          {/* Empty State */}
+          {!selectedChild && !isLoading && hasSearched && (
+            <View className="mt-8 items-center justify-center py-12">
+              <Text className="mb-4 text-6xl">👶</Text>
+              <Text className="mb-2 text-xl font-semibold" style={{ color: colors.textPrimary }}>
+                Select a Child
+              </Text>
+              <Text className="text-center" style={{ color: colors.textSecondary }}>
+                Choose one of your children to view their activities
+              </Text>
+            </View>
+          )}
+
+          {/* No Children State */}
+          {children.length === 0 && !isLoadingChildren && (
+            <View className="mt-8 items-center justify-center py-12">
+              <Text className="mb-4 text-6xl">👨‍👩‍👧‍👦</Text>
+              <Text className="mb-2 text-xl font-semibold" style={{ color: colors.textPrimary }}>
+                No Children Found
+              </Text>
+              <Text className="text-center" style={{ color: colors.textSecondary }}>
+                No children are associated with your account. Please contact the school
+                administration.
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Fixed Pagination at Bottom */}
+        {selectedChild && activities.length > 0 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            isLoading={loadingActivities}
+            itemName="activities"
+          />
+        )}
+      </View>
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={isFilterModalVisible}
+        filters={filters}
+        onApply={handleFilterApply}
+        onClose={() => setIsFilterModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };
