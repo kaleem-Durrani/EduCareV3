@@ -32,21 +32,23 @@ export const ParentReportCard: React.FC<ParentReportCardProps> = ({ report }) =>
 
   const { completedDays, totalDays, percentage } = getCompletionStats();
 
-  const getActivityIcon = (activity: string, value: string) => {
-    if (!value) return '⚪';
-    
+  const getActivityIcon = (activity: string) => {
     switch (activity) {
       case 'toilet':
-        return value === 'good' ? '🟢' : value === 'average' ? '🟡' : '🔴';
+        return '🚽';
       case 'food_intake':
-        return value === 'good' ? '🍽️' : value === 'average' ? '🥄' : '🚫';
+        return '🍽️';
       case 'friends_interaction':
-        return value === 'good' ? '😊' : value === 'average' ? '😐' : '😔';
+        return '👥';
       case 'studies_mood':
-        return value === 'good' ? '📚' : value === 'average' ? '📖' : '📝';
+        return '📚';
       default:
-        return '⚪';
+        return '📝';
     }
+  };
+
+  const getStatusCircle = (value: string) => {
+    return value ? '🟢' : '🔴';
   };
 
   const getActivityLabel = (activity: string) => {
@@ -65,33 +67,12 @@ export const ParentReportCard: React.FC<ParentReportCardProps> = ({ report }) =>
   };
 
   const getValueLabel = (value: string) => {
-    switch (value) {
-      case 'good':
-        return 'Good';
-      case 'average':
-        return 'Average';
-      case 'poor':
-        return 'Poor';
-      default:
-        return 'Not recorded';
-    }
-  };
-
-  const getValueColor = (value: string) => {
-    switch (value) {
-      case 'good':
-        return '#10B981'; // Green
-      case 'average':
-        return '#F59E0B'; // Yellow
-      case 'poor':
-        return '#EF4444'; // Red
-      default:
-        return colors.textSecondary;
-    }
+    return value || 'Not recorded';
   };
 
   const renderDayTag = (day: DailyReport, index: number) => {
-    const isCompleted = day.toilet || day.food_intake || day.friends_interaction || day.studies_mood;
+    const isCompleted =
+      day.toilet || day.food_intake || day.friends_interaction || day.studies_mood;
     return (
       <View
         key={index}
@@ -165,7 +146,8 @@ export const ParentReportCard: React.FC<ParentReportCardProps> = ({ report }) =>
               <View
                 className="rounded-full px-3 py-1"
                 style={{
-                  backgroundColor: percentage >= 80 ? '#10B981' : percentage >= 50 ? '#F59E0B' : '#EF4444',
+                  backgroundColor:
+                    percentage >= 80 ? '#10B981' : percentage >= 50 ? '#F59E0B' : '#EF4444',
                 }}>
                 <Text className="text-sm font-bold text-white">{percentage}%</Text>
               </View>
@@ -189,7 +171,7 @@ export const ParentReportCard: React.FC<ParentReportCardProps> = ({ report }) =>
             <Text className="mb-4 text-lg font-bold" style={{ color: colors.textPrimary }}>
               Daily Progress
             </Text>
-            
+
             {report.dailyReports.map((day, dayIndex) => (
               <View
                 key={dayIndex}
@@ -199,34 +181,45 @@ export const ParentReportCard: React.FC<ParentReportCardProps> = ({ report }) =>
                   borderWidth: 1,
                   borderColor: colors.border,
                 }}>
-                <Text className="mb-3 text-base font-semibold" style={{ color: colors.textPrimary }}>
+                <Text
+                  className="mb-3 text-base font-semibold"
+                  style={{ color: colors.textPrimary }}>
                   {day.day}
                 </Text>
-                
+
                 <View className="space-y-3">
-                  {['toilet', 'food_intake', 'friends_interaction', 'studies_mood'].map((activity) => (
-                    <View key={activity} className="flex-row items-center justify-between">
-                      <View className="flex-row items-center">
-                        <Text className="mr-2 text-lg">
-                          {getActivityIcon(activity, day[activity as keyof DailyReport])}
-                        </Text>
-                        <Text className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                          {getActivityLabel(activity)}
-                        </Text>
+                  {['toilet', 'food_intake', 'friends_interaction', 'studies_mood'].map(
+                    (activity) => (
+                      <View key={activity} className="flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <Text className="mr-2 text-lg">{getActivityIcon(activity)}</Text>
+                          <Text
+                            className="text-sm font-medium"
+                            style={{ color: colors.textPrimary }}>
+                            {getActivityLabel(activity)}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center">
+                          <Text className="mr-2 text-lg">
+                            {getStatusCircle(day[activity as keyof DailyReport])}
+                          </Text>
+                          <View
+                            className="rounded-lg px-3 py-1"
+                            style={{
+                              backgroundColor: colors.background,
+                              borderWidth: 1,
+                              borderColor: colors.border,
+                            }}>
+                            <Text
+                              className="text-xs font-medium"
+                              style={{ color: colors.textPrimary }}>
+                              {getValueLabel(day[activity as keyof DailyReport])}
+                            </Text>
+                          </View>
+                        </View>
                       </View>
-                      <View
-                        className="rounded-full px-3 py-1"
-                        style={{
-                          backgroundColor: getValueColor(day[activity as keyof DailyReport]) + '20',
-                        }}>
-                        <Text
-                          className="text-xs font-semibold"
-                          style={{ color: getValueColor(day[activity as keyof DailyReport]) }}>
-                          {getValueLabel(day[activity as keyof DailyReport])}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
+                    )
+                  )}
                 </View>
               </View>
             ))}
@@ -307,7 +300,8 @@ export const ParentReportCard: React.FC<ParentReportCardProps> = ({ report }) =>
           <View
             className="rounded-full px-4 py-2"
             style={{
-              backgroundColor: percentage >= 80 ? '#10B981' : percentage >= 50 ? '#F59E0B' : '#EF4444',
+              backgroundColor:
+                percentage >= 80 ? '#10B981' : percentage >= 50 ? '#F59E0B' : '#EF4444',
             }}>
             <Text className="text-sm font-bold text-white">{percentage}%</Text>
           </View>
