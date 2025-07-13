@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, Dimensions } from 'react-native';
-import Video from 'react-native-video';
+import { Video, ResizeMode } from 'expo-av';
 import ImageViewing from 'react-native-image-viewing';
 import { useTheme } from '../../../../contexts';
 import { Post } from '../../../../services';
@@ -113,9 +113,11 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
                     height: 200,
                     borderRadius: 8,
                   }}
-                  controls={true}
-                  resizeMode="contain"
-                  paused={true}
+                  useNativeControls
+                  resizeMode={ResizeMode.CONTAIN}
+                  shouldPlay={false}
+                  isLooping={false}
+                  isMuted={false}
                 />
                 <Text className="mt-1 text-xs" style={{ color: colors.textSecondary }}>
                   {video.filename || `Video ${index + 1}`}

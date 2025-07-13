@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, Image, Dimensions } from 'react-native';
 import ImageView from 'react-native-image-viewing';
-import Video from 'react-native-video';
+import { Video, ResizeMode } from 'expo-av';
 import { useTheme } from '../../../../contexts';
 import { Post } from '../../../../services';
 import { buildMediaUrl } from '../../../../config';
@@ -289,25 +289,51 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
                 <View className="space-y-4">
                   {videos.map((video, index) => (
                     <View key={index} className="mb-4">
+                      {/* Video Container with fixed dimensions */}
                       <View
-                        className="overflow-hidden rounded-lg"
                         style={{
-                          width: '100%',
-                          aspectRatio: 16 / 9,
-                          backgroundColor: colors.border,
+                          width: screenWidth - 40, // Account for padding
+                          height: (screenWidth - 40) * (9 / 16), // 16:9 aspect ratio
+                          backgroundColor: 'black',
+                          borderRadius: 8,
+                          alignSelf: 'center',
+                          justifyContent: 'center',
+                          alignItems: 'center',
                         }}>
                         {playingVideoIndex === index ? (
                           <Video
                             source={{ uri: buildMediaUrl(video.url) }}
-                            style={{ width: '100%', height: '100%' }}
-                            controls={true}
-                            resizeMode="contain" // Maintain aspect ratio
-                            onEnd={() => setPlayingVideoIndex(null)}
-                            onError={() => setPlayingVideoIndex(null)}
+                            style={{
+                              width: screenWidth - 40,
+                              height: (screenWidth - 40) * (9 / 16),
+                            }}
+                            useNativeControls
+                            resizeMode={ResizeMode.CONTAIN}
+                            isLooping={false}
+                            shouldPlay={true}
+                            isMuted={false}
+                            volume={1.0}
+                            rate={1.0}
+                            onPlaybackStatusUpdate={(status) => {
+                              if (status.isLoaded) {
+                                if (status.didJustFinish) {
+                                  setPlayingVideoIndex(null);
+                                }
+                              } else {
+                                // Handle error case when video is not loaded
+                                console.log('Video error:', status.error);
+                                setPlayingVideoIndex(null);
+                              }
+                            }}
                           />
                         ) : (
                           <TouchableOpacity
-                            className="h-full w-full items-center justify-center"
+                            style={{
+                              width: screenWidth - 40,
+                              height: (screenWidth - 40) * (9 / 16),
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}
                             onPress={() => handleVideoPress(index)}
                             activeOpacity={0.7}>
                             <View className="items-center">
@@ -320,12 +346,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
                                 }}>
                                 <Text className="text-2xl text-white">▶️</Text>
                               </View>
-                              <Text
-                                className="text-base font-medium"
-                                style={{ color: colors.textPrimary }}>
+                              <Text className="text-base font-medium" style={{ color: 'white' }}>
                                 Tap to play video
                               </Text>
-                              <Text className="text-sm" style={{ color: colors.textSecondary }}>
+                              <Text className="text-sm" style={{ color: '#CCCCCC' }}>
                                 Video {index + 1}
                               </Text>
                             </View>
