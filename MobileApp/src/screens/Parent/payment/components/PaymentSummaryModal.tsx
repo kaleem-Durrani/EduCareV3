@@ -22,12 +22,19 @@ export const PaymentSummaryModal: React.FC<PaymentSummaryModalProps> = ({
 }) => {
   const { colors } = useTheme();
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    // Ensure amount is a number
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) || 0 : amount || 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(numAmount);
   };
+
+  // Debug logging to help identify the issue
+  if (feeSummaryData) {
+    console.log('Fee Summary Data:', JSON.stringify(feeSummaryData, null, 2));
+  }
 
   const getPaymentRate = () => {
     if (!feeSummaryData || feeSummaryData.fees.total === 0) return 0;
