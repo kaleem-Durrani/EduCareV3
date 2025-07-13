@@ -265,8 +265,6 @@ export const createFee = asyncHandler(async (req, res) => {
       description,
       status: "pending",
       createdBy: req.user.id,
-      created_at: new Date(),
-      updated_at: new Date(),
     });
 
     await newFee.save({ session });
@@ -419,7 +417,7 @@ export const getFeeSummary = asyncHandler(async (req, res) => {
   if (year) {
     const startDate = new Date(`${year}-01-01`);
     const endDate = new Date(`${year}-12-31`);
-    query.created_at = { $gte: startDate, $lte: endDate };
+    query.createdAt = { $gte: startDate, $lte: endDate };
   }
 
   // Get fee statistics
@@ -539,7 +537,7 @@ export const getFeeStatistics = asyncHandler(async (req, res) => {
   if (year) {
     const startDate = new Date(`${year}-01-01`);
     const endDate = new Date(`${year}-12-31`);
-    query.created_at = { $gte: startDate, $lte: endDate };
+    query.createdAt = { $gte: startDate, $lte: endDate };
   }
 
   // Get fee statistics
