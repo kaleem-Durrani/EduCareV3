@@ -108,8 +108,6 @@ export const getPostsForParent = asyncHandler(async (req, res) => {
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
 
-  console.log(studentId);
-
   // Get student and their class
   const student = await Student.findById(studentId).populate("current_class");
   if (!student) {
