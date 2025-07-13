@@ -52,13 +52,28 @@ weeklyMenuSchema.index({ status: 1 });
 weeklyMenuSchema.index({ isActive: 1 });
 weeklyMenuSchema.index({ createdAt: -1 });
 
-// Pre-save middleware to calculate totalItems
-weeklyMenuSchema.pre("save", function (next) {
-  if (this.menuData && Array.isArray(this.menuData)) {
-    this.totalItems = this.menuData.reduce(
+// Function to calculate total items
+function calculateTotalItems(menuData) {
+  if (menuData && Array.isArray(menuData)) {
+    return menuData.reduce(
       (sum, day) => sum + (day.items?.length || 0),
       0
     );
+  }
+  return 0;
+}
+
+// Pre-save middleware to calculate totalItems
+weeklyMenuSchema.pre("save", function (next) {
+  this.totalItems = calculateTotalItems(this.menuData);
+  next();
+});
+
+// Pre-update middleware to calculate totalItems
+weeklyMenuSchema.pre(["updateOne", "findOneAndUpdate"], function (next) {
+  const update = this.getUpdate();
+  if (update.menuData) {
+    update.totalItems = calculateTotalItems(update.menuData);
   }
   next();
 });
