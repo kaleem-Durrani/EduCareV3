@@ -1,394 +1,484 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  FlatList,
-} from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../../contexts';
-import { feeService, Fee, FeeSummary } from '../../../services';
+import { useParentChildren } from '../../../contexts/ParentChildrenContext';
+import { useApi } from '../../../hooks';
+import {
+  feeService,
+  StudentFeesResponse,
+  FeeSummary,
+  FeeFilters,
+  ParentStudent,
+} from '../../../services';
+import { ChildSelector, PaginationControls, ScreenHeader } from '../../../components';
+import { FeeSummaryCard, FeeCard, FilterModal } from './components';
+import Toast from 'react-native-toast-message';
 
-interface Props {
-  navigation: any;
-  route?: {
-    params?: {
-      studentId?: string;
-    };
-  };
+interface FilterState {
+  status?: 'pending' | 'paid';
+  year?: string;
+  sortBy?: 'deadline' | 'amount' | 'title' | 'status' | 'created_at';
+  sortOrder?: 'asc' | 'desc';
 }
 
-const PaymentScreen: React.FC<Props> = ({ navigation, route }) => {
+const PaymentScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
 
-  // Early error handling for missing navigation or route
-  if (!navigation) {
-    console.error('PaymentScreen: navigation prop is undefined');
-    return null;
-  }
+  // State
+  const [selectedChild, setSelectedChild] = useState<ParentStudent | null>(null);
+  const [fees, setFees] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [filters, setFilters] = useState<FilterState>({
+    sortBy: 'deadline',
+    sortOrder: 'asc',
+  });
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  if (!route) {
-    console.error('PaymentScreen: route prop is undefined');
-    return null;
-  }
+  // Use parent children context
+  const { children, isLoading: isLoadingChildren, refreshChildren } = useParentChildren();
 
-  const studentId = route?.params?.studentId;
+  // API hooks for fees
+  const {
+    request: fetchFees,
+    isLoading: loadingFees,
+    error: feesError,
+    data: feesData,
+  } = useApi<StudentFeesResponse>((params: FeeFilters & { studentId: string }) =>
+    feeService.getStudentFees(params.studentId, {
+      page: params.page,
+      limit: params.limit,
+      status: params.status,
+      year: params.year,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+    })
+  );
 
-  const [fees, setFees] = useState<Fee[]>([]);
-  const [feeSummary, setFeeSummary] = useState<FeeSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'paid' | 'overdue'>('all');
+  // API hooks for fee summary
+  const {
+    request: fetchFeeSummary,
+    isLoading: loadingFeeSummary,
+    error: feeSummaryError,
+    data: feeSummaryData,
+  } = useApi<FeeSummary>((params: { studentId: string; year?: string }) =>
+    feeService.getFeeSummary(params.studentId, params.year)
+  );
 
+  // Load fee data when child or filters change
   useEffect(() => {
-    if (studentId) {
-      fetchPaymentData();
+    if (selectedChild) {
+      loadFeeData();
+    } else {
+      setFees([]);
+      setTotalPages(1);
+      setTotalItems(0);
     }
-  }, [studentId, statusFilter]);
+  }, [selectedChild, currentPage, pageSize, filters]);
 
-  const fetchPaymentData = async () => {
-    if (!studentId) {
-      Alert.alert('Error', 'Student ID is required to view payment information');
-      setLoading(false);
-      return;
+  const loadFeeData = async () => {
+    if (!selectedChild) return;
+
+    // Load fee summary
+    const feeSummaryResponse = await feeService.getFeeSummary(selectedChild._id, filters.year);
+    if (feeSummaryResponse.success) {
+      await fetchFeeSummary({
+        studentId: selectedChild._id,
+        year: filters.year,
+      });
     }
 
-    try {
-      setLoading(true);
-
-      // Fetch both fees and summary
-      const [feesResponse, summaryResponse] = await Promise.all([
-        feeService.getStudentFees(studentId, {
-          status: statusFilter === 'all' ? undefined : statusFilter,
-          limit: 50,
-        }),
-        feeService.getFeeSummary(studentId),
-      ]);
-
-      if (feesResponse.success) {
-        setFees(feesResponse.data.fees || []);
-      }
-
-      if (summaryResponse.success) {
-        setFeeSummary(summaryResponse.data);
-      }
-
-      if (!feesResponse.success && !summaryResponse.success) {
-        Alert.alert('Error', 'Failed to fetch payment data');
-      }
-    } catch (error) {
-      console.error('Error fetching payment data:', error);
-      Alert.alert('Error', 'Failed to fetch payment data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchPaymentData();
-    setRefreshing(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    // Load fees
+    const feesResponse = await feeService.getStudentFees(selectedChild._id, {
+      page: currentPage,
+      limit: pageSize,
+      status: filters.status,
+      year: filters.year,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
     });
-  };
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toFixed(2)}`;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return '#10B981'; // Green
-      case 'pending':
-        return '#F59E0B'; // Yellow
-      case 'overdue':
-        return '#EF4444'; // Red
-      case 'cancelled':
-        return '#6B7280'; // Gray
-      default:
-        return colors.textSecondary;
+    if (feesResponse.success) {
+      await fetchFees({
+        studentId: selectedChild._id,
+        page: currentPage,
+        limit: pageSize,
+        status: filters.status,
+        year: filters.year,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: feesResponse.message || 'Failed to load payment data',
+        visibilityTime: 3000,
+      });
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'Paid';
-      case 'pending':
-        return 'Pending';
-      case 'overdue':
-        return 'Overdue';
-      case 'cancelled':
-        return 'Cancelled';
-      default:
-        return 'Unknown';
+  // Update fees when data changes
+  useEffect(() => {
+    if (feesData) {
+      setFees(feesData.fees);
+      setTotalPages(feesData.pagination.totalPages);
+      setTotalItems(feesData.pagination.totalItems);
+    }
+  }, [feesData]);
+
+  const handleChildSelect = (child: ParentStudent) => {
+    setSelectedChild(child);
+    setCurrentPage(1); // Reset to first page when changing child
+    setHasSearched(true);
+  };
+
+  const handleChildReset = () => {
+    setSelectedChild(null);
+    setFees([]);
+    setCurrentPage(1);
+    setFilters({
+      sortBy: 'deadline',
+      sortOrder: 'asc',
+    });
+    setHasSearched(false);
+  };
+
+  const handleRefresh = async () => {
+    await refreshChildren();
+    if (selectedChild) {
+      await loadFeeData();
     }
   };
 
-  const getFeeTypeIcon = (type: string) => {
-    switch (type) {
-      case 'tuition':
-        return '🎓';
-      case 'transport':
-        return '🚌';
-      case 'meal':
-        return '🍽️';
-      case 'activity':
-        return '🎨';
-      case 'uniform':
-        return '👕';
-      case 'book':
-        return '📚';
+  const handleFilterApply = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when applying filters
+    setIsFilterModalVisible(false);
+  };
+
+  const handleFilterClear = (filterKey: keyof FilterState) => {
+    const newFilters = { ...filters };
+    delete newFilters[filterKey];
+    setFilters(newFilters);
+    setCurrentPage(1);
+  };
+
+  const getActiveFiltersCount = () => {
+    return Object.keys(filters).filter((key) => {
+      const value = filters[key as keyof FilterState];
+      // Don't count default sort values as active filters
+      if (key === 'sortBy' && value === 'deadline') return false;
+      if (key === 'sortOrder' && value === 'asc') return false;
+      return !!value;
+    }).length;
+  };
+
+  const formatFilterValue = (key: keyof FilterState, value: string) => {
+    if (key === 'status') {
+      return value === 'pending' ? 'Pending' : 'Paid';
+    }
+    if (key === 'year') {
+      return value;
+    }
+    if (key === 'sortBy') {
+      switch (value) {
+        case 'deadline':
+          return 'Deadline';
+        case 'amount':
+          return 'Amount';
+        case 'title':
+          return 'Title';
+        case 'status':
+          return 'Status';
+        case 'created_at':
+          return 'Created Date';
+        default:
+          return value;
+      }
+    }
+    if (key === 'sortOrder') {
+      return value === 'asc' ? 'Ascending' : 'Descending';
+    }
+    return value;
+  };
+
+  const getFilterLabel = (key: keyof FilterState) => {
+    switch (key) {
+      case 'status':
+        return 'Status';
+      case 'year':
+        return 'Year';
+      case 'sortBy':
+        return 'Sort By';
+      case 'sortOrder':
+        return 'Order';
       default:
-        return '💰';
+        return key;
     }
   };
 
-  const renderFilterButton = (filter: typeof statusFilter, label: string) => (
-    <TouchableOpacity
-      className={`mr-2 rounded-full px-4 py-2 ${statusFilter === filter ? 'bg-blue-500' : 'bg-gray-200'}`}
-      onPress={() => setStatusFilter(filter)}>
-      <Text
-        className={`text-sm font-medium ${statusFilter === filter ? 'text-white' : 'text-gray-700'}`}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const renderFeeItem = ({ item }: { item: Fee }) => (
-    <View className="mx-4 mb-3 rounded-lg bg-white p-4 shadow-sm">
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1">
-          <View className="mb-2 flex-row items-center">
-            <Text className="mr-2 text-2xl">{getFeeTypeIcon(item.type)}</Text>
-            <View className="flex-1">
-              <Text className="text-base font-semibold" style={{ color: colors.textPrimary }}>
-                {item.title}
-              </Text>
-              <Text className="text-sm" style={{ color: colors.textSecondary }}>
-                {item.description}
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row items-center justify-between">
-            <Text className="text-lg font-bold" style={{ color: colors.primary }}>
-              {formatCurrency(item.amount)}
-            </Text>
-            <View
-              className="rounded-full px-2 py-1"
-              style={{ backgroundColor: getStatusColor(item.status) + '20' }}>
-              <Text className="text-xs font-medium" style={{ color: getStatusColor(item.status) }}>
-                {getStatusText(item.status)}
-              </Text>
-            </View>
-          </View>
-
-          <View className="mt-2 flex-row justify-between">
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
-              Due: {formatDate(item.dueDate)}
-            </Text>
-            {item.paymentDate && (
-              <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                Paid: {formatDate(item.paymentDate)}
-              </Text>
-            )}
-          </View>
-
-          {item.transactionId && (
-            <Text className="mt-1 text-xs" style={{ color: colors.textSecondary }}>
-              Transaction: {item.transactionId}
-            </Text>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-
-  // Show error if no studentId is provided
-  if (!studentId) {
-    return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-        <View className="items-center pb-4 pt-4">
-          <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-            Centro Infantil EDUCARE
-          </Text>
-          <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-        </View>
-
-        <View className="px-4 py-2">
-          <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-            <Text className="mr-2 text-2xl">←</Text>
-            <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-              Payment & Fees
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-            Error: Missing Student Information
-          </Text>
-          <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-            Student ID is required to view payment information. Please navigate from the home
-            screen.
-          </Text>
-          <TouchableOpacity
-            className="mt-4 rounded-lg bg-blue-500 px-6 py-3"
-            onPress={() => navigation.goBack()}>
-            <Text className="font-medium text-white">Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const isLoading = isLoadingChildren || loadingFees || loadingFeeSummary;
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
+      <ScreenHeader title="Payments" navigation={navigation} showBackButton={true} />
 
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Payment & Fees
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {feeSummary && feeSummary.student && (
-        <View className="px-4 py-2">
-          <Text className="text-base font-medium" style={{ color: colors.textPrimary }}>
-            {feeSummary.student.fullName || 'Student'}
-            {feeSummary.student.rollNum && ` - Roll #${feeSummary.student.rollNum}`}
-          </Text>
-        </View>
-      )}
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text className="mt-2 text-base" style={{ color: colors.textSecondary }}>
-            Loading payment information...
-          </Text>
-        </View>
-      ) : (
+      {/* Main Content */}
+      <View className="flex-1">
         <ScrollView
-          className="flex-1"
+          className="flex-1 px-4"
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
+              refreshing={isLoading}
+              onRefresh={handleRefresh}
               colors={[colors.primary]}
+              tintColor={colors.primary}
             />
           }>
-          {/* Payment Summary - Yellow Box */}
-          {feeSummary && (
-            <View
-              className="mx-4 mb-4 rounded-lg p-4 shadow-sm"
-              style={{ backgroundColor: '#FEF3C7' }}>
-              <Text className="mb-3 text-lg font-bold" style={{ color: '#92400E' }}>
-                Payment Summary
-              </Text>
-
-              <View className="mb-2 flex-row justify-between">
-                <Text className="text-sm font-medium" style={{ color: '#92400E' }}>
-                  Total Amount:
-                </Text>
-                <Text className="text-sm font-bold" style={{ color: '#92400E' }}>
-                  {formatCurrency(feeSummary.amounts?.total || feeSummary.totalAmount || 0)}
-                </Text>
-              </View>
-
-              <View className="mb-2 flex-row justify-between">
-                <Text className="text-sm font-medium" style={{ color: '#92400E' }}>
-                  Paid Amount:
-                </Text>
-                <Text className="text-sm font-bold" style={{ color: '#059669' }}>
-                  {formatCurrency(feeSummary.amounts?.paid || feeSummary.paidAmount || 0)}
-                </Text>
-              </View>
-
-              <View className="mb-2 flex-row justify-between">
-                <Text className="text-sm font-medium" style={{ color: '#92400E' }}>
-                  Pending Amount:
-                </Text>
-                <Text className="text-sm font-bold" style={{ color: '#D97706' }}>
-                  {formatCurrency(feeSummary.amounts?.pending || feeSummary.pendingAmount || 0)}
-                </Text>
-              </View>
-
-              {(feeSummary.overdueAmount || 0) > 0 && (
-                <View className="flex-row justify-between">
-                  <Text className="text-sm font-medium" style={{ color: '#92400E' }}>
-                    Overdue Amount:
-                  </Text>
-                  <Text className="text-sm font-bold" style={{ color: '#DC2626' }}>
-                    {formatCurrency(feeSummary.overdueAmount || 0)}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Filter Buttons */}
-          <View className="px-4 py-2">
-            <FlatList
-              horizontal
-              data={[
-                { filter: 'all' as const, label: 'All' },
-                { filter: 'pending' as const, label: 'Pending' },
-                { filter: 'paid' as const, label: 'Paid' },
-                { filter: 'overdue' as const, label: 'Overdue' },
-              ]}
-              renderItem={({ item }) => renderFilterButton(item.filter, item.label)}
-              keyExtractor={(item) => item.filter}
-              showsHorizontalScrollIndicator={false}
+          {/* Child Selector */}
+          <View className="mt-4">
+            <ChildSelector
+              selectedChild={selectedChild}
+              onChildSelect={handleChildSelect}
+              onResetSelection={handleChildReset}
+              placeholder="Select a child to view their payment information"
+              disabled={isLoadingChildren}
             />
           </View>
 
-          {/* Fees List */}
-          {fees.length === 0 ? (
-            <View className="flex-1 items-center justify-center px-6 py-8">
-              <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-                No Fees Found
-              </Text>
-              <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-                No {statusFilter === 'all' ? '' : statusFilter + ' '}fees found for this student.
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={fees}
-              renderItem={renderFeeItem}
-              keyExtractor={(item, index) => item._id || `fee-${index}`}
-              contentContainerStyle={{ paddingVertical: 8 }}
-              showsVerticalScrollIndicator={false}
-              scrollEnabled={false}
-            />
+          {selectedChild && (
+            <>
+              {/* Fee Summary Card */}
+              {feeSummaryData && !loadingFeeSummary && (
+                <View className="mt-4">
+                  <FeeSummaryCard feeSummary={feeSummaryData} />
+                </View>
+              )}
+
+              {/* Fee Summary Loading */}
+              {loadingFeeSummary && (
+                <View className="mt-4 items-center justify-center py-8">
+                  <Text className="text-base" style={{ color: colors.textSecondary }}>
+                    Loading payment summary...
+                  </Text>
+                </View>
+              )}
+
+              {/* Fee Summary Error */}
+              {feeSummaryError && (
+                <View className="mt-4 items-center justify-center py-8">
+                  <Text className="text-base" style={{ color: colors.error }}>
+                    Failed to load payment summary
+                  </Text>
+                </View>
+              )}
+
+              {/* Filters Section */}
+              <View className="mb-4 mt-6">
+                <View className="mb-3 flex-row items-center justify-end">
+                  <TouchableOpacity
+                    className="flex-row items-center rounded-lg px-4 py-2"
+                    style={{
+                      backgroundColor: isFilterModalVisible
+                        ? colors.primary
+                        : colors.primary + '20',
+                    }}
+                    onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}>
+                    <Text
+                      className="text-sm font-medium"
+                      style={{
+                        color: isFilterModalVisible ? 'white' : colors.primary,
+                      }}>
+                      {isFilterModalVisible ? 'Close Filters' : 'Open Filters'}
+                    </Text>
+                    {getActiveFiltersCount() > 0 && (
+                      <View
+                        className="ml-2 h-5 w-5 items-center justify-center rounded-full"
+                        style={{
+                          backgroundColor: isFilterModalVisible ? 'white' : colors.primary,
+                        }}>
+                        <Text
+                          className="text-xs font-bold"
+                          style={{
+                            color: isFilterModalVisible ? colors.primary : 'white',
+                          }}>
+                          {getActiveFiltersCount()}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Active Filters Tags */}
+                {getActiveFiltersCount() > 0 && (
+                  <View className="flex-row flex-wrap">
+                    {Object.entries(filters).map(([key, value]) => {
+                      if (!value) return null;
+                      // Don't show default sort values as tags
+                      if (key === 'sortBy' && value === 'deadline') return null;
+                      if (key === 'sortOrder' && value === 'asc') return null;
+
+                      return (
+                        <View
+                          key={key}
+                          className="mb-2 mr-2 flex-row items-center rounded-full px-3 py-1"
+                          style={{ backgroundColor: colors.primary + '20' }}>
+                          <Text className="text-sm font-medium" style={{ color: colors.primary }}>
+                            {getFilterLabel(key as keyof FilterState)}:{' '}
+                            {formatFilterValue(key as keyof FilterState, value)}
+                          </Text>
+                          <TouchableOpacity
+                            className="ml-2"
+                            onPress={() => handleFilterClear(key as keyof FilterState)}>
+                            <Text className="text-sm font-bold" style={{ color: colors.primary }}>
+                              ×
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+
+              {/* Fees Loading */}
+              {loadingFees && (
+                <View className="mt-8 items-center justify-center py-12">
+                  <Text className="text-lg" style={{ color: colors.textSecondary }}>
+                    Loading {selectedChild.fullName}'s payment records...
+                  </Text>
+                </View>
+              )}
+
+              {/* Fees Error */}
+              {feesError && (
+                <View className="mt-8 items-center justify-center py-12">
+                  <Text className="mb-4 text-6xl">⚠️</Text>
+                  <Text className="mb-2 text-xl font-bold" style={{ color: colors.error }}>
+                    Error Loading Payment Records
+                  </Text>
+                  <Text
+                    className="px-8 text-center text-base leading-6"
+                    style={{ color: colors.textSecondary }}>
+                    {feesError || 'Something went wrong'}
+                  </Text>
+                  <TouchableOpacity
+                    className="mt-4 rounded-lg px-6 py-3"
+                    style={{ backgroundColor: colors.primary }}
+                    onPress={loadFeeData}>
+                    <Text className="font-semibold text-white">Try Again</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Fees List */}
+              {!loadingFees && fees.length > 0 && (
+                <View className="pb-8">
+                  {/* Header */}
+                  <View className="mb-4 flex-row items-center">
+                    <View
+                      className="mr-3 h-12 w-12 items-center justify-center rounded-full"
+                      style={{ backgroundColor: colors.primary + '20' }}>
+                      <Text className="text-2xl">💳</Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                        Payment Records
+                      </Text>
+                      <Text className="text-sm" style={{ color: colors.textSecondary }}>
+                        {selectedChild.fullName}'s fee and payment history
+                      </Text>
+                    </View>
+                    <View
+                      className="rounded-full px-3 py-1"
+                      style={{ backgroundColor: colors.primary + '20' }}>
+                      <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                        {totalItems} Record{totalItems !== 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Fees */}
+                  {fees.map((fee) => (
+                    <FeeCard key={fee.id} fee={fee} />
+                  ))}
+                </View>
+              )}
+
+              {/* No Fees State */}
+              {!loadingFees && fees.length === 0 && selectedChild && (
+                <View className="mt-8 items-center justify-center py-12">
+                  <Text className="mb-4 text-6xl">💳</Text>
+                  <Text className="mb-2 text-xl font-bold" style={{ color: colors.textPrimary }}>
+                    No Payment Records Found
+                  </Text>
+                  <Text
+                    className="px-8 text-center text-base leading-6"
+                    style={{ color: colors.textSecondary }}>
+                    No payment records have been found for {selectedChild.fullName}.
+                    {getActiveFiltersCount() > 0 && ' Try adjusting your filters.'}
+                  </Text>
+                </View>
+              )}
+            </>
           )}
 
-          <View className="h-8" />
+          {/* Empty State */}
+          {!selectedChild && !isLoading && hasSearched && (
+            <View className="mt-8 items-center justify-center py-12">
+              <Text className="mb-4 text-6xl">👶</Text>
+              <Text className="mb-2 text-xl font-semibold" style={{ color: colors.textPrimary }}>
+                Select a Child
+              </Text>
+              <Text className="text-center" style={{ color: colors.textSecondary }}>
+                Choose one of your children to view their payment information
+              </Text>
+            </View>
+          )}
+
+          {/* No Children State */}
+          {children.length === 0 && !isLoadingChildren && (
+            <View className="mt-8 items-center justify-center py-12">
+              <Text className="mb-4 text-6xl">👨‍👩‍👧‍👦</Text>
+              <Text className="mb-2 text-xl font-semibold" style={{ color: colors.textPrimary }}>
+                No Children Found
+              </Text>
+              <Text className="text-center" style={{ color: colors.textSecondary }}>
+                No children are associated with your account. Please contact the school
+                administration.
+              </Text>
+            </View>
+          )}
         </ScrollView>
-      )}
+
+        {/* Fixed Pagination at Bottom */}
+        {selectedChild && fees.length > 0 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            isLoading={loadingFees}
+            itemName="payment records"
+          />
+        )}
+      </View>
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={isFilterModalVisible}
+        filters={filters}
+        onApply={handleFilterApply}
+        onClose={() => setIsFilterModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };
