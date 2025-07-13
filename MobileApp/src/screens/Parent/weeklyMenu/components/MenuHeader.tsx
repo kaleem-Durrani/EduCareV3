@@ -10,6 +10,14 @@ interface MenuHeaderProps {
 const MenuHeader: React.FC<MenuHeaderProps> = ({ menu }) => {
   const { colors } = useTheme();
 
+  // Calculate total items as fallback if backend calculation is wrong
+  const calculateTotalItems = () => {
+    if (!menu.menuData || !Array.isArray(menu.menuData)) return 0;
+    return menu.menuData.reduce((sum, day) => sum + (day.items?.length || 0), 0);
+  };
+
+  const totalItems = menu.totalItems || calculateTotalItems();
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -142,7 +150,7 @@ const MenuHeader: React.FC<MenuHeaderProps> = ({ menu }) => {
               </Text>
             </View>
             <Text className="text-base font-bold" style={{ color: colors.primary }}>
-              {menu.totalItems} Items
+              {totalItems} Items
             </Text>
           </View>
         </View>
