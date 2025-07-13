@@ -12,7 +12,7 @@ import {
   ParentStudent,
 } from '../../../services';
 import { ChildSelector, PaginationControls, ScreenHeader } from '../../../components';
-import { FeeSummaryCard, FeeCard, FilterModal } from './components';
+import { FeeCard, FilterModal, PaymentSummaryModal } from './components';
 import Toast from 'react-native-toast-message';
 
 interface FilterState {
@@ -37,6 +37,7 @@ const PaymentScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
     sortOrder: 'asc',
   });
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [isPaymentSummaryModalVisible, setIsPaymentSummaryModalVisible] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   // Use parent children context
@@ -83,16 +84,7 @@ const PaymentScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
   const loadFeeData = async () => {
     if (!selectedChild) return;
 
-    // Load fee summary
-    const feeSummaryResponse = await feeService.getFeeSummary(selectedChild._id, filters.year);
-    if (feeSummaryResponse.success) {
-      await fetchFeeSummary({
-        studentId: selectedChild._id,
-        year: filters.year,
-      });
-    }
-
-    // Load fees
+    // Load fees only
     const feesResponse = await feeService.getStudentFees(selectedChild._id, {
       page: currentPage,
       limit: pageSize,
@@ -116,7 +108,26 @@ const PaymentScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: feesResponse.message || 'Failed to load payment data',
+        text2: feesResponse.message || 'Failed to load payment records',
+        visibilityTime: 3000,
+      });
+    }
+  };
+
+  const loadFeeSummary = async () => {
+    if (!selectedChild) return;
+
+    const feeSummaryResponse = await feeService.getFeeSummary(selectedChild._id, filters.year);
+    if (feeSummaryResponse.success) {
+      await fetchFeeSummary({
+        studentId: selectedChild._id,
+        year: filters.year,
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: feeSummaryResponse.message || 'Failed to load payment summary',
         visibilityTime: 3000,
       });
     }
@@ -254,34 +265,26 @@ const PaymentScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
 
           {selectedChild && (
             <>
-              {/* Fee Summary Card */}
-              {feeSummaryData && !loadingFeeSummary && (
-                <View className="mt-4">
-                  <FeeSummaryCard feeSummary={feeSummaryData} />
-                </View>
-              )}
-
-              {/* Fee Summary Loading */}
-              {loadingFeeSummary && (
-                <View className="mt-4 items-center justify-center py-8">
-                  <Text className="text-base" style={{ color: colors.textSecondary }}>
-                    Loading payment summary...
-                  </Text>
-                </View>
-              )}
-
-              {/* Fee Summary Error */}
-              {feeSummaryError && (
-                <View className="mt-4 items-center justify-center py-8">
-                  <Text className="text-base" style={{ color: colors.error }}>
-                    Failed to load payment summary
-                  </Text>
-                </View>
-              )}
-
               {/* Filters Section */}
               <View className="mb-4 mt-6">
                 <View className="mb-3 flex-row items-center justify-end">
+                  {/* Payment Summary Button */}
+                  <TouchableOpacity
+                    className="mr-3 flex-row items-center rounded-lg px-4 py-2"
+                    style={{
+                      backgroundColor: colors.secondary + '20',
+                    }}
+                    onPress={() => {
+                      setIsPaymentSummaryModalVisible(true);
+                      loadFeeSummary();
+                    }}>
+                    <Text className="mr-2">💰</Text>
+                    <Text className="text-sm font-medium" style={{ color: colors.secondary }}>
+                      Payment Summary
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Filters Button */}
                   <TouchableOpacity
                     className="flex-row items-center rounded-lg px-4 py-2"
                     style={{
@@ -478,6 +481,16 @@ const PaymentScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation 
         filters={filters}
         onApply={handleFilterApply}
         onClose={() => setIsFilterModalVisible(false)}
+      />
+
+      {/* Payment Summary Modal */}
+      <PaymentSummaryModal
+        visible={isPaymentSummaryModalVisible}
+        selectedChild={selectedChild}
+        feeSummaryData={feeSummaryData}
+        isLoading={loadingFeeSummary}
+        error={feeSummaryError}
+        onClose={() => setIsPaymentSummaryModalVisible(false)}
       />
     </SafeAreaView>
   );
