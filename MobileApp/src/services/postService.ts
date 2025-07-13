@@ -116,27 +116,6 @@ export const postService = {
   },
 
   /**
-   * Get posts for parent by student ID (for parent app - not implemented yet)
-   * Uses endpoint: GET /api/posts/parent/:studentId
-   */
-  getPostsForParent: async (
-    studentId: string,
-    page?: number,
-    limit?: number
-  ): Promise<ApiResponse<PaginatedPostsResponse>> => {
-    const params = new URLSearchParams();
-    if (page) params.append('page', page.toString());
-    if (limit) params.append('limit', limit.toString());
-
-    const queryString = params.toString();
-    const url = queryString
-      ? `/posts/parent/${studentId}?${queryString}`
-      : `/posts/parent/${studentId}`;
-
-    return ApiService.get<PaginatedPostsResponse>(url);
-  },
-
-  /**
    * Get single post by ID (mobile app)
    * Uses existing endpoint: GET /api/posts/:post_id
    */
@@ -225,5 +204,26 @@ export const postService = {
     return postService.getPosts(filters);
   },
 
-  // Note: Statistics API removed - only needed for admin web app
+  /**
+   * Get posts for parent by student ID (mobile app)
+   * Uses existing endpoint: GET /api/posts/parent/:studentId
+   */
+  getPostsForParent: async (
+    studentId: string,
+    page?: number,
+    limit?: number
+  ): Promise<ApiResponse<PaginatedPostsResponse>> => {
+    const params = new URLSearchParams();
+
+    if (page) params.append('page', page.toString());
+    if (limit) params.append('limit', limit.toString());
+
+    const queryString = params.toString();
+    const url = queryString
+      ? `/posts/parent/${studentId}?${queryString}`
+      : `/posts/parent/${studentId}`;
+
+    return ApiService.get<PaginatedPostsResponse>(url);
+  },
+
 };
