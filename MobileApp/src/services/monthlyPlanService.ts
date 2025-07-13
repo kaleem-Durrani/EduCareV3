@@ -1,17 +1,17 @@
 import { ApiService } from './api';
 import { ApiResponse } from '../types';
 
-// Monthly Plan types for mobile app
+// Monthly Plan types for mobile app - aligned with backend controller
 export interface MonthlyPlan {
   _id: string;
-  month: number;
+  month: number; // 1-12
   year: number;
   class_id: {
     _id: string;
     name: string;
   };
-  description: string;
-  imageUrl?: string;
+  description: string; // Main text content
+  imageUrl?: string; // Optional image for the plan
   createdBy: {
     _id: string;
     name: string;

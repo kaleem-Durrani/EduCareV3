@@ -1,26 +1,38 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+  Image,
+  Dimensions,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ImageViewing from 'react-native-image-viewing';
+import Toast from 'react-native-toast-message';
 import { useTheme, useParentChildren } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import { monthlyPlanService, ParentStudent, MonthlyPlan } from '../../../services';
-import LoadingScreen from '../../../components/LoadingScreen';
-import { ChildSelector, MonthPicker, PlanContent } from './components';
+import { ChildSelector, ScreenHeader } from '../../../components';
+import { buildMediaUrl } from '../../../config';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
+
+  // State management
   const [selectedChild, setSelectedChild] = useState<ParentStudent | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [hasSearched, setHasSearched] = useState(false);
+  const [isImageViewVisible, setIsImageViewVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use parent children context
-  const {
-    children,
-    isLoading: isLoadingChildren,
-    error: childrenError,
-    refreshChildren,
-  } = useParentChildren();
+  const { refreshChildren } = useParentChildren();
 
   // API hook for fetching monthly plan
   const {
@@ -30,144 +42,242 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
     data: plan,
   } = useApi<MonthlyPlan>(monthlyPlanService.getMonthlyPlanForParent);
 
-  const handleLoadPlan = async () => {
+  // Handle search for monthly plan
+  const handleSearch = async () => {
     if (!selectedChild) {
+      Toast.show({
+        type: 'error',
+        text1: 'Selection Required',
+        text2: 'Please select a child first',
+      });
       return;
     }
 
+    setHasSearched(true);
     try {
-      setHasSearched(true);
       await fetchPlan(selectedChild._id, selectedMonth, selectedYear);
-    } catch (err) {
-      console.error('Failed to load monthly plan:', err);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to fetch monthly plan',
+      });
     }
   };
 
-  // Show loading screen if children are still loading
-  if (isLoadingChildren) {
-    return <LoadingScreen />;
-  }
+  // Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshChildren();
+    if (selectedChild && hasSearched) {
+      await handleSearch();
+    }
+    setRefreshing(false);
+  };
 
-  // Show error if failed to load children
-  if (childrenError) {
-    return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-        <View className="items-center pb-4 pt-4">
-          <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-            Centro Infantil EDUCARE
-          </Text>
-          <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-        </View>
+  // Handle image press
+  const handleImagePress = () => {
+    if (plan?.imageUrl) {
+      setIsImageViewVisible(true);
+    }
+  };
 
-        <View className="px-4 py-2">
-          <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-            <Text className="mr-2 text-2xl">←</Text>
-            <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-              Monthly Plan
-            </Text>
-          </TouchableOpacity>
-        </View>
+  // Get month name
+  const getMonthName = (month: number) => {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month - 1];
+  };
 
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="mb-2 text-center text-lg font-medium" style={{ color: colors.error }}>
-            Error Loading Children
-          </Text>
-          <Text className="mb-4 text-center text-sm" style={{ color: colors.textSecondary }}>
-            {childrenError}
-          </Text>
-          <TouchableOpacity
-            className="rounded-lg px-4 py-2"
-            style={{ backgroundColor: colors.primary }}
-            onPress={refreshChildren}>
-            <Text className="text-white">Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Auto-search when child, month, or year changes
+  useEffect(() => {
+    if (selectedChild && hasSearched) {
+      handleSearch();
+    }
+  }, [selectedChild, selectedMonth, selectedYear]);
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="items-center pb-4 pt-4">
-        <Text className="mb-2 text-xl font-bold" style={{ color: colors.primary }}>
-          Centro Infantil EDUCARE
-        </Text>
-        <View className="h-px w-full" style={{ backgroundColor: '#000000' }} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScreenHeader title="Monthly Plan" navigation={navigation} />
 
-      <View className="px-4 py-2">
-        <TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-          <Text className="mr-2 text-2xl">←</Text>
-          <Text className="text-lg font-medium" style={{ color: colors.primary }}>
-            Monthly Plan
+      <ScrollView
+        className="flex-1 px-4"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {/* Child Selector */}
+        <View className="mb-4">
+          <ChildSelector
+            selectedChild={selectedChild}
+            onChildSelect={setSelectedChild}
+            onResetSelection={() => setSelectedChild(null)}
+          />
+        </View>
+
+        {/* Compact Month and Year Picker */}
+        <View className="mb-4 flex-row items-center space-x-3">
+          <View className="flex-1">
+            <Text className="mb-1 text-xs font-medium" style={{ color: colors.textSecondary }}>
+              Month
+            </Text>
+            <TouchableOpacity
+              className="rounded-lg border px-3 py-2"
+              style={{ borderColor: colors.border, backgroundColor: colors.card }}
+              onPress={() => {
+                Alert.alert(
+                  'Select Month',
+                  '',
+                  Array.from({ length: 12 }, (_, i) => ({
+                    text: getMonthName(i + 1),
+                    onPress: () => setSelectedMonth(i + 1),
+                  })).concat([{ text: 'Cancel', onPress: () => {} }])
+                );
+              }}>
+              <Text className="text-center text-sm" style={{ color: colors.textPrimary }}>
+                {getMonthName(selectedMonth)}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-1">
+            <Text className="mb-1 text-xs font-medium" style={{ color: colors.textSecondary }}>
+              Year
+            </Text>
+            <TouchableOpacity
+              className="rounded-lg border px-3 py-2"
+              style={{ borderColor: colors.border, backgroundColor: colors.card }}
+              onPress={() => {
+                const currentYear = new Date().getFullYear();
+                const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+                Alert.alert(
+                  'Select Year',
+                  '',
+                  years
+                    .map((year) => ({
+                      text: year.toString(),
+                      onPress: () => setSelectedYear(year),
+                    }))
+                    .concat([{ text: 'Cancel', onPress: () => {} }])
+                );
+              }}>
+              <Text className="text-center text-sm" style={{ color: colors.textPrimary }}>
+                {selectedYear}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Search Button */}
+        <TouchableOpacity
+          className="mb-6 rounded-lg py-3"
+          style={{
+            backgroundColor: selectedChild ? colors.primary : colors.border,
+            opacity: selectedChild ? 1 : 0.6,
+          }}
+          onPress={handleSearch}
+          disabled={!selectedChild || isLoadingPlan}>
+          <Text className="text-center text-base font-semibold text-white">
+            {isLoadingPlan ? 'Loading...' : 'Get Monthly Plan'}
           </Text>
         </TouchableOpacity>
-      </View>
 
-      {children.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-center text-lg" style={{ color: colors.textPrimary }}>
-            No Children Found
-          </Text>
-          <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary }}>
-            You don't have any children registered in the system.
-          </Text>
-        </View>
-      ) : (
-        <>
-          {/* Plan Selector */}
-          <ScrollView className="px-4">
-            <View
-              className="mb-4 rounded-lg p-4"
-              style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
-              <Text className="mb-4 text-base font-medium" style={{ color: colors.textPrimary }}>
-                Select Child and Month
-              </Text>
-
-              {/* Child Selector */}
-              <ChildSelector
-                selectedChild={selectedChild}
-                onChildSelect={setSelectedChild}
-                placeholder="Choose your child..."
-              />
-
-              {/* Month Picker */}
-              <MonthPicker
-                selectedMonth={selectedMonth}
-                selectedYear={selectedYear}
-                onMonthSelect={setSelectedMonth}
-                onYearSelect={setSelectedYear}
-              />
-
-              {/* Load Plan Button */}
-              <TouchableOpacity
-                className="rounded-lg py-3"
-                style={{
-                  backgroundColor: selectedChild ? colors.primary : colors.surface,
-                  opacity: selectedChild ? 1 : 0.6,
-                }}
-                onPress={handleLoadPlan}
-                disabled={!selectedChild || isLoadingPlan}>
-                <Text
-                  className="text-center font-medium"
-                  style={{ color: selectedChild ? 'white' : colors.textSecondary }}>
-                  {isLoadingPlan ? 'Loading Plan...' : 'Load Monthly Plan'}
+        {/* Plan Content */}
+        {hasSearched && (
+          <View className="mb-6">
+            {isLoadingPlan ? (
+              <View className="items-center py-12">
+                <Text className="text-base" style={{ color: colors.textSecondary }}>
+                  Loading monthly plan...
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
+              </View>
+            ) : planError ? (
+              <View
+                className="items-center rounded-lg px-6 py-12"
+                style={{ backgroundColor: colors.card }}>
+                <Text className="mb-2 text-lg font-semibold" style={{ color: colors.error }}>
+                  📋 No Plan Found
+                </Text>
+                <Text
+                  className="text-center text-sm leading-5"
+                  style={{ color: colors.textSecondary }}>
+                  No monthly plan available for {getMonthName(selectedMonth)} {selectedYear}
+                </Text>
+              </View>
+            ) : plan ? (
+              <View className="rounded-lg p-4" style={{ backgroundColor: colors.card }}>
+                {/* Header */}
+                <View className="mb-4 items-center">
+                  <Text className="text-xl font-bold" style={{ color: colors.primary }}>
+                    📅 {getMonthName(selectedMonth)} {selectedYear}
+                  </Text>
+                  <Text className="text-sm" style={{ color: colors.textSecondary }}>
+                    {plan.class_id.name}
+                  </Text>
+                </View>
 
-          {/* Plan Content */}
-          <PlanContent
-            plan={plan}
-            isLoading={isLoadingPlan}
-            error={planError}
-            hasSearched={hasSearched}
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            childName={selectedChild?.fullName}
-          />
-        </>
+                {/* Image */}
+                {plan.imageUrl && (
+                  <TouchableOpacity onPress={handleImagePress} className="mb-4">
+                    <Image
+                      source={{ uri: buildMediaUrl(plan.imageUrl) }}
+                      style={{
+                        width: '100%',
+                        height: 200,
+                        borderRadius: 8,
+                      }}
+                      resizeMode="cover"
+                    />
+                    <View className="absolute bottom-2 right-2 rounded-full bg-black/50 p-2">
+                      <Text className="text-xs text-white">🔍 Tap to view</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+                {/* Description */}
+                <View className="mb-4">
+                  <Text
+                    className="mb-2 text-base font-semibold"
+                    style={{ color: colors.textPrimary }}>
+                    📝 Plan Details
+                  </Text>
+                  <Text className="text-sm leading-6" style={{ color: colors.textPrimary }}>
+                    {plan.description}
+                  </Text>
+                </View>
+
+                {/* Footer Info */}
+                <View className="pt-3" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <Text className="text-xs" style={{ color: colors.textSecondary }}>
+                    👨‍🏫 Created by: {plan.createdBy.name}
+                  </Text>
+                  <Text className="text-xs" style={{ color: colors.textSecondary }}>
+                    📅 Created: {new Date(plan.createdAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Image Viewer */}
+      {plan?.imageUrl && (
+        <ImageViewing
+          images={[{ uri: buildMediaUrl(plan.imageUrl) }]}
+          imageIndex={0}
+          visible={isImageViewVisible}
+          onRequestClose={() => setIsImageViewVisible(false)}
+        />
       )}
     </SafeAreaView>
   );
