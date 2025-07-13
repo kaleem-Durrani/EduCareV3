@@ -12,7 +12,7 @@ import {
   ParentStudent,
 } from '../../../services';
 import { ChildSelector, PaginationControls, ScreenHeader } from '../../../components';
-import { HealthInfoCard, HealthMetricsCard, FilterModal } from './components';
+import { HealthMetricsCard, FilterModal, HealthInfoModal } from './components';
 import Toast from 'react-native-toast-message';
 
 interface FilterState {
@@ -39,6 +39,7 @@ const HealthScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }
     sortOrder: 'desc',
   });
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [isHealthInfoModalVisible, setIsHealthInfoModalVisible] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   // Use parent children context
@@ -85,13 +86,7 @@ const HealthScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }
   const loadHealthData = async () => {
     if (!selectedChild) return;
 
-    // Load health info
-    const healthInfoResponse = await healthService.getHealthInfo(selectedChild._id);
-    if (healthInfoResponse.success) {
-      await fetchHealthInfo(selectedChild._id);
-    }
-
-    // Load health metrics
+    // Load health metrics only
     const healthMetricsResponse = await healthService.getHealthMetrics(selectedChild._id, {
       page: currentPage,
       limit: pageSize,
@@ -119,7 +114,23 @@ const HealthScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: healthMetricsResponse.message || 'Failed to load health data',
+        text2: healthMetricsResponse.message || 'Failed to load health metrics',
+        visibilityTime: 3000,
+      });
+    }
+  };
+
+  const loadHealthInfo = async () => {
+    if (!selectedChild) return;
+
+    const healthInfoResponse = await healthService.getHealthInfo(selectedChild._id);
+    if (healthInfoResponse.success) {
+      await fetchHealthInfo(selectedChild._id);
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: healthInfoResponse.message || 'Failed to load health information',
         visibilityTime: 3000,
       });
     }
@@ -284,68 +295,62 @@ const HealthScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }
 
           {selectedChild && (
             <>
-              {/* Health Info Card */}
-              {healthInfoData && !loadingHealthInfo && (
-                <View className="mt-4">
-                  <HealthInfoCard healthInfo={healthInfoData} />
-                </View>
-              )}
-
-              {/* Health Info Loading */}
-              {loadingHealthInfo && (
-                <View className="mt-4 items-center justify-center py-8">
-                  <Text className="text-base" style={{ color: colors.textSecondary }}>
-                    Loading health information...
-                  </Text>
-                </View>
-              )}
-
-              {/* Health Info Error */}
-              {healthInfoError && (
-                <View className="mt-4 items-center justify-center py-8">
-                  <Text className="text-base" style={{ color: colors.error }}>
-                    Failed to load health information
-                  </Text>
-                </View>
-              )}
-
               {/* Filters Section */}
               <View className="mb-4 mt-6">
                 <View className="mb-3 flex-row items-center justify-between">
                   <Text className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
                     Health Metrics Filters
                   </Text>
-                  <TouchableOpacity
-                    className="flex-row items-center rounded-lg px-4 py-2"
-                    style={{
-                      backgroundColor: isFilterModalVisible
-                        ? colors.primary
-                        : colors.primary + '20',
-                    }}
-                    onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}>
-                    <Text
-                      className="text-sm font-medium"
+                  <View className="flex-row">
+                    {/* Health Info Button */}
+                    <TouchableOpacity
+                      className="mr-3 flex-row items-center rounded-lg px-4 py-2"
                       style={{
-                        color: isFilterModalVisible ? 'white' : colors.primary,
+                        backgroundColor: colors.secondary + '20',
+                      }}
+                      onPress={() => {
+                        setIsHealthInfoModalVisible(true);
+                        loadHealthInfo();
                       }}>
-                      {isFilterModalVisible ? 'Close Filters' : 'Open Filters'}
-                    </Text>
-                    {getActiveFiltersCount() > 0 && (
-                      <View
-                        className="ml-2 h-5 w-5 items-center justify-center rounded-full"
+                      <Text className="mr-2">🏥</Text>
+                      <Text className="text-sm font-medium" style={{ color: colors.secondary }}>
+                        Health Info
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Filters Button */}
+                    <TouchableOpacity
+                      className="flex-row items-center rounded-lg px-4 py-2"
+                      style={{
+                        backgroundColor: isFilterModalVisible
+                          ? colors.primary
+                          : colors.primary + '20',
+                      }}
+                      onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}>
+                      <Text
+                        className="text-sm font-medium"
                         style={{
-                          backgroundColor: isFilterModalVisible ? 'white' : colors.primary,
+                          color: isFilterModalVisible ? 'white' : colors.primary,
                         }}>
-                        <Text
-                          className="text-xs font-bold"
+                        {isFilterModalVisible ? 'Close Filters' : 'Open Filters'}
+                      </Text>
+                      {getActiveFiltersCount() > 0 && (
+                        <View
+                          className="ml-2 h-5 w-5 items-center justify-center rounded-full"
                           style={{
-                            color: isFilterModalVisible ? colors.primary : 'white',
+                            backgroundColor: isFilterModalVisible ? 'white' : colors.primary,
                           }}>
-                          {getActiveFiltersCount()}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
+                          <Text
+                            className="text-xs font-bold"
+                            style={{
+                              color: isFilterModalVisible ? colors.primary : 'white',
+                            }}>
+                            {getActiveFiltersCount()}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {/* Active Filters Tags */}
@@ -511,6 +516,16 @@ const HealthScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }
         filters={filters}
         onApply={handleFilterApply}
         onClose={() => setIsFilterModalVisible(false)}
+      />
+
+      {/* Health Info Modal */}
+      <HealthInfoModal
+        visible={isHealthInfoModalVisible}
+        selectedChild={selectedChild}
+        healthInfoData={healthInfoData}
+        isLoading={loadingHealthInfo}
+        error={healthInfoError}
+        onClose={() => setIsHealthInfoModalVisible(false)}
       />
     </SafeAreaView>
   );
