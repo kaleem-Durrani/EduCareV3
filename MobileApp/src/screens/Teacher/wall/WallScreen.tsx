@@ -83,9 +83,16 @@ const WallScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) 
     loadPosts(page);
   };
 
-  const handlePageSizeChange = (size: number) => {
+  const handlePageSizeChange = async (size: number) => {
     setPageSize(size);
-    loadPosts(1);
+    // Use the new size directly instead of relying on state update
+    const postFilters: PostFilters = {
+      page: 1,
+      limit: size,
+      ...(selectedClass && { classId: selectedClass._id }),
+      ...(selectedStudent && { studentId: selectedStudent._id }),
+    };
+    await fetchPosts(postFilters);
   };
 
   const handleCreatePost = async (postData: CreatePostData, mediaFiles?: any[]) => {
