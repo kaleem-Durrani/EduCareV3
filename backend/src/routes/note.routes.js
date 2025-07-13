@@ -29,7 +29,6 @@ const router = express.Router();
 router.get(
   "/notes/student/:student_id",
   authenticate,
-  requireAdminOrTeacher,
   getStudentNotesValidation,
   handleValidationErrors,
   getStudentNotes
