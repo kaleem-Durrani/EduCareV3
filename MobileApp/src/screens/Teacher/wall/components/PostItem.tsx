@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, Dimensions } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import ImageViewing from 'react-native-image-viewing';
@@ -18,14 +18,36 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
   const [imageViewingIndex, setImageViewingIndex] = useState(0);
   const [isImageViewingVisible, setIsImageViewingVisible] = useState(false);
 
-  // Create video players for each video
+  // Create video players for each video - using fixed number to avoid hook violations
   const videos = post.media.filter((item) => item.type === 'video');
-  const videoPlayers = videos.map((video) =>
-    useVideoPlayer(buildMediaUrl(video.url), (player: any) => {
+
+  // Create a stable array of video URLs to avoid hook violations
+  const videoUrls = useMemo(() => videos.map((video) => buildMediaUrl(video.url)), [post.media]);
+
+  // Create video players with a fixed number of hooks (max 3 videos)
+  const videoPlayer1 = useVideoPlayer(videoUrls[0] || '', (player: any) => {
+    if (videoUrls[0]) {
       player.loop = false;
       player.muted = false;
-    })
-  );
+    }
+  });
+
+  const videoPlayer2 = useVideoPlayer(videoUrls[1] || '', (player: any) => {
+    if (videoUrls[1]) {
+      player.loop = false;
+      player.muted = false;
+    }
+  });
+
+  const videoPlayer3 = useVideoPlayer(videoUrls[2] || '', (player: any) => {
+    if (videoUrls[2]) {
+      player.loop = false;
+      player.muted = false;
+    }
+  });
+
+  // Array of players for easy access
+  const videoPlayers = [videoPlayer1, videoPlayer2, videoPlayer3];
 
   const screenWidth = Dimensions.get('window').width - 32; // Account for padding
 
@@ -111,22 +133,30 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onEdit, onDelete }) =>
         {videos.length > 0 && (
           <View className="mb-3">
             <Text className="mb-2 text-sm font-medium" style={{ color: colors.textPrimary }}>
-              🎥 Videos ({videos.length})
+              🎥 Videos ({Math.min(videos.length, 3)}
+              {videos.length > 3 ? ' of ' + videos.length : ''})
             </Text>
-            {videos.map((video, index) => (
+            {videos.length > 3 && (
+              <Text className="mb-2 text-xs" style={{ color: colors.textSecondary }}>
+                Showing first 3 videos only
+              </Text>
+            )}
+            {videos.slice(0, 3).map((video, index) => (
               <View key={`video_${index}`} className="mb-2">
-                <VideoView
-                  player={videoPlayers[index]}
-                  style={{
-                    width: screenWidth,
-                    height: 200,
-                    borderRadius: 8,
-                  }}
-                  nativeControls
-                  contentFit="contain"
-                  allowsFullscreen
-                  allowsPictureInPicture
-                />
+                {videoUrls[index] && (
+                  <VideoView
+                    player={videoPlayers[index]}
+                    style={{
+                      width: screenWidth,
+                      height: 200,
+                      borderRadius: 8,
+                    }}
+                    nativeControls
+                    contentFit="contain"
+                    allowsFullscreen
+                    allowsPictureInPicture
+                  />
+                )}
                 <Text className="mt-1 text-xs" style={{ color: colors.textSecondary }}>
                   {video.filename || `Video ${index + 1}`}
                 </Text>

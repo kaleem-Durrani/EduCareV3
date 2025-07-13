@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, Image, Dimensions } from 'react-native';
 import ImageView from 'react-native-image-viewing';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -20,14 +20,39 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [playingVideoIndex, setPlayingVideoIndex] = useState<number | null>(null);
 
-  // Create video players for each video
+  // Create video players for each video - using useMemo to avoid hook violations
   const postVideos = post?.media.filter((item) => item.type === 'video') || [];
-  const videoPlayers = postVideos.map((video) =>
-    useVideoPlayer(buildMediaUrl(video.url), (player: any) => {
+
+  // Create a stable array of video URLs to avoid hook violations
+  const videoUrls = useMemo(
+    () => postVideos.map((video) => buildMediaUrl(video.url)),
+    [post?.media]
+  );
+
+  // Create video players with a fixed number of hooks
+  const videoPlayer1 = useVideoPlayer(videoUrls[0] || '', (player: any) => {
+    if (videoUrls[0]) {
       player.loop = false;
       player.muted = false;
-    })
-  );
+    }
+  });
+
+  const videoPlayer2 = useVideoPlayer(videoUrls[1] || '', (player: any) => {
+    if (videoUrls[1]) {
+      player.loop = false;
+      player.muted = false;
+    }
+  });
+
+  const videoPlayer3 = useVideoPlayer(videoUrls[2] || '', (player: any) => {
+    if (videoUrls[2]) {
+      player.loop = false;
+      player.muted = false;
+    }
+  });
+
+  // Array of players for easy access
+  const videoPlayers = [videoPlayer1, videoPlayer2, videoPlayer3];
 
   if (!post) return null;
 
@@ -297,12 +322,18 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
                 <View className="mb-4 flex-row items-center">
                   <Text className="mr-2 text-lg">🎥</Text>
                   <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                    Videos ({videos.length})
+                    Videos ({Math.min(videos.length, 3)}
+                    {videos.length > 3 ? ' of ' + videos.length : ''})
                   </Text>
                 </View>
+                {videos.length > 3 && (
+                  <Text className="mb-2 text-sm" style={{ color: colors.textSecondary }}>
+                    Showing first 3 videos only
+                  </Text>
+                )}
 
                 <View className="space-y-4">
-                  {videos.map((video, index) => (
+                  {videos.slice(0, 3).map((video, index) => (
                     <View key={index} className="mb-4">
                       {/* Video Container with fixed dimensions */}
                       <View
@@ -315,7 +346,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({ visible, post,
                           justifyContent: 'center',
                           alignItems: 'center',
                         }}>
-                        {playingVideoIndex === index ? (
+                        {playingVideoIndex === index && videoUrls[index] ? (
                           <VideoView
                             player={videoPlayers[index]}
                             style={{
