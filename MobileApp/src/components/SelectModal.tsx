@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, Image } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useTheme } from '../contexts';
 import { buildMediaUrl } from '../config';
 
@@ -99,7 +100,11 @@ const SelectModal: React.FC<SelectModalProps> = ({
               className="h-full w-full"
               resizeMode="cover"
               onError={() => {
-                console.log('Failed to load image for item:', item.label);
+                Toast.show({
+                  type: 'error',
+                  text1: 'Image Load Error',
+                  text2: `Failed to load image for ${item.label}`,
+                });
               }}
             />
           </View>
@@ -145,7 +150,11 @@ const SelectModal: React.FC<SelectModalProps> = ({
                       className="h-full w-full"
                       resizeMode="cover"
                       onError={() => {
-                        console.log('Failed to load selected item image:', selectedItem.label);
+                        Toast.show({
+                          type: 'error',
+                          text1: 'Image Load Error',
+                          text2: `Failed to load image for ${selectedItem.label}`,
+                        });
                       }}
                     />
                   </View>

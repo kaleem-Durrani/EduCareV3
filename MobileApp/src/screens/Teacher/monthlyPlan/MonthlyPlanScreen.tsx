@@ -6,19 +6,17 @@ import {
   ScrollView,
   RefreshControl,
   Image,
-  Dimensions,
-  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ImageViewing from 'react-native-image-viewing';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { useTheme, useTeacherClasses } from '../../../contexts';
 import { useApi } from '../../../hooks';
 import { monthlyPlanService, EnrolledClass, MonthlyPlan } from '../../../services';
 import { SelectModal, ScreenHeader } from '../../../components';
 import { buildMediaUrl } from '../../../config';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -31,8 +29,13 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
   const [isImageViewVisible, setIsImageViewVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Date picker state
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
+
   // Use teacher classes context
-  const { classes, isLoading: isLoadingClasses, refreshClasses } = useTeacherClasses();
+  const { classes, refreshClasses } = useTeacherClasses();
 
   // API hook for fetching monthly plan
   const {
@@ -101,6 +104,48 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
     return months[month - 1];
   };
 
+  // Handle month picker
+  const handleMonthPickerChange = (_event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowMonthPicker(false);
+    }
+
+    if (selectedDate) {
+      setSelectedMonth(selectedDate.getMonth() + 1);
+      setTempDate(selectedDate);
+    }
+  };
+
+  // Handle year picker
+  const handleYearPickerChange = (_event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowYearPicker(false);
+    }
+
+    if (selectedDate) {
+      setSelectedYear(selectedDate.getFullYear());
+      setTempDate(selectedDate);
+    }
+  };
+
+  // Show month picker
+  const showMonthSelector = () => {
+    const currentDate = new Date();
+    currentDate.setMonth(selectedMonth - 1);
+    currentDate.setFullYear(selectedYear);
+    setTempDate(currentDate);
+    setShowMonthPicker(true);
+  };
+
+  // Show year picker
+  const showYearSelector = () => {
+    const currentDate = new Date();
+    currentDate.setMonth(selectedMonth - 1);
+    currentDate.setFullYear(selectedYear);
+    setTempDate(currentDate);
+    setShowYearPicker(true);
+  };
+
   // Auto-search when class, month, or year changes
   useEffect(() => {
     if (selectedClass && hasSearched) {
@@ -148,16 +193,7 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
             <TouchableOpacity
               className="rounded-lg border px-3 py-2"
               style={{ borderColor: colors.border, backgroundColor: colors.card }}
-              onPress={() => {
-                Alert.alert(
-                  'Select Month',
-                  '',
-                  Array.from({ length: 12 }, (_, i) => ({
-                    text: getMonthName(i + 1),
-                    onPress: () => setSelectedMonth(i + 1),
-                  })).concat([{ text: 'Cancel', onPress: () => {} }])
-                );
-              }}>
+              onPress={showMonthSelector}>
               <Text className="text-center text-sm" style={{ color: colors.textPrimary }}>
                 {getMonthName(selectedMonth)}
               </Text>
@@ -171,20 +207,7 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
             <TouchableOpacity
               className="rounded-lg border px-3 py-2"
               style={{ borderColor: colors.border, backgroundColor: colors.card }}
-              onPress={() => {
-                const currentYear = new Date().getFullYear();
-                const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
-                Alert.alert(
-                  'Select Year',
-                  '',
-                  years
-                    .map((year) => ({
-                      text: year.toString(),
-                      onPress: () => setSelectedYear(year),
-                    }))
-                    .concat([{ text: 'Cancel', onPress: () => {} }])
-                );
-              }}>
+              onPress={showYearSelector}>
               <Text className="text-center text-sm" style={{ color: colors.textPrimary }}>
                 {selectedYear}
               </Text>
@@ -284,6 +307,30 @@ const MonthlyPlanScreen: React.FC<{ navigation: any; route?: any }> = ({ navigat
           </View>
         )}
       </ScrollView>
+
+      {/* Month Picker */}
+      {showMonthPicker && (
+        <DateTimePicker
+          value={tempDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleMonthPickerChange}
+          maximumDate={new Date(2030, 11, 31)}
+          minimumDate={new Date(2020, 0, 1)}
+        />
+      )}
+
+      {/* Year Picker */}
+      {showYearPicker && (
+        <DateTimePicker
+          value={tempDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleYearPickerChange}
+          maximumDate={new Date(2030, 11, 31)}
+          minimumDate={new Date(2020, 0, 1)}
+        />
+      )}
 
       {/* Image Viewer */}
       {plan?.imageUrl && (
